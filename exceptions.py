@@ -1,0 +1,2 @@
+class ConfigurationFileNotFoundOrEmpty(Exception):
+    pass

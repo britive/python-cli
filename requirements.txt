@@ -1,0 +1,8 @@
+typer-cli
+typer[all]
+requests
+https://github.com/britive/python-sdk/releases/download/v2.5.0/britive-2.5.0.tar.gz
+pyyaml
+merge_args
+tabulate
+
