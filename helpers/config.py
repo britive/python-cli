@@ -1,6 +1,6 @@
 from pathlib import Path
 import yaml
-import typer
+import click
 
 
 def lowercase(obj):
@@ -57,8 +57,8 @@ class ConfigManager:
                     return {}
                 return lowercase(config)  # lowercase keys and values in the config
             except yaml.YAMLError:
-                typer.echo(f'Invalid YAML file at {self.path}')
-                raise typer.Abort()
+                click.echo(f'Invalid YAML file at {self.path}')
+                exit()
 
     def get_tenant(self):
         # normalize the input
@@ -66,28 +66,28 @@ class ConfigManager:
 
         # do some error checking to ensure we can actually grab a tenant
         if 'tenants' not in self.keys and not name:
-            typer.echo(f'No "tenants" block found in {self.path}. Cannot continue.')
-            raise typer.Abort()
+            click.echo(f'No "tenants" block found in {self.path}. Cannot continue.')
+            exit()
 
         if len(self.tenants.keys()) == 0 and not name:
-            typer.echo(f'No tenants found in {self.path}. Cannot continue.')
-            raise typer.Abort()
+            click.echo(f'No tenants found in {self.path}. Cannot continue.')
+            exit()
 
         # attempt to determine the name of the tenant based on what the user passed in (or didn't pass in)
         provided_tenant_name = name if name else self.default_tenant
 
         if not provided_tenant_name:  # name not provided and no default has been set
             if len(self.tenants.keys()) != 1:
-                typer.echo('Tenant not provided, no default tenant set, and more than one tenant exists.')
-                raise typer.Abort()
+                click.echo('Tenant not provided, no default tenant set, and more than one tenant exists.')
+                exit()
             else:
                 # nothing given but only 1 tenant so assume that is what should be used
                 provided_tenant_name = list(self.tenants.keys())[0]
 
         # if we get here then we now have a tenant name we can check to ensure exists
         if provided_tenant_name not in self.tenants.keys() and not name:
-            typer.echo(f'Tenant name "{provided_tenant_name}" not found in {self.path}')
-            raise typer.Abort()
+            click.echo(f'Tenant name "{provided_tenant_name}" not found in {self.path}')
+            exit()
 
         self.alias = provided_tenant_name or name
         # return details about the requested tenant

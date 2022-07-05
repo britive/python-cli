@@ -1,9 +1,11 @@
-import typer
+import click
 
 
-TokenOption = typer.Option(
-    None, '-T', '--token',
+option = click.option(
+    '-T', '--token',
+    default=None,
     help='API token.',
     envvar='BRITIVE_API_TOKEN',
-    show_envvar=True
+    show_envvar=True,
+    show_default=True
 )

@@ -1,29 +1,25 @@
-from typing import Callable, Optional
 from britive_cli import BritiveCli
-import typer
+import click
 from functools import wraps
 from merge_args import merge_args
 from dataclasses import dataclass
-from options.tenant import TenantOption
 
 
-# to be used to inject additional information into the typer.Context ctx.obj
 @dataclass
 class Common:
     britive: BritiveCli
 
 
 # this wrapper exists to centralize all "common" CLI options (options that exist for all commands)
-# adapted from https://github.com/tiangolo/typer/issues/296
-def inject_common_options(f: Callable):
+def build_britive(f):
     @merge_args(f)
     @wraps(f)
+    @click.pass_context
     def wrapper(
-            ctx: typer.Context,
-            #tenant: Optional[str] = TenantOption,
-            **kwargs,
-
+            ctx,
+            **kwargs
     ):
         ctx.obj = Common(BritiveCli(tenant_name=kwargs.get('tenant'), token=kwargs.get('token')))
+        ctx.obj.britive.set_output_format(kwargs.get('output_format'))
         return f(ctx=ctx, **kwargs)
     return wrapper

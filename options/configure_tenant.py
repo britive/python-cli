@@ -1,4 +1,4 @@
-import typer
+import click
 
 
 def validate_tenant(value: str):
@@ -7,8 +7,9 @@ def validate_tenant(value: str):
     return value.replace('.britive-app.com', '')  # just in case
 
 
-ConfigureTenantRequiredOption = typer.Option(
-    None, '-t', '--tenant',
+option = click.option(
+    '--tenant', '-t',
+    required=True,
     callback=validate_tenant,
     help='The name of the tenant: [tenant].britive-app.com.'
 )

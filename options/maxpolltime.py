@@ -1,7 +1,10 @@
-import typer
+import click
 
 
-MaxPollTimeOption = typer.Option(
-    600, '-p', '--maxpolltime',
+option = click.option(
+    '--maxpolltime', '-p',
+    default=600,
+    show_default=True,
     help='Maximum seconds to poll before exiting.'
 )
+

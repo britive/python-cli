@@ -6,7 +6,7 @@ import time
 import requests
 from pathlib import Path
 import yaml
-import typer
+import click
 
 
 interactive_login_fields_to_pop = [
@@ -50,7 +50,7 @@ class CredentialManager:
         self.credentials = self.load() or {}
 
     def perform_interactive_login(self):
-        typer.echo(f'Performing interacive login against tenant {self.tenant}')
+        click.echo(f'Performing interacive login against tenant {self.tenant}')
         url = f'{self.base_url}/login?token={self.auth_token}'
         webbrowser.get().open(url)
         time.sleep(3)
@@ -77,7 +77,7 @@ class CredentialManager:
                     credentials.pop(field, None)
 
                 self.save(credentials)
-                typer.echo(f'Authenticated to tenant {self.tenant} via interactive login.')
+                click.echo(f'Authenticated to tenant {self.tenant} via interactive login.')
                 break
 
     def retrieve_tokens(self):
@@ -94,18 +94,18 @@ class CredentialManager:
 
     def load(self, full=False):
         # we should NEVER here exception but adding here just in case
-        typer.echo('Must use a subclass of CredentialManager')
-        raise typer.Abort()
+        click.echo('Must use a subclass of CredentialManager')
+        exit()
 
     def save(self, credentials: dict):
         # we should NEVER get here but adding here just in case
-        typer.echo('Must use a subclass of CredentialManager')
-        raise typer.Abort()
+        click.echo('Must use a subclass of CredentialManager')
+        exit()
 
     def delete(self):
         # we should NEVER get here but adding here just in case
-        typer.echo('Must use a subclass of CredentialManager')
-        raise typer.Abort()
+        click.echo('Must use a subclass of CredentialManager')
+        exit()
 
     def get_credentials(self):
         if self.has_valid_credentials():
@@ -119,11 +119,11 @@ class CredentialManager:
 
     def has_valid_credentials(self):
         if not self.credentials or self.credentials == {}:
-            typer.echo(f'Credentials for tenant {self.tenant} not found.')
+            click.echo(f'Credentials for tenant {self.tenant} not found.')
             return False
         if int(time.time() * 1000) <= int(self.credentials.get('safeExpirationTime', 0)):
             return True
-        typer.echo(f'Credentials for tenant {self.tenant} have expired.')
+        click.echo(f'Credentials for tenant {self.tenant} have expired.')
         return False
 
 
@@ -146,8 +146,8 @@ class FileCredentialManager(CredentialManager):
                     return credentials
                 return credentials.get(self.alias, None)
             except yaml.YAMLError:
-                typer.echo(f'Invalid YAML file at {self.path}')
-                raise typer.Abort()
+                click.echo(f'Invalid YAML file at {self.path}')
+                exit()
 
     def save(self, credentials: dict):
         full_credentials = self.load(full=True)

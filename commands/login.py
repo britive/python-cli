@@ -1,13 +1,12 @@
-import typer
-from helpers.inject_common_options import inject_common_options
+import click
+from helpers.build_britive import build_britive
+from options.britive_options import britive_options
 
 
-app = typer.Typer(add_completion=False)
-
-
-@app.callback(invoke_without_command=True)
-@inject_common_options
-def login(ctx: typer.Context):
+@click.command()
+@build_britive
+@britive_options(names='tenant')
+def login(ctx, tenant):
     """
     Perform an interactive login to obtain temporary credentials.
 
@@ -15,7 +14,3 @@ def login(ctx: typer.Context):
     BRITIVE_API_TOKEN.
     """
     ctx.obj.britive.login(explicit=True)
-
-
-if __name__ == "__main__":
-    app()

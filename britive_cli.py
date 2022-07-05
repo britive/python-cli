@@ -3,7 +3,7 @@ from britive.britive import Britive
 from helpers.config import ConfigManager
 from helpers.credentials import FileCredentialManager
 import json
-import typer
+import click
 import csv
 from tabulate import tabulate
 import yaml
@@ -26,8 +26,8 @@ class BritiveCli:
 
     def login(self, explicit: bool = False):
         if explicit and self.token:
-            typer.echo('Interactive login unavailable when an API token is provided.')
-            typer.Abort()
+            click.echo('Interactive login unavailable when an API token is provided.')
+            exit()
         self.b = Britive(
             tenant=self.tenant_name,
             token=self.token or FileCredentialManager(
@@ -44,37 +44,42 @@ class BritiveCli:
     # dict can only be 1 level deep (no nesting) - caller needs to massage the data accordingly
     def print(self, data: object):
         if isinstance(data, str):  # if we have a string just print it and move on
-            typer.echo(data)
+            click.echo(data)
             return
 
         if isinstance(data, dict):
             data = [data]
 
         if self.output_format == 'json':
-            typer.echo(json.dumps(data, indent=2, default=str))
+            click.echo(json.dumps(data, indent=2, default=str))
         elif self.output_format == 'csv':
             fields = list(data[0].keys())
             output = io.StringIO()
             writer = csv.DictWriter(output, fieldnames=fields, delimiter=',')
             writer.writeheader()
             writer.writerows(data)
-            typer.echo(output.getvalue())
+            click.echo(output.getvalue())
         elif self.output_format.startswith('table'):
             tablefmt = default_table_format
             split = self.output_format.split('-')
             if len(split) > 1:
                 tablefmt = split[1]
-            typer.echo(tabulate(data, headers='keys', tablefmt=tablefmt))
+            click.echo(tabulate(data, headers='keys', tablefmt=tablefmt))
         elif self.output_format == 'yaml':
             y = yaml.safe_load(json.dumps(data))
-            typer.secho(yaml.safe_dump(y))
+            click.secho(yaml.safe_dump(y))
         else:
-            typer.echo(f'Invalid output format {self.output_format} provided.')
-            typer.Abort()
+            click.echo(f'Invalid output format {self.output_format} provided.')
+            exit()
 
     def user(self):
         self.login()
-        self.print(self.b.my_access.whoami()['user']['username'])
+        username = self.b.my_access.whoami()['user']['username']
+        alias = self.tenant_alias
+        output = f'{username} @ {self.tenant_name}'
+        if alias != self.tenant_name:
+            output += f' (alias: {alias})'
+        self.print(output)
 
     def list_secrets(self):
         self.login()

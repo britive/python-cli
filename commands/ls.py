@@ -1,63 +1,46 @@
-from typing import Optional
-import typer
-from helpers.inject_common_options import inject_common_options
-from enums.output_format import OutputFormat
-from options.output_format import OutputFormatOption
-from options.token import TokenOption
-
-app = typer.Typer(add_completion=False)
+import click
+from helpers.build_britive import build_britive
+from options.britive_options import britive_options
 
 
-@app.command()
-@inject_common_options
-def applications(
-        ctx: typer.Context,
-        output_format: Optional[OutputFormat] = OutputFormatOption,
-        token: Optional[str] = TokenOption  # used by @inject common_options
-):
+@click.group()
+def ls():
+    """
+    List resources available for currently authenticated identity.
+    """
+    pass
+
+
+@ls.command()
+@build_britive
+@britive_options(names='tenant,token,format')
+def applications(ctx, tenant, token, output_format):
     """List applications for the currently authenticated identity."""
-    ctx.obj.britive.set_output_format(None if output_format is None else output_format.value)
     ctx.obj.britive.list_applications()
 
 
-@app.command()
-@inject_common_options
-def environments(
-        ctx: typer.Context,
-        output_format: Optional[OutputFormat] = OutputFormatOption,
-        token: Optional[str] = TokenOption  # used by @inject common_options
-):
+@ls.command()
+@build_britive
+@britive_options(names='tenant,token,format')
+def environments(ctx, tenant, token, output_format):
     """List environments for the currently authenticated identity."""
-    ctx.obj.britive.set_output_format(None if output_format is None else output_format.value)
     ctx.obj.britive.list_environments()
 
 
-@app.command()
-@inject_common_options
-def profiles(
-        ctx: typer.Context,
-        output_format: Optional[OutputFormat] = OutputFormatOption,
-        token: Optional[str] = TokenOption  # used by @inject common_options
-):
+@ls.command()
+@build_britive
+@britive_options(names='tenant,token,format')
+def profiles(ctx, tenant, token, output_format):
     """List profiles for the currently authenticated identity."""
-    ctx.obj.britive.set_output_format(None if output_format is None else output_format.value)
-    ctx.obj.britive.list_profiless()
+    ctx.obj.britive.list_profiles()
 
 
-@app.command()
-@inject_common_options
-def secrets(
-        ctx: typer.Context,
-        output_format: Optional[OutputFormat] = OutputFormatOption,
-        token: Optional[str] = TokenOption  # used by @inject common_options
-):
+@ls.command()
+@build_britive
+@britive_options(names='tenant,token,format')
+def secrets(ctx, tenant, token, output_format):
     """List secrets for the currently authenticated identity."""
-    ctx.obj.britive.set_output_format(None if output_format is None else output_format.value)
     ctx.obj.britive.list_secrets()
 
 
-@app.callback()
-def ls():
-    """
-    Lists resources available to the the currently authenticated identity.
-    """
+

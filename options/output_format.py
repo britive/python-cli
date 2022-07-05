@@ -1,8 +1,10 @@
-import typer
+import click
+from choices.output_format import output_format_choices
 
 
-OutputFormatOption = typer.Option(
-    None, '-f', '--format',
+option = click.option(
+    '--format', '-f', 'output_format',  # format is a reserved word so method parameter will be output_format
+    default=None,
     help=(
         'Display output format. Valid values are (json, yaml, csv, table[_format]). '
         'If `table` is used an optional table format can be specified as `table_format`. '
@@ -10,5 +12,8 @@ OutputFormatOption = typer.Option(
         'Example: `table_pretty`.'
     ),
     show_choices=True,
-    case_sensitive=False,
+    type=output_format_choices,
+    show_default=True
+
 )
+

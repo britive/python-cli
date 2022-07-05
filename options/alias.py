@@ -1,6 +1,7 @@
-import typer
+import click
 
-AliasOption = typer.Option(
-    None, '-a', '--alias',
+option = click.option(
+    '--alias', '-a',
+    default=None,
     help='Alias for the profile so future checkouts can use the alias instead of the profile details.'
 )

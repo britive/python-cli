@@ -1,21 +1,19 @@
-import typer
-from enums.output_format import OutputFormat
-from options.output_format import OutputFormatOption
-from options.configure_tenant import ConfigureTenantRequiredOption
-from options.configure_alias import ConfigureTenantAlias
-from options.configure_prompt import ConfigurePrompt
+import click
+from choices.output_format import output_format_choices
+from options.britive_options import britive_options
 from helpers.config import ConfigManager
 
-app = typer.Typer(add_completion=False)
+
+@click.group()
+def configure():
+    """
+    Configures the PyBritive CLI.
+    """
 
 
-@app.command()
-def tenant(
-        tenant_name: str = ConfigureTenantRequiredOption,
-        alias: str = ConfigureTenantAlias,
-        output_format: OutputFormat = OutputFormatOption,
-        no_prompt: bool = ConfigurePrompt
-):
+@configure.command()
+@britive_options(names='configure_tenant,configure_alias,format,configure_prompt')
+def tenant(tenant_name, alias, output_format, no_prompt):
     """
     Configures tenant level settings for the PyBritive CLI.
 
@@ -23,45 +21,42 @@ def tenant(
     """
     if not no_prompt:
         if not tenant_name:
-            tenant_name = typer.prompt(
+            tenant_name = click.prompt(
                 'The name of the tenant: [tenant].britive-app.com',
                 type=str
             )
         if not alias:
-            alias = typer.prompt(
+            alias = click.prompt(
                 'Optional alias for the above tenant. This alias would be used with the `--tenant` flag',
                 default=tenant_name,
                 type=str
             )
         if not output_format:
-            output_format = typer.prompt(
+            output_format = click.prompt(
                 'Output format (csv|json|table|yaml): ',
                 default='json',
-                type=OutputFormat
+                type=output_format_choices
             )
 
     if not tenant_name  or len(tenant_name.strip()) == 0:
-        typer.echo('Tenant Name not provided.')
-        typer.Abort()
+        click.echo('Tenant Name not provided.')
+        exit()
     if not alias:
         alias = tenant_name
-    if not output_format or output_format not in OutputFormat:
-        typer.echo(f'Invalid output format {output_format} provided. Defaulting to "json".')
+    if not output_format or output_format not in output_format_choices:
+        click.echo(f'Invalid output format {output_format} provided. Defaulting to "json".')
         output_format = 'json'
 
     ConfigManager(save=True).save_tenant(
         tenant=tenant_name,
         alias=alias,
-        output_format=output_format.value
+        output_format=output_format
     )
 
 
-@app.command(name='global')  # have to specify the name since global is a reserved word
-def global_command(
-        default_tenant_name: str = ConfigureTenantRequiredOption,
-        output_format: OutputFormat = OutputFormatOption,
-        no_prompt: bool = ConfigurePrompt
-):
+@configure.command(name='global')  # have to specify the name since global is a reserved word
+@britive_options(names='configure_tenant,format,configure_prompt')
+def global_command(default_tenant_name, output_format, no_prompt):
     """
     Configures global level settings for the PyBritive CLI.
 
@@ -69,32 +64,21 @@ def global_command(
     """
     if not no_prompt:
         if not default_tenant_name:
-            default_tenant_name = typer.prompt(
+            default_tenant_name = click.prompt(
                 'The default tenant name',
                 type=str
             )
         if not output_format:
-            output_format = typer.prompt(
+            output_format = click.prompt(
                 'Output format (csv|json|table|yaml): ',
                 default='json',
-                type=OutputFormat
+                type=output_format_choices
             )
-        if not output_format or output_format not in OutputFormat:
-            typer.echo(f'Invalid output format {output_format} provided. Defaulting to "json".')
+        if not output_format or output_format not in output_format_choices:
+            click.echo(f'Invalid output format {output_format} provided. Defaulting to "json".')
             output_format = 'json'
 
     ConfigManager(save=True).save_global(
         default_tenant_name=default_tenant_name,
-        output_format=output_format.value if output_format else None
+        output_format=output_format
     )
-
-
-@app.callback()
-def base():
-    """
-    Configures the PyBritive CLI.
-    """
-
-
-if __name__ == "__main__":
-    app()
