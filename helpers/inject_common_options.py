@@ -20,9 +20,10 @@ def inject_common_options(f: Callable):
     @wraps(f)
     def wrapper(
             ctx: typer.Context,
-            tenant: Optional[str] = TenantOption,
-            **kwargs
+            #tenant: Optional[str] = TenantOption,
+            **kwargs,
+
     ):
-        ctx.obj = Common(BritiveCli(tenant_name=tenant, token=kwargs.get('token')))
+        ctx.obj = Common(BritiveCli(tenant_name=kwargs.get('tenant'), token=kwargs.get('token')))
         return f(ctx=ctx, **kwargs)
     return wrapper

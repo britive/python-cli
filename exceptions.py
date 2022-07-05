@@ -1,2 +1,0 @@
-class ConfigurationFileNotFoundOrEmpty(Exception):
-    pass

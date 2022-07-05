@@ -144,7 +144,7 @@ class FileCredentialManager(CredentialManager):
                 credentials = yaml.safe_load(f) or {}
                 if full:
                     return credentials
-                return credentials.get(self.tenant, None)
+                return credentials.get(self.alias, None)
             except yaml.YAMLError:
                 typer.echo(f'Invalid YAML file at {self.path}')
                 raise typer.Abort()

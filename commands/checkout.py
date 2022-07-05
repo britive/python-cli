@@ -5,22 +5,27 @@ from arguments.profile import ProfileArgument
 from enums.mode import Mode
 from options.alias import AliasOption
 from options.mode import ModeOption
+from options.blocktime import BlockTimeOption
+from options.maxpolltime import MaxPollTimeOption
+
 
 app = typer.Typer(add_completion=False)
 
 
-@app.callback(invoke_without_command=True)
+@app.callback()
 @inject_common_options
 def checkout(
         ctx: typer.Context,
-        profile: Optional[str] = ProfileArgument,
+        profilename: str = ProfileArgument,
         alias: Optional[str] = AliasOption,
-        mode: Optional[Mode] = ModeOption
+        mode: Mode = ModeOption,
+        blocktime: int = BlockTimeOption,
+        maxpolltime: int = MaxPollTimeOption
 ):
     """
     Checkout a profile.
     """
-    if not profile:  # build the profile via interactive prompts
+    if not profilename:  # build the profile via interactive prompts
         pass
 
 

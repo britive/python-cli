@@ -4,7 +4,7 @@ from options.output_format import OutputFormatOption
 from options.configure_tenant import ConfigureTenantRequiredOption
 from options.configure_alias import ConfigureTenantAlias
 from options.configure_prompt import ConfigurePrompt
-from config import ConfigManager
+from helpers.config import ConfigManager
 
 app = typer.Typer(add_completion=False)
 

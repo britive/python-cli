@@ -15,6 +15,7 @@ app.add_typer(logout.app, name="logout")
 app.add_typer(ls.app, name="ls")
 app.add_typer(user.app, name="user")
 app.add_typer(checkout.app, name="checkout")
+typer.Typer.
 
 
 @app.command()

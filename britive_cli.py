@@ -1,7 +1,7 @@
 import io
 from britive.britive import Britive
-from config import ConfigManager
-from credentials import FileCredentialManager
+from helpers.config import ConfigManager
+from helpers.credentials import FileCredentialManager
 import json
 import typer
 import csv
