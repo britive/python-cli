@@ -35,6 +35,7 @@ class ConfigManager:
             self.keys = self.config.keys()
             self.tenants = self.config.get('tenants', {})
             self.selected_tenant = self.get_tenant()
+            self.profile_aliases = self.config.get('profile_aliases', {})
 
     def get_output_format(self, output_format: str = None):
         return coalesce(
@@ -116,4 +117,9 @@ class ConfigManager:
             self.config['default_tenant'] = default_tenant_name
         if output_format:
             self.config['output_format'] = output_format
+        self.save()
+
+    def save_profile_alias(self, alias, profile):
+        self.profile_aliases[alias] = profile
+        self.config['profile_aliases'] = self.profile_aliases
         self.save()

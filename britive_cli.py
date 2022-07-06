@@ -7,6 +7,7 @@ import click
 import csv
 from tabulate import tabulate
 import yaml
+import helpers.cloud_credential_printer as printer
 
 
 default_table_format = 'fancy_grid'
@@ -20,6 +21,7 @@ class BritiveCli:
         self.tenant_alias = self.config.alias
         self.token = token
         self.b = None
+        self.available_profiles = None
 
     def set_output_format(self, output_format: str):
         self.output_format = self.config.get_output_format(output_format)
@@ -128,3 +130,72 @@ class BritiveCli:
                     }
                     data.append(row)
         self.print(data)
+
+    def _set_available_profiles(self):
+        if not self.available_profiles:
+            data = []
+            for app in self.b.my_access.list_profiles():
+                for profile in app.get('profiles', []):
+                    for env in profile.get('environments', []):
+                        row = {
+                            'app_name': app['appName'],
+                            'app_id': app['appContainerId'],
+                            'app_type': app['catalogAppName'],
+                            'env_name': env['environmentName'],
+                            'env_id': env['environmentId'],
+                            'profile_name': profile['profileName'],
+                            'profile_id': profile['profileId'],
+                            'profile_allows_console': profile['consoleAccess'],
+                            'profile_allows_programmatic': profile['programmaticAccess']
+                        }
+                        data.append(row)
+            self.available_profiles = data
+
+    def _get_app_type(self, application_id):
+        self._set_available_profiles()
+        for profile in self.available_profiles:
+            if profile['app_id'] == application_id:
+                return profile['app_type']
+        click.echo('application not found')
+        exit()
+
+    @staticmethod
+    def __get_cloud_credential_printer(app_type, console, mode, credentials):
+        if app_type in ['AWS', 'AWS Standalone']:
+            return printer.AwsCloudCredentialPrinter(
+                console=console,
+                mode=mode,
+                credentials=credentials
+            )
+
+    def checkout(self, alias, blocktime, console, justification, mode, maxpolltime, silent, profile):
+        self.login()
+        # first check if this is a profile alias
+        profile = self.config.profile_aliases.get(profile, profile)
+        parts = profile.split('/')
+        if len(parts) != 3:
+            click.echo('Provided profile string does not have the required 3 parts.')
+            exit()
+        app_name = parts[0]
+        env_name = parts[1]
+        profile_name = parts[2]
+
+        response = self.b.my_access.checkout_by_name(
+            profile_name=profile_name,
+            environment_name=env_name,
+            application_name=app_name,
+            programmatic=False if console else True,
+            include_credentials=True
+        )
+
+        if alias:  # do this down here so we know that the profile is valid and a checkout was successful
+            self.config.save_profile_alias(alias=alias, profile=profile)
+
+        app_container_id = response['appContainerId']
+        app_type = self._get_app_type(app_container_id)
+        cc_printer = self.__get_cloud_credential_printer(app_type, console, mode, response['credentials'])
+        cc_printer.print()
+
+
+
+

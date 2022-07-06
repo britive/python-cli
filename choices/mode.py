@@ -5,7 +5,11 @@ mode_choices = click.Choice(
         'text',
         'json',
         'env',
-        'integrate'
+        'integrate',
+        'env-nix',
+        'env-wincmd',
+        'env-winps',
+        'awscredentialprocess'
     ],
     case_sensitive=False
 )

@@ -10,6 +10,9 @@ from options.version import option as version
 from options.configure_tenant import option as configure_tenant
 from options.configure_alias import option as configure_alias
 from options.configure_prompt import option as configure_prompt
+from options.justification import option as justification
+from options.silent import option as silent
+from options.console import option as console
 
 options_map = {
     'tenant': tenant,
@@ -23,7 +26,10 @@ options_map = {
     'version': version,
     'configure_tenant': configure_tenant,
     'configure_alias': configure_alias,
-    'configure_prompt': configure_prompt
+    'configure_prompt': configure_prompt,
+    'justification': justification,
+    'silent': silent,
+    'console': console
 }
 
 
