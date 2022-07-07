@@ -13,12 +13,17 @@ def configure():
 
 @configure.command()
 @britive_options(names='configure_tenant,configure_alias,format,configure_prompt')
-def tenant(tenant_name, alias, output_format, no_prompt):
+def tenant(**kwargs):
     """
     Configures tenant level settings for the PyBritive CLI.
 
     If CLI options/flags are not provided an interactive data entry process will collect any needed data.
     """
+    tenant_name = kwargs['tenant']
+    no_prompt = kwargs['no_prompt']
+    alias = kwargs['alias']
+    output_format = kwargs['output_format']
+
     if not no_prompt:
         if not tenant_name:
             tenant_name = click.prompt(
@@ -43,7 +48,7 @@ def tenant(tenant_name, alias, output_format, no_prompt):
         exit()
     if not alias:
         alias = tenant_name
-    if not output_format or output_format not in output_format_choices:
+    if not output_format or output_format not in output_format_choices.choices:
         click.echo(f'Invalid output format {output_format} provided. Defaulting to "json".')
         output_format = 'json'
 
@@ -56,12 +61,16 @@ def tenant(tenant_name, alias, output_format, no_prompt):
 
 @configure.command(name='global')  # have to specify the name since global is a reserved word
 @britive_options(names='configure_tenant,format,configure_prompt')
-def global_command(default_tenant_name, output_format, no_prompt):
+def global_command(**kwargs):
     """
     Configures global level settings for the PyBritive CLI.
 
     If CLI options/flags are not provided an interactive data entry process will collect any needed data.
     """
+    default_tenant_name = kwargs['tenant']
+    no_prompt = kwargs['no_prompt']
+    output_format = kwargs['output_format']
+
     if not no_prompt:
         if not default_tenant_name:
             default_tenant_name = click.prompt(
@@ -74,7 +83,7 @@ def global_command(default_tenant_name, output_format, no_prompt):
                 default='json',
                 type=output_format_choices
             )
-        if not output_format or output_format not in output_format_choices:
+        if not output_format or output_format not in output_format_choices.choices:
             click.echo(f'Invalid output format {output_format} provided. Defaulting to "json".')
             output_format = 'json'
 

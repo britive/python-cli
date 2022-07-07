@@ -1,12 +1,12 @@
 import random
 import base64
 import hashlib
-import webbrowser
 import time
 import requests
 from pathlib import Path
-import yaml
 import click
+import configparser
+import json
 
 
 interactive_login_fields_to_pop = [
@@ -36,6 +36,7 @@ def b64_encode_url_safe(value: bytes):
     return base64.urlsafe_b64encode(value).decode('utf-8').replace('=', '')
 
 
+# this base class expects self.credentials to be a dict - so sub classes need to convert to dict
 class CredentialManager:
     def __init__(self, tenant_name: str, tenant_alias: str):
         self.tenant = tenant_name
@@ -52,7 +53,7 @@ class CredentialManager:
     def perform_interactive_login(self):
         click.echo(f'Performing interacive login against tenant {self.tenant}')
         url = f'{self.base_url}/login?token={self.auth_token}'
-        webbrowser.get().open(url)
+        click.launch(url)
         time.sleep(3)
         num_tries = 1
         while True:
@@ -129,7 +130,7 @@ class CredentialManager:
 
 class FileCredentialManager(CredentialManager):
     def __init__(self, tenant_name: str, tenant_alias: str):
-        self.path = str(Path.home() / '.pybritive' / 'credentials.yaml')
+        self.path = str(Path.home() / '.britive' / 'pybritive.credentials')
         super().__init__(tenant_name, tenant_alias)
 
     def load(self, full=False):
@@ -138,16 +139,14 @@ class FileCredentialManager(CredentialManager):
             path.parent.mkdir(exist_ok=True, parents=True)
             path.write_text('')
 
-        # now load the credentials file
-        with open(self.path, 'r') as f:
-            try:
-                credentials = yaml.safe_load(f) or {}
-                if full:
-                    return credentials
-                return credentials.get(self.alias, None)
-            except yaml.YAMLError:
-                click.echo(f'Invalid YAML file at {self.path}')
-                exit()
+        # open the file with configparser
+        credentials = configparser.ConfigParser()
+        credentials.optionxform = str  # maintain key case
+        credentials.read(str(path))
+        credentials = json.loads(json.dumps(credentials._sections))  # TODO this is messy but works for now
+        if full:
+            return credentials
+        return credentials.get(self.alias, None)
 
     def save(self, credentials: dict):
         full_credentials = self.load(full=True)
@@ -155,8 +154,14 @@ class FileCredentialManager(CredentialManager):
             full_credentials.pop(self.alias, None)
         else:
             full_credentials[self.alias] = credentials
-        with open(self.path, 'w') as f:
-            f.write(yaml.safe_dump(full_credentials))
+
+        config = configparser.ConfigParser()
+        config.optionxform = str  # maintain key case
+        config.read_dict(full_credentials)
+
+        # write the new credentials file
+        with open(str(self.path), 'w') as f:
+            config.write(f, space_around_delimiters=False)
         self.credentials = credentials
 
     def delete(self):

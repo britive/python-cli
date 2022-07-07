@@ -160,17 +160,43 @@ class BritiveCli:
         exit()
 
     @staticmethod
-    def __get_cloud_credential_printer(app_type, console, mode, credentials):
+    def __get_cloud_credential_printer(app_type, console, mode, profile, credentials):
         if app_type in ['AWS', 'AWS Standalone']:
             return printer.AwsCloudCredentialPrinter(
                 console=console,
                 mode=mode,
+                profile=profile,
                 credentials=credentials
             )
+        if app_type in ['Azure']:
+            return printer.AzureCloudCredentialPrinter(
+                console=console,
+                mode=mode,
+                profile=profile,
+                credentials=credentials
+            )
+
+    def checkin(self, profile):
+        self.login()
+        profile = self.config.profile_aliases.get(profile, profile)
+        parts = profile.split('/')
+        if len(parts) != 3:
+            click.echo('Provided profile string does not have the required 3 parts.')
+            exit()
+        app_name = parts[0]
+        env_name = parts[1]
+        profile_name = parts[2]
+
+        self.b.my_access.checkin_by_name(
+            profile_name=profile_name,
+            environment_name=env_name,
+            application_name=app_name
+        )
 
     def checkout(self, alias, blocktime, console, justification, mode, maxpolltime, silent, profile):
         self.login()
         # first check if this is a profile alias
+        profile_or_alias = alias or profile
         profile = self.config.profile_aliases.get(profile, profile)
         parts = profile.split('/')
         if len(parts) != 3:
@@ -193,7 +219,13 @@ class BritiveCli:
 
         app_container_id = response['appContainerId']
         app_type = self._get_app_type(app_container_id)
-        cc_printer = self.__get_cloud_credential_printer(app_type, console, mode, response['credentials'])
+        cc_printer = self.__get_cloud_credential_printer(
+            app_type,
+            console,
+            mode,
+            profile_or_alias,
+            response['credentials']
+        )
         cc_printer.print()
 
 

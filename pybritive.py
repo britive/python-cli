@@ -6,6 +6,7 @@ from commands.login import login as command_login
 from commands.logout import logout as command_logout
 from commands.ls import ls as group_ls
 from commands.checkout import checkout as command_checkout
+from commands.checkin import checkin as command_checkin
 
 
 # this is the "main" app - it really does nothing but print the overview/help section
@@ -23,6 +24,7 @@ cli.add_command(command_login)
 cli.add_command(command_logout)
 cli.add_command(command_checkout)
 cli.add_command(group_configure)
+cli.add_command(command_checkin)
 
 
 if __name__ == "__main__":
