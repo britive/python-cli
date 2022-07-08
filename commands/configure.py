@@ -2,6 +2,7 @@ import click
 from choices.output_format import output_format_choices
 from options.britive_options import britive_options
 from helpers.config import ConfigManager
+from helpers.build_britive import build_britive
 
 
 @click.group()
@@ -91,3 +92,9 @@ def global_command(**kwargs):
         default_tenant_name=default_tenant_name,
         output_format=output_format
     )
+
+
+@configure.command(name='import')  # have to specify the name since import is a reserved word
+@build_britive
+def import_command(ctx):
+    ctx.obj.britive.import_existing_npm_config()

@@ -166,8 +166,3 @@ class FileCredentialManager(CredentialManager):
 
     def delete(self):
         self.save(None)
-
-
-
-
-

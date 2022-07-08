@@ -17,8 +17,8 @@ class BritiveCli:
     def __init__(self, tenant_name: str = None, token: str = None):
         self.config = ConfigManager(tenant_name=tenant_name)
         self.output_format = None
-        self.tenant_name = self.config.selected_tenant['name']
-        self.tenant_alias = self.config.alias
+        self.tenant_name = None
+        self.tenant_alias = None
         self.token = token
         self.b = None
         self.available_profiles = None
@@ -27,6 +27,8 @@ class BritiveCli:
         self.output_format = self.config.get_output_format(output_format)
 
     def login(self, explicit: bool = False):
+        self.tenant_name = self.config.get_tenant()['name']
+        self.tenant_alias = self.config.alias
         if explicit and self.token:
             click.echo('Interactive login unavailable when an API token is provided.')
             exit()
@@ -227,6 +229,32 @@ class BritiveCli:
             response['credentials']
         )
         cc_printer.print()
+
+    def import_existing_npm_config(self):
+        profile_aliases = self.config.import_global_npm_config()
+        if len(profile_aliases.keys()) == 0:
+            return
+        click.echo('')
+        click.echo('Profile aliases exist...will retrieve profile details from the tenant.')
+        click.echo('')
+
+        self.login()
+        self._set_available_profiles()
+        click.echo('')
+
+        for alias, ids in profile_aliases.items():
+            if '/' in alias:
+                continue
+            app, env, profile, cloud = ids.split('/')
+            for p in self.available_profiles:
+                if p['app_id'] == app and p['env_id'] == env and p['profile_id'] == profile:
+                    profile_str = f"{p['app_name']}/{p['env_name']}/{p['profile_name']}"
+                    self.config.save_profile_alias(alias, profile_str)
+                    click.echo(f'Saved alias {alias} to profile {profile_str}')
+
+
+
+
 
 
 

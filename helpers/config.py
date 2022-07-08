@@ -1,12 +1,14 @@
 from pathlib import Path
-import yaml
 import click
+import configparser
+import json
+import toml
 
 
 def lowercase(obj):
     """ Make dictionary lowercase """
     if isinstance(obj, dict):
-        return {k.lower():lowercase(v) for k, v in obj.items()}
+        return {k.lower(): lowercase(v) for k, v in obj.items()}
     elif isinstance(obj, (list, set, tuple)):
         t = type(obj)
         return t(lowercase(o) for o in obj)
@@ -25,23 +27,21 @@ def coalesce(*arg):
 
 class ConfigManager:
     def __init__(self, tenant_name: str = None, save=False):
+        self.save_flag = save
         self.tenant_name = tenant_name
-        self.path = str(Path.home() / '.pybritive' / 'config.yaml')  # handle os specific separators properly
-        self.config = self.load()  # every key/value will have been lowercased by load()
-
-        if not save:  # if we are saving then no need to go through all this logic
-            self.alias = None  # will be set in self.get_tenant()
-            self.default_tenant = self.config.get('default_tenant')
-            self.keys = self.config.keys()
-            self.tenants = self.config.get('tenants', {})
-            self.selected_tenant = self.get_tenant()
-            self.profile_aliases = self.config.get('profile_aliases', {})
+        self.path = str(Path.home() / '.britive' / 'pybritive.config')  # handle os specific separators properly
+        self.config = None
+        self.alias = None
+        self.default_tenant = None
+        self.tenants = None
+        self.profile_aliases = None
+        self.load()  # will set self.config and other variables
 
     def get_output_format(self, output_format: str = None):
         return coalesce(
             output_format,
-            self.selected_tenant.get('output_format'),
-            self.config.get('output_format'),
+            self.get_tenant().get('output_format'),
+            self.config.get('global', {}).get('output_format'),
             'json'  # set to json if no output format is provided
         )
 
@@ -51,25 +51,27 @@ class ConfigManager:
         if not path.is_file():
             return {}
 
-        with open(self.path, 'r') as f:
-            try:
-                config = yaml.safe_load(f)
-                if not config:
-                    return {}
-                return lowercase(config)  # lowercase keys and values in the config
-            except yaml.YAMLError:
-                click.echo(f'Invalid YAML file at {self.path}')
-                exit()
+        config = configparser.ConfigParser()
+        config.optionxform = str  # maintain key case
+        config.read(str(path))
+        config = json.loads(json.dumps(config._sections))  # TODO this is messy but works for now
+        self.config = lowercase(config)
+
+        if not self.save_flag:  # if we are saving then no need to go through all this logic
+            self.alias = None  # will be set in self.get_tenant()
+            self.default_tenant = self.config.get('global', {}).get('default_tenant')
+            self.tenants = {}
+            for key in list(self.config.keys()):
+                if key.startswith('tenant-'):
+                    ignore, alias = key.split('-')
+                    self.tenants[alias] = self.config[key]
+            self.profile_aliases = self.config.get('profile-aliases', {})
 
     def get_tenant(self):
         # normalize the input
         name = self.tenant_name.lower() if self.tenant_name else None
 
         # do some error checking to ensure we can actually grab a tenant
-        if 'tenants' not in self.keys and not name:
-            click.echo(f'No "tenants" block found in {self.path}. Cannot continue.')
-            exit()
-
         if len(self.tenants.keys()) == 0 and not name:
             click.echo(f'No tenants found in {self.path}. Cannot continue.')
             exit()
@@ -95,31 +97,64 @@ class ConfigManager:
         return self.tenants.get(provided_tenant_name, {'name': name})
 
     def save(self):
-        with open(self.path, 'w') as f:
-            f.write(yaml.safe_dump(self.config))
+        config = configparser.ConfigParser()
+        config.optionxform = str  # maintain key case
+        config.read_dict(self.config)
+
+        # write the new credentials file
+        with open(str(self.path), 'w') as f:
+            config.write(f, space_around_delimiters=False)
 
     def save_tenant(self, tenant: str, alias: str = None, output_format: str = None):
-        if 'tenants' not in self.config.keys():
-            self.config['tenants'] = {}
         if not alias:
             alias = tenant
-
-        attributes = {'name': tenant}
+        if f'tenant-{alias}' not in self.config.keys():
+            self.config[f'tenant-{alias}'] = {}
+        self.config[f'tenant-{alias}']['name'] = tenant
         if output_format:
-            attributes['output_format'] = output_format
-        self.config['tenants'][alias] = attributes
+            self.config[f'tenant-{alias}']['output_format'] = output_format
         self.save()
 
     def save_global(self, default_tenant_name: str = None, output_format: str = None):
         if not default_tenant_name and not output_format:
             return
+        if 'global' not in self.config.keys():
+            self.config['global'] = {}
         if default_tenant_name:
-            self.config['default_tenant'] = default_tenant_name
+            self.config['global']['default_tenant'] = default_tenant_name
         if output_format:
-            self.config['output_format'] = output_format
+            self.config['global']['output_format'] = output_format
         self.save()
 
     def save_profile_alias(self, alias, profile):
         self.profile_aliases[alias] = profile
-        self.config['profile_aliases'] = self.profile_aliases
+        self.config['profile-aliases'] = self.profile_aliases
         self.save()
+
+    # returns a dict of profile aliases that need to be created after listing profiles
+    def import_global_npm_config(self):
+        path = str(Path.home() / '.britive' / 'config')  # handle os specific separators properly
+        with open(path, 'r') as f:
+            npm_config = toml.load(f)
+        tenant = npm_config.get('tenantURL', '').replace('https://', '').replace('.britive-app.com', '').lower()
+        output_format = npm_config.get('output_format', '').lower()
+
+        # reset the config as we are building a new one
+        self.config = {
+            'global': {}
+        }
+        if tenant != '':
+            click.echo(f'Found tenant {tenant}.')
+            self.config['global']['default_tenant'] = tenant
+            self.config[f'tenant-{tenant}'] = {
+                'name': tenant
+            }
+        if output_format != '':
+            click.echo(f'Found default output format {output_format}.')
+            self.config['global']['output_format'] = output_format
+
+        self.save()
+        self.load()
+
+        return npm_config.get('envProfileMap', {})
+

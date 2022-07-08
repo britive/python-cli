@@ -4,3 +4,4 @@ https://github.com/britive/python-sdk/releases/download/v2.5.0/britive-2.5.0.tar
 PyYAML~=6.0
 merge_args==0.1.4
 tabulate~=0.8.10
+toml~=0.10.2
