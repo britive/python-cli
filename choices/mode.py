@@ -13,7 +13,8 @@ mode_choices = click.Choice(
         'env-winps',                # environment variable output specifying "$env:"
         'awscredentialprocess',     # aws credential process output
         'azlogin',                  # azure az login command with all fields populated (suitable for eval)
-        'azps'                      # azure powershell script
+        'azps',                     # azure powershell script
+        'browser'                   # when console access is checked out open the browser to the URL provided
     ],
     case_sensitive=False
 )

@@ -177,6 +177,13 @@ class BritiveCli:
                 profile=profile,
                 credentials=credentials
             )
+        if app_type in ['GCP']:
+            return printer.GcpCloudCredentialPrinter(
+                console=console,
+                mode=mode,
+                profile=profile,
+                credentials=credentials
+            )
 
     def checkin(self, profile):
         self.login()

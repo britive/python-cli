@@ -30,6 +30,9 @@ class CloudCredentialPrinter:
             self.env_command = env_options['wincmd'] if self.on_windows else env_options['nix']
 
     def print(self):
+        if self.console:
+            self.print_console()
+            return
         mode_prefix = self.mode.split('-')[0]
         if mode_prefix == 'text':
             self.print_text()
@@ -46,27 +49,35 @@ class CloudCredentialPrinter:
         if mode_prefix == 'azps':
             self.print_azps()
 
+    def print_console(self):
+        if self.mode == 'browser':
+            click.launch(self.credentials['url'])
+        else:
+            click.echo(self.credentials['url'])
+
     def print_text(self):
-        raise NotImplementedError(f'Application type {self.app_type} does not support the specified mode.')
+        self._not_implemented()
 
     def print_json(self):
-        raise NotImplementedError(f'Application type {self.app_type} does not support the specified mode.')
+        self._not_implemented()
 
     def print_env(self):
-        raise NotImplementedError(f'Application type {self.app_type} does not support the specified mode.')
+        self._not_implemented()
 
     def print_integrate(self):
-        raise NotImplementedError(f'Application type {self.app_type} does not support the specified mode.')
+        self._not_implemented()
 
     def print_awscredentialprocess(self):
-        raise NotImplementedError(f'Application type {self.app_type} does not support the specified mode.')
+        self._not_implemented()
 
     def print_azlogin(self):
-        raise NotImplementedError(f'Application type {self.app_type} does not support the specified mode.')
+        self._not_implemented()
 
     def print_azps(self):
-        raise NotImplementedError(f'Application type {self.app_type} does not support the specified mode.')
+        self._not_implemented()
 
+    def _not_implemented(self):
+        raise NotImplementedError(f'Application type {self.app_type} does not support the specified mode.')
 
 class AwsCloudCredentialPrinter(CloudCredentialPrinter):
     def __init__(self, console, mode, profile, credentials):
@@ -158,15 +169,12 @@ class AzureCloudCredentialPrinter(CloudCredentialPrinter):
         click.echo(self.credentials['secretText'])
         click.echo('')
 
-    def print_json(self, version=None):
+    def print_json(self):
         creds = {
             'TenantId': self.credentials['tenantId'],
             'ClientId': self.credentials['appId'],
             'ClientSecret': self.credentials['secretText']
         }
-        if version:
-            creds['Version'] = version
-        click.echo(json.dumps(creds, indent=2))
 
     def print_env(self):
         click.echo(f'{self.env_command}AZURE_CLIENT_ID="{self.credentials["appId"]}"')
@@ -178,3 +186,19 @@ class AzureCloudCredentialPrinter(CloudCredentialPrinter):
 
     def print_azps(self):
         click.echo(self.credentials['powershellScript'].replace('\n ', '\n'))
+
+
+class GcpCloudCredentialPrinter(CloudCredentialPrinter):
+    def __init__(self, console, mode, profile, credentials):
+        key = list(credentials.keys())[0]
+        credentials = json.loads(credentials[key])
+        super().__init__('GCP', console, mode, profile, credentials)
+
+    def print_json(self):
+        click.echo(json.dumps(self.credentials, indent=2))
+        click.echo('')
+        click.echo(
+            f"Run command: gcloud auth activate-service-account {self.credentials['client_email']} "
+            "--key-file <path-where-above-json-is-stored>"
+        )
+
