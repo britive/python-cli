@@ -14,14 +14,15 @@ default_table_format = 'fancy_grid'
 
 
 class BritiveCli:
-    def __init__(self, tenant_name: str = None, token: str = None):
-        self.config = ConfigManager(tenant_name=tenant_name)
+    def __init__(self, tenant_name: str = None, token: str = None, silent: bool = False):
+        self.silent = silent
         self.output_format = None
         self.tenant_name = None
         self.tenant_alias = None
         self.token = token
         self.b = None
         self.available_profiles = None
+        self.config = ConfigManager(tenant_name=tenant_name, cli=self)
 
     def set_output_format(self, output_format: str):
         self.output_format = self.config.get_output_format(output_format)
@@ -30,29 +31,36 @@ class BritiveCli:
         self.tenant_name = self.config.get_tenant()['name']
         self.tenant_alias = self.config.alias
         if explicit and self.token:
-            click.echo('Interactive login unavailable when an API token is provided.')
-            exit()
+            raise click.ClickException('Interactive login unavailable when an API token is provided.')
         self.b = Britive(
             tenant=self.tenant_name,
             token=self.token or FileCredentialManager(
                 tenant_alias=self.tenant_alias,
-                tenant_name=self.tenant_name
+                tenant_name=self.tenant_name,
+                cli=self
             ).get_token(),
             query_features=False
         )
 
     def logout(self):
-        FileCredentialManager(tenant_alias=self.tenant_alias, tenant_name=self.tenant_name).delete()
+        if self.token:
+            raise click.ClickException('Logout not available when using an API token.')
+        self.login()
+        self.b.delete(f'https://{self.tenant_name}.britive-app.com/api/auth')
+        #FileCredentialManager(tenant_alias=self.tenant_alias, tenant_name=self.tenant_name).delete()
 
     # will take a list of dicts and print to the screen based on the format specified in the config file
     # dict can only be 1 level deep (no nesting) - caller needs to massage the data accordingly
-    def print(self, data: object):
+    def print(self, data: object, ignore_silent: bool = False):
+        if self.silent and not ignore_silent:
+            return
+
         if isinstance(data, str):  # if we have a string just print it and move on
             click.echo(data)
             return
 
         if isinstance(data, dict):
-            data = [data]
+            click.echo(json.dumps(data, indent=2, default=str))
 
         if self.output_format == 'json':
             click.echo(json.dumps(data, indent=2, default=str))
@@ -73,8 +81,7 @@ class BritiveCli:
             y = yaml.safe_load(json.dumps(data))
             click.secho(yaml.safe_dump(y))
         else:
-            click.echo(f'Invalid output format {self.output_format} provided.')
-            exit()
+            raise click.ClickException(f'Invalid output format {self.output_format} provided.')
 
     def user(self):
         self.login()
@@ -158,31 +165,35 @@ class BritiveCli:
         for profile in self.available_profiles:
             if profile['app_id'] == application_id:
                 return profile['app_type']
-        click.echo('application not found')
-        exit()
+        raise click.ClickException(f'Application {application_id} not found')
 
-    @staticmethod
-    def __get_cloud_credential_printer(app_type, console, mode, profile, credentials):
+    def __get_cloud_credential_printer(self, app_type, console, mode, profile, silent, credentials):
         if app_type in ['AWS', 'AWS Standalone']:
             return printer.AwsCloudCredentialPrinter(
                 console=console,
                 mode=mode,
                 profile=profile,
-                credentials=credentials
+                credentials=credentials,
+                silent=silent,
+                cli=self
             )
         if app_type in ['Azure']:
             return printer.AzureCloudCredentialPrinter(
                 console=console,
                 mode=mode,
                 profile=profile,
-                credentials=credentials
+                credentials=credentials,
+                silent=silent,
+                cli=self
             )
         if app_type in ['GCP']:
             return printer.GcpCloudCredentialPrinter(
                 console=console,
                 mode=mode,
                 profile=profile,
-                credentials=credentials
+                credentials=credentials,
+                silent=silent,
+                cli=self
             )
 
     def checkin(self, profile):
@@ -190,8 +201,7 @@ class BritiveCli:
         profile = self.config.profile_aliases.get(profile, profile)
         parts = profile.split('/')
         if len(parts) != 3:
-            click.echo('Provided profile string does not have the required 3 parts.')
-            exit()
+            raise click.ClickException('Provided profile string does not have the required 3 parts.')
         app_name = parts[0]
         env_name = parts[1]
         profile_name = parts[2]
@@ -202,15 +212,14 @@ class BritiveCli:
             application_name=app_name
         )
 
-    def checkout(self, alias, blocktime, console, justification, mode, maxpolltime, silent, profile):
+    def checkout(self, alias, blocktime, console, justification, mode, maxpolltime, profile):
         self.login()
         # first check if this is a profile alias
         profile_or_alias = alias or profile
         profile = self.config.profile_aliases.get(profile, profile)
         parts = profile.split('/')
         if len(parts) != 3:
-            click.echo('Provided profile string does not have the required 3 parts.')
-            exit()
+            raise click.ClickException('Provided profile string does not have the required 3 parts.')
         app_name = parts[0]
         env_name = parts[1]
         profile_name = parts[2]
@@ -233,6 +242,7 @@ class BritiveCli:
             console,
             mode,
             profile_or_alias,
+            self.silent,
             response['credentials']
         )
         cc_printer.print()
@@ -241,13 +251,13 @@ class BritiveCli:
         profile_aliases = self.config.import_global_npm_config()
         if len(profile_aliases.keys()) == 0:
             return
-        click.echo('')
-        click.echo('Profile aliases exist...will retrieve profile details from the tenant.')
-        click.echo('')
+        self.print('')
+        self.print('Profile aliases exist...will retrieve profile details from the tenant.')
+        self.print('')
 
         self.login()
         self._set_available_profiles()
-        click.echo('')
+        self.print('')
 
         for alias, ids in profile_aliases.items():
             if '/' in alias:
@@ -257,9 +267,20 @@ class BritiveCli:
                 if p['app_id'] == app and p['env_id'] == env and p['profile_id'] == profile:
                     profile_str = f"{p['app_name']}/{p['env_name']}/{p['profile_name']}"
                     self.config.save_profile_alias(alias, profile_str)
-                    click.echo(f'Saved alias {alias} to profile {profile_str}')
+                    self.print(f'Saved alias {alias} to profile {profile_str}')
 
+    def configure_tenant(self, tenant, alias, output_format):
+        self.config.save_tenant(
+            tenant=tenant,
+            alias=alias,
+            output_format=output_format
+        )
 
+    def configure_global(self, default_tenant_name, output_format):
+        self.config.save_global(
+            default_tenant_name=default_tenant_name,
+            output_format=output_format
+        )
 
 
 

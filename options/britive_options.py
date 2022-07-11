@@ -40,8 +40,7 @@ def britive_options(*args, **kwargs):
         for name in names:
             option = options_map.get(name)
             if not name:
-                click.echo(f'Invalid option {name} provided.')
-                exit()
+                raise click.ClickException(f'Invalid option {name} provided.')
             f = option(f)
         return f
     return inner

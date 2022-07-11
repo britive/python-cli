@@ -38,7 +38,8 @@ def b64_encode_url_safe(value: bytes):
 
 # this base class expects self.credentials to be a dict - so sub classes need to convert to dict
 class CredentialManager:
-    def __init__(self, tenant_name: str, tenant_alias: str):
+    def __init__(self, tenant_name: str, tenant_alias: str, cli: object):
+        self.cli = cli
         self.tenant = tenant_name
         self.alias = tenant_alias
         self.base_url = f'https://{self.tenant}.britive-app.com'
@@ -51,7 +52,7 @@ class CredentialManager:
         self.credentials = self.load() or {}
 
     def perform_interactive_login(self):
-        click.echo(f'Performing interacive login against tenant {self.tenant}')
+        self.cli.print(f'Performing interactive login against tenant {self.tenant}')
         url = f'{self.base_url}/login?token={self.auth_token}'
         click.launch(url)
         time.sleep(3)
@@ -78,7 +79,7 @@ class CredentialManager:
                     credentials.pop(field, None)
 
                 self.save(credentials)
-                click.echo(f'Authenticated to tenant {self.tenant} via interactive login.')
+                self.cli.print(f'Authenticated to tenant {self.tenant} via interactive login.')
                 break
 
     def retrieve_tokens(self):
@@ -95,18 +96,15 @@ class CredentialManager:
 
     def load(self, full=False):
         # we should NEVER here exception but adding here just in case
-        click.echo('Must use a subclass of CredentialManager')
-        exit()
+        raise click.ClickException('Must use a subclass of CredentialManager')
 
     def save(self, credentials: dict):
         # we should NEVER get here but adding here just in case
-        click.echo('Must use a subclass of CredentialManager')
-        exit()
+        raise click.ClickException('Must use a subclass of CredentialManager')
 
     def delete(self):
         # we should NEVER get here but adding here just in case
-        click.echo('Must use a subclass of CredentialManager')
-        exit()
+        raise click.ClickException('Must use a subclass of CredentialManager')
 
     def get_credentials(self):
         if self.has_valid_credentials():
@@ -120,18 +118,18 @@ class CredentialManager:
 
     def has_valid_credentials(self):
         if not self.credentials or self.credentials == {}:
-            click.echo(f'Credentials for tenant {self.tenant} not found.')
+            self.cli.print(f'Credentials for tenant {self.tenant} not found.')
             return False
         if int(time.time() * 1000) <= int(self.credentials.get('safeExpirationTime', 0)):
             return True
-        click.echo(f'Credentials for tenant {self.tenant} have expired.')
+        self.cli.print(f'Credentials for tenant {self.tenant} have expired.')
         return False
 
 
 class FileCredentialManager(CredentialManager):
-    def __init__(self, tenant_name: str, tenant_alias: str):
+    def __init__(self, tenant_name: str, tenant_alias: str, cli: object):
         self.path = str(Path.home() / '.britive' / 'pybritive.credentials')
-        super().__init__(tenant_name, tenant_alias)
+        super().__init__(tenant_name, tenant_alias, cli)
 
     def load(self, full=False):
         path = Path(self.path)

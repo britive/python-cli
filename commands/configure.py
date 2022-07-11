@@ -1,7 +1,6 @@
 import click
 from choices.output_format import output_format_choices
 from options.britive_options import britive_options
-from helpers.config import ConfigManager
 from helpers.build_britive import build_britive
 
 
@@ -13,17 +12,18 @@ def configure():
 
 
 @configure.command()
+@build_britive
 @britive_options(names='configure_tenant,configure_alias,format,configure_prompt')
-def tenant(**kwargs):
+def tenant(ctx, configure_tenant, configure_alias, output_format, configure_prompt):
     """
     Configures tenant level settings for the PyBritive CLI.
 
     If CLI options/flags are not provided an interactive data entry process will collect any needed data.
     """
-    tenant_name = kwargs['tenant']
-    no_prompt = kwargs['no_prompt']
-    alias = kwargs['alias']
-    output_format = kwargs['output_format']
+    tenant_name = configure_tenant
+    no_prompt = configure_prompt
+    alias = configure_alias
+    output_format = output_format
 
     if not no_prompt:
         if not tenant_name:
@@ -45,15 +45,14 @@ def tenant(**kwargs):
             )
 
     if not tenant_name  or len(tenant_name.strip()) == 0:
-        click.echo('Tenant Name not provided.')
-        exit()
+        raise click.ClickException('Tenant Name not provided.')
     if not alias:
         alias = tenant_name
     if not output_format or output_format not in output_format_choices.choices:
-        click.echo(f'Invalid output format {output_format} provided. Defaulting to "json".')
+        ctx.obj.britive.print(f'Invalid output format {output_format} provided. Defaulting to "json".')
         output_format = 'json'
 
-    ConfigManager(save=True).save_tenant(
+    ctx.obj.britive.configure_tenant(
         tenant=tenant_name,
         alias=alias,
         output_format=output_format
@@ -61,16 +60,17 @@ def tenant(**kwargs):
 
 
 @configure.command(name='global')  # have to specify the name since global is a reserved word
+@build_britive
 @britive_options(names='configure_tenant,format,configure_prompt')
-def global_command(**kwargs):
+def global_command(ctx, configure_tenant, output_format, configure_prompt):
     """
     Configures global level settings for the PyBritive CLI.
 
     If CLI options/flags are not provided an interactive data entry process will collect any needed data.
     """
-    default_tenant_name = kwargs['tenant']
-    no_prompt = kwargs['no_prompt']
-    output_format = kwargs['output_format']
+    default_tenant_name = configure_tenant
+    no_prompt = configure_prompt
+    output_format = output_format
 
     if not no_prompt:
         if not default_tenant_name:
@@ -85,10 +85,10 @@ def global_command(**kwargs):
                 type=output_format_choices
             )
         if not output_format or output_format not in output_format_choices.choices:
-            click.echo(f'Invalid output format {output_format} provided. Defaulting to "json".')
+            ctx.obj.britive.print(f'Invalid output format {output_format} provided. Defaulting to "json".')
             output_format = 'json'
 
-    ConfigManager(save=True).save_global(
+    ctx.obj.britive.configure_global(
         default_tenant_name=default_tenant_name,
         output_format=output_format
     )
@@ -96,5 +96,9 @@ def global_command(**kwargs):
 
 @configure.command(name='import')  # have to specify the name since import is a reserved word
 @build_britive
-def import_command(ctx):
+@britive_options(names='silent')
+def import_command(ctx, silent):  # silent is handled by @build_britive
+    """
+    Import an existing configuration from the Node.js/NPM version of the Britive CLI.
+    """
     ctx.obj.britive.import_existing_npm_config()

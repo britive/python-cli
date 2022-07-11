@@ -14,6 +14,8 @@ def checkout(ctx, alias, blocktime, console, justification, mode, maxpolltime, s
     This command takes 1 required argument PROFILE. This should be a string representation of the profile
     that should be checked out. Format is "application name/environment name/profile name".
     """
+
+    # silent will get passed in via @build_britive
     ctx.obj.britive.checkout(
         alias=alias,
         blocktime=blocktime,
@@ -21,8 +23,5 @@ def checkout(ctx, alias, blocktime, console, justification, mode, maxpolltime, s
         justification=justification,
         mode=mode,
         maxpolltime=maxpolltime,
-        silent=silent,
         profile=profile
     )
-
-

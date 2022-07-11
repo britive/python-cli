@@ -26,8 +26,7 @@ def coalesce(*arg):
 
 
 class ConfigManager:
-    def __init__(self, tenant_name: str = None, save=False):
-        self.save_flag = save
+    def __init__(self, cli: object, tenant_name: str = None):
         self.tenant_name = tenant_name
         self.path = str(Path.home() / '.britive' / 'pybritive.config')  # handle os specific separators properly
         self.config = None
@@ -35,7 +34,7 @@ class ConfigManager:
         self.default_tenant = None
         self.tenants = None
         self.profile_aliases = None
-        self.load()  # will set self.config and other variables
+        self.cli = cli
 
     def get_output_format(self, output_format: str = None):
         return coalesce(
@@ -56,41 +55,41 @@ class ConfigManager:
         config.read(str(path))
         config = json.loads(json.dumps(config._sections))  # TODO this is messy but works for now
         self.config = lowercase(config)
-
-        if not self.save_flag:  # if we are saving then no need to go through all this logic
-            self.alias = None  # will be set in self.get_tenant()
-            self.default_tenant = self.config.get('global', {}).get('default_tenant')
-            self.tenants = {}
-            for key in list(self.config.keys()):
-                if key.startswith('tenant-'):
-                    ignore, alias = key.split('-')
-                    self.tenants[alias] = self.config[key]
-            self.profile_aliases = self.config.get('profile-aliases', {})
+        self.alias = None  # will be set in self.get_tenant()
+        self.default_tenant = self.config.get('global', {}).get('default_tenant')
+        self.tenants = {}
+        for key in list(self.config.keys()):
+            if key.startswith('tenant-'):
+                ignore, alias = key.split('-')
+                self.tenants[alias] = self.config[key]
+        self.profile_aliases = self.config.get('profile-aliases', {})
 
     def get_tenant(self):
+        # load up the config - doing it here instead of __init__ for the configure commands since config won't
+        # yet exist and we don't want to error
+        self.load()  # will set self.config and other variables
+
         # normalize the input
         name = self.tenant_name.lower() if self.tenant_name else None
 
         # do some error checking to ensure we can actually grab a tenant
         if len(self.tenants.keys()) == 0 and not name:
-            click.echo(f'No tenants found in {self.path}. Cannot continue.')
-            exit()
+            raise click.ClickException(f'No tenants found in {self.path}. Cannot continue.')
 
         # attempt to determine the name of the tenant based on what the user passed in (or didn't pass in)
         provided_tenant_name = name if name else self.default_tenant
 
         if not provided_tenant_name:  # name not provided and no default has been set
             if len(self.tenants.keys()) != 1:
-                click.echo('Tenant not provided, no default tenant set, and more than one tenant exists.')
-                exit()
+                raise click.ClickException('Tenant not provided, no default tenant set, and more than one '
+                                           'tenant exists.')
             else:
                 # nothing given but only 1 tenant so assume that is what should be used
                 provided_tenant_name = list(self.tenants.keys())[0]
 
         # if we get here then we now have a tenant name we can check to ensure exists
         if provided_tenant_name not in self.tenants.keys() and not name:
-            click.echo(f'Tenant name "{provided_tenant_name}" not found in {self.path}')
-            exit()
+            raise click.ClickException(f'Tenant name "{provided_tenant_name}" not found in {self.path}')
 
         self.alias = provided_tenant_name or name
         # return details about the requested tenant
@@ -144,13 +143,13 @@ class ConfigManager:
             'global': {}
         }
         if tenant != '':
-            click.echo(f'Found tenant {tenant}.')
+            self.cli.print(f'Found tenant {tenant}.')
             self.config['global']['default_tenant'] = tenant
             self.config[f'tenant-{tenant}'] = {
                 'name': tenant
             }
         if output_format != '':
-            click.echo(f'Found default output format {output_format}.')
+            self.cli.print(f'Found default output format {output_format}.')
             self.config['global']['output_format'] = output_format
 
         self.save()

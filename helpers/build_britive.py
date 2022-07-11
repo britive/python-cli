@@ -19,7 +19,11 @@ def build_britive(f):
             ctx,
             **kwargs
     ):
-        ctx.obj = Common(BritiveCli(tenant_name=kwargs.get('tenant'), token=kwargs.get('token')))
+        ctx.obj = Common(BritiveCli(
+            tenant_name=kwargs.get('tenant'),
+            token=kwargs.get('token'),
+            silent=kwargs.get('silent', False)
+        ))
         if kwargs.get('output_format'):
             ctx.obj.britive.set_output_format(kwargs.get('output_format'))
         return f(ctx=ctx, **kwargs)

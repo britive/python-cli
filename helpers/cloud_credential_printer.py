@@ -15,7 +15,9 @@ env_options = {
 
 
 class CloudCredentialPrinter:
-    def __init__(self, app_type, console, mode, profile, credentials):
+    def __init__(self, app_type, console, mode, profile, silent, credentials, cli):
+        self.cli = cli
+        self.silent = silent
         self.app_type = app_type
         self.profile = profile
         self.console = console
@@ -53,7 +55,7 @@ class CloudCredentialPrinter:
         if self.mode == 'browser':
             click.launch(self.credentials['url'])
         else:
-            click.echo(self.credentials['url'])
+            self.cli.print(self.credentials['url'], ignore_silent=True)
 
     def print_text(self):
         self._not_implemented()
@@ -77,28 +79,29 @@ class CloudCredentialPrinter:
         self._not_implemented()
 
     def _not_implemented(self):
-        raise NotImplementedError(f'Application type {self.app_type} does not support the specified mode.')
+        raise click.ClickException(f'Application type {self.app_type} does not support the specified mode.')
+
 
 class AwsCloudCredentialPrinter(CloudCredentialPrinter):
-    def __init__(self, console, mode, profile, credentials):
-        super().__init__('AWS', console, mode, profile, credentials)
+    def __init__(self, console, mode, profile, silent, credentials, cli):
+        super().__init__('AWS', console, mode, profile, silent, credentials, cli)
 
     def print_text(self):
-        click.echo('AWS_ACCESS_KEY_ID')
-        click.echo(self.credentials['accessKeyID'])
-        click.echo('')
+        self.cli.print('AWS_ACCESS_KEY_ID', ignore_silent=True)
+        self.cli.print(self.credentials['accessKeyID'], ignore_silent=True)
+        self.cli.print('', ignore_silent=True)
 
-        click.echo('AWS_SECRET_ACCESS_KEY')
-        click.echo(self.credentials['secretAccessKey'])
-        click.echo('')
+        self.cli.print('AWS_SECRET_ACCESS_KEY', ignore_silent=True)
+        self.cli.print(self.credentials['secretAccessKey'], ignore_silent=True)
+        self.cli.print('', ignore_silent=True)
 
-        click.echo('AWS_SESSION_TOKEN')
-        click.echo(self.credentials['sessionToken'])
-        click.echo('')
+        self.cli.print('AWS_SESSION_TOKEN', ignore_silent=True)
+        self.cli.print(self.credentials['sessionToken'], ignore_silent=True)
+        self.cli.print('', ignore_silent=True)
 
-        click.echo('AWS_EXPIRATION')
-        click.echo(self.credentials['expirationTime'])
-        click.echo('')
+        self.cli.print('AWS_EXPIRATION', ignore_silent=True)
+        self.cli.print(self.credentials['expirationTime'], ignore_silent=True)
+        self.cli.print('', ignore_silent=True)
 
     def print_json(self, version=None):
         creds = {
@@ -109,13 +112,14 @@ class AwsCloudCredentialPrinter(CloudCredentialPrinter):
         }
         if version:
             creds['Version'] = version
-        click.echo(json.dumps(creds, indent=2))
+        self.cli.print(json.dumps(creds, indent=2), ignore_silent=True)
 
     def print_env(self):
-        click.echo(f'{self.env_command}AWS_ACCESS_KEY_ID="{self.credentials["accessKeyID"]}"')
-        click.echo(f'{self.env_command}AWS_SECRET_ACCESS_KEY="{self.credentials["secretAccessKey"]}"')
-        click.echo(f'{self.env_command}AWS_SESSION_TOKEN="{self.credentials["sessionToken"]}"')
-        click.echo(f'{self.env_command}AWS_EXPIRATION="{self.credentials["expirationTime"]}"')
+        self.cli.print(f'{self.env_command}AWS_ACCESS_KEY_ID="{self.credentials["accessKeyID"]}"', ignore_silent=True)
+        self.cli.print(f'{self.env_command}AWS_SECRET_ACCESS_KEY="{self.credentials["secretAccessKey"]}"',
+                       ignore_silent=True)
+        self.cli.print(f'{self.env_command}AWS_SESSION_TOKEN="{self.credentials["sessionToken"]}"', ignore_silent=True)
+        self.cli.print(f'{self.env_command}AWS_EXPIRATION="{self.credentials["expirationTime"]}"', ignore_silent=True)
 
     def print_integrate(self):
         # get path to aws credentials file
@@ -151,23 +155,23 @@ class AwsCloudCredentialPrinter(CloudCredentialPrinter):
 
 
 class AzureCloudCredentialPrinter(CloudCredentialPrinter):
-    def __init__(self, console, mode, profile, credentials):
+    def __init__(self, console, mode, profile, silent, credentials, cli):
         key = list(credentials.keys())[0]
         credentials = json.loads(credentials[key])
-        super().__init__('Azure', console, mode, profile, credentials)
+        super().__init__('Azure', console, mode, profile, silent, credentials, cli)
 
     def print_text(self):
-        click.echo('TENANT')
-        click.echo(self.credentials['tenantId'])
-        click.echo('')
+        self.cli.print('TENANT', ignore_silent=True)
+        self.cli.print(self.credentials['tenantId'], ignore_silent=True)
+        self.cli.print('', ignore_silent=True)
 
-        click.echo('USERNAME/APP ID/CLIENT ID')
-        click.echo(self.credentials['appId'])
-        click.echo('')
+        self.cli.print('USERNAME/APP ID/CLIENT ID', ignore_silent=True)
+        self.cli.print(self.credentials['appId'], ignore_silent=True)
+        self.cli.print('', ignore_silent=True)
 
-        click.echo('PASSWORD/SECRET TEXT/CLIENT SECRET')
-        click.echo(self.credentials['secretText'])
-        click.echo('')
+        self.cli.print('PASSWORD/SECRET TEXT/CLIENT SECRET', ignore_silent=True)
+        self.cli.print(self.credentials['secretText'], ignore_silent=True)
+        self.cli.print('', ignore_silent=True)
 
     def print_json(self):
         creds = {
@@ -175,30 +179,31 @@ class AzureCloudCredentialPrinter(CloudCredentialPrinter):
             'ClientId': self.credentials['appId'],
             'ClientSecret': self.credentials['secretText']
         }
+        self.cli.print(json.dumps(creds, indent=2), ignore_silent=True)
 
     def print_env(self):
-        click.echo(f'{self.env_command}AZURE_CLIENT_ID="{self.credentials["appId"]}"')
-        click.echo(f'{self.env_command}AZURE_CLIENT_SECRET="{self.credentials["secretText"]}"')
-        click.echo(f'{self.env_command}AZURE_TENANT_ID="{self.credentials["tenantId"]}"')
+        self.cli.print(f'{self.env_command}AZURE_CLIENT_ID="{self.credentials["appId"]}"', ignore_silent=True)
+        self.cli.print(f'{self.env_command}AZURE_CLIENT_SECRET="{self.credentials["secretText"]}"', ignore_silent=True)
+        self.cli.print(f'{self.env_command}AZURE_TENANT_ID="{self.credentials["tenantId"]}"', ignore_silent=True)
 
     def print_azlogin(self):
-        click.echo(self.credentials['cliLogin'])
+        self.cli.print(self.credentials['cliLogin'], ignore_silent=True)
 
     def print_azps(self):
-        click.echo(self.credentials['powershellScript'].replace('\n ', '\n'))
+        self.cli.print(self.credentials['powershellScript'].replace('\n ', '\n'), ignore_silent=True)
 
 
 class GcpCloudCredentialPrinter(CloudCredentialPrinter):
-    def __init__(self, console, mode, profile, credentials):
+    def __init__(self, console, mode, profile, silent, credentials, cli):
         key = list(credentials.keys())[0]
         credentials = json.loads(credentials[key])
-        super().__init__('GCP', console, mode, profile, credentials)
+        super().__init__('GCP', console, mode, profile, silent, credentials, cli)
 
     def print_json(self):
-        click.echo(json.dumps(self.credentials, indent=2))
-        click.echo('')
-        click.echo(
+        self.cli.print(json.dumps(self.credentials, indent=2), ignore_silent=True)
+        self.cli.print('', ignore_silent=True)
+        self.cli.print(
             f"Run command: gcloud auth activate-service-account {self.credentials['client_email']} "
-            "--key-file <path-where-above-json-is-stored>"
+            "--key-file <path-where-above-json-is-stored>", ignore_silent=True
         )
 

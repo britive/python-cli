@@ -8,7 +8,7 @@ def version_callback(ctx, self, value):
     if value:
         cli_version = __version__
         click.echo(f'pybritve: {cli_version} / platform: {platform.platform()} / python: {platform.python_version()}')
-        exit()
+        raise click.exceptions.Exit()
 
 
 option = click.option(
