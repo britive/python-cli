@@ -24,7 +24,6 @@ def build_britive(f):
             token=kwargs.get('token'),
             silent=kwargs.get('silent', False)
         ))
-        if kwargs.get('output_format'):
-            ctx.obj.britive.set_output_format(kwargs.get('output_format'))
+        ctx.obj.britive.set_output_format(kwargs.get('output_format'))
         return f(ctx=ctx, **kwargs)
     return wrapper

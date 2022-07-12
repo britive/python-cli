@@ -7,7 +7,7 @@ from commands.logout import logout as command_logout
 from commands.ls import ls as group_ls
 from commands.checkout import checkout as command_checkout
 from commands.checkin import checkin as command_checkin
-
+from commands.viewsecret import viewsecret as command_viewsecret
 
 # this is the "main" app - it really does nothing but print the overview/help section
 @click.group()
@@ -25,6 +25,7 @@ cli.add_command(command_logout)
 cli.add_command(command_checkout)
 cli.add_command(group_configure)
 cli.add_command(command_checkin)
+cli.add_command(command_viewsecret)
 
 
 if __name__ == "__main__":

@@ -13,6 +13,7 @@ from options.configure_prompt import option as configure_prompt
 from options.justification import option as justification
 from options.silent import option as silent
 from options.console import option as console
+from options.checked_out import option as checked_out
 
 options_map = {
     'tenant': tenant,
@@ -29,7 +30,8 @@ options_map = {
     'configure_prompt': configure_prompt,
     'justification': justification,
     'silent': silent,
-    'console': console
+    'console': console,
+    'checked_out': checked_out
 }
 
 

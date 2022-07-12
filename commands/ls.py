@@ -13,32 +13,32 @@ def ls():
 
 @ls.command()
 @build_britive
-@britive_options(names='tenant,token,format')
-def applications(ctx, tenant, token, output_format):
+@britive_options(names='format,tenant,token')
+def applications(ctx, output_format, tenant, token):
     """List applications for the currently authenticated identity."""
     ctx.obj.britive.list_applications()
 
 
 @ls.command()
 @build_britive
-@britive_options(names='tenant,token,format')
-def environments(ctx, tenant, token, output_format):
+@britive_options(names='format,tenant,token')
+def environments(ctx, output_format, tenant, token):
     """List environments for the currently authenticated identity."""
     ctx.obj.britive.list_environments()
 
 
 @ls.command()
 @build_britive
-@britive_options(names='tenant,token,format')
-def profiles(ctx, tenant, token, output_format):
+@britive_options(names='checked_out, output_format, tenant,token')
+def profiles(ctx, checked_out, output_format, tenant, token):
     """List profiles for the currently authenticated identity."""
-    ctx.obj.britive.list_profiles()
+    ctx.obj.britive.list_profiles(checked_out=checked_out)
 
 
 @ls.command()
 @build_britive
-@britive_options(names='tenant,token,format')
-def secrets(ctx, tenant, token, output_format):
+@britive_options(names='format,tenant,token')
+def secrets(ctx, output_format, tenant, token):
     """List secrets for the currently authenticated identity."""
     ctx.obj.britive.list_secrets()
 

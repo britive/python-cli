@@ -8,6 +8,7 @@ import csv
 from tabulate import tabulate
 import yaml
 import helpers.cloud_credential_printer as printer
+from britive import exceptions
 
 
 default_table_format = 'fancy_grid'
@@ -32,22 +33,46 @@ class BritiveCli:
         self.tenant_alias = self.config.alias
         if explicit and self.token:
             raise click.ClickException('Interactive login unavailable when an API token is provided.')
-        self.b = Britive(
-            tenant=self.tenant_name,
-            token=self.token or FileCredentialManager(
-                tenant_alias=self.tenant_alias,
-                tenant_name=self.tenant_name,
-                cli=self
-            ).get_token(),
-            query_features=False
-        )
+
+        if self.token:
+            try:
+                self.b = Britive(
+                    tenant=self.tenant_name,
+                    token=self.token,
+                    query_features=True
+                )
+            except exceptions.UnauthorizedRequest as e:
+                raise click.ClickException('Invalid API token provided.')
+        else:
+            while True:  # will break after we successfully get logged in
+                try:
+                    self.b = Britive(
+                        tenant=self.tenant_name,
+                        token=FileCredentialManager(
+                            tenant_alias=self.tenant_alias,
+                            tenant_name=self.tenant_name,
+                            cli=self
+                        ).get_token(),
+                        query_features=True
+                    )
+                    break
+                except exceptions.UnauthorizedRequest as e:
+                    self._cleanup_credentials()
+
+    def _cleanup_credentials(self):
+        FileCredentialManager(
+            tenant_alias=self.tenant_alias,
+            tenant_name=self.tenant_name,
+            cli=self
+        ).delete()
 
     def logout(self):
         if self.token:
             raise click.ClickException('Logout not available when using an API token.')
         self.login()
         self.b.delete(f'https://{self.tenant_name}.britive-app.com/api/auth')
-        #FileCredentialManager(tenant_alias=self.tenant_alias, tenant_name=self.tenant_name).delete()
+        self._cleanup_credentials()
+
 
     # will take a list of dicts and print to the screen based on the format specified in the config file
     # dict can only be 1 level deep (no nesting) - caller needs to massage the data accordingly
@@ -59,9 +84,6 @@ class BritiveCli:
             click.echo(data)
             return
 
-        if isinstance(data, dict):
-            click.echo(json.dumps(data, indent=2, default=str))
-
         if self.output_format == 'json':
             click.echo(json.dumps(data, indent=2, default=str))
         elif self.output_format == 'csv':
@@ -72,6 +94,8 @@ class BritiveCli:
             writer.writerows(data)
             click.echo(output.getvalue())
         elif self.output_format.startswith('table'):
+            if isinstance(data, dict):
+                data = [data]
             tablefmt = default_table_format
             split = self.output_format.split('-')
             if len(split) > 1:
@@ -79,7 +103,7 @@ class BritiveCli:
             click.echo(tabulate(data, headers='keys', tablefmt=tablefmt))
         elif self.output_format == 'yaml':
             y = yaml.safe_load(json.dumps(data))
-            click.secho(yaml.safe_dump(y))
+            click.echo(yaml.safe_dump(y))
         else:
             raise click.ClickException(f'Invalid output format {self.output_format} provided.')
 
@@ -96,20 +120,22 @@ class BritiveCli:
         self.login()
         self.print(self.b.my_secrets.list())
 
-    def list_profiles(self):
+    def list_profiles(self, checked_out: bool = False):
         self.login()
         data = []
+        checked_out = [p['papId'] for p in self.b.my_access.list_checked_out_profiles()] if checked_out else []
         for app in self.b.my_access.list_profiles():
             for profile in app.get('profiles', []):
                 for env in profile.get('environments', []):
-                    row = {
-                        'Application': app['appName'],
-                        'Environment Name': env['environmentName'],
-                        'Profile Name': profile['profileName'],
-                        'Description': profile['profileDescription'],
-                        'Type': app['catalogAppName']
-                    }
-                    data.append(row)
+                    if not checked_out or profile['profileId'] in checked_out:
+                        row = {
+                            'Application': app['appName'],
+                            'Environment Name': env['environmentName'],
+                            'Profile Name': profile['profileName'],
+                            'Description': profile['profileDescription'],
+                            'Type': app['catalogAppName']
+                        }
+                        data.append(row)
         self.print(data)
 
     def list_applications(self):
@@ -281,6 +307,31 @@ class BritiveCli:
             default_tenant_name=default_tenant_name,
             output_format=output_format
         )
+
+    def viewsecret(self, path, blocktime, justification,maxpolltime):
+        self.login()
+        value = self.b.my_secrets.view(
+            path=path,
+            justification=justification,
+            wait_time=blocktime,
+            max_wait_time=maxpolltime
+        )
+
+        # handle the generic note template type for a better UX
+        if len(value.keys()) == 1 and 'Note' in value.keys():
+            value = value['Note']
+
+        # if the value can be converted from JSON to python dict, do it
+        try:
+            value = json.loads(value)
+        except json.JSONDecodeError:
+            pass
+        except TypeError:
+            pass
+
+        # and finally print the secret data
+        self.print(value)
+
 
 
 
