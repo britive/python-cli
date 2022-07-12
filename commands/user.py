@@ -1,18 +1,12 @@
-import typer
-from helpers.inject_common_options import inject_common_options
-from options.token import TokenOption
+import click
+from helpers.build_britive import build_britive
+from options.britive_options import britive_options
 
 
-app = typer.Typer(add_completion=False)
-
-
-@app.callback(invoke_without_command=True)
-@inject_common_options
-def user(
-        ctx: typer.Context,
-        token: str = TokenOption  # used by @inject common_options
-):
-    """
-    Returns details about the authenticated identity.
-    """
+@click.command()
+@build_britive
+@britive_options(names='tenant,token')
+def user(ctx, tenant, token):
+    """Print details about the authenticated identity."""
     ctx.obj.britive.user()
+

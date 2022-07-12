@@ -1,18 +1,21 @@
-import typer
+import click
 import platform
+from version import __version__
 
 
 # for --version we need to print the version and exit - nothing more, nothing less
-def version_callback(value: bool):
+def version_callback(ctx, self, value):
     if value:
-        version = '0.1.0'  # TODO where to dynamically source this?
-        typer.echo(f'pybritve: {version} / platform: {platform.platform()} / python: {platform.python_version()}')
-        raise typer.Exit()
+        cli_version = __version__
+        click.echo(f'pybritve: {cli_version} / platform: {platform.platform()} / python: {platform.python_version()}')
+        raise click.exceptions.Exit()
 
 
-VersionOption = typer.Option(
-    None, '-v', '--version',
+option = click.option(
+    '--version', '-v',
+    default=None,
     callback=version_callback,
     is_eager=True,
-    help="List current version and exit."
+    help='Prints the PyBritive CLI version and exits.',
+    is_flag=True
 )

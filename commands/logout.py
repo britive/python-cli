@@ -1,13 +1,12 @@
-import typer
-from helpers.inject_common_options import inject_common_options
+import click
+from helpers.build_britive import build_britive
+from options.britive_options import britive_options
 
 
-app = typer.Typer(add_completion=False)
-
-
-@app.callback(invoke_without_command=True)
-@inject_common_options
-def logout(ctx: typer.Context):
+@click.command()
+@build_britive
+@britive_options(names='tenant')
+def logout(ctx, tenant):
     """
     Logout of an interactive login session.
 

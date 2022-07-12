@@ -1,12 +1,12 @@
 import random
 import base64
 import hashlib
-import webbrowser
 import time
 import requests
 from pathlib import Path
-import yaml
-import typer
+import click
+import configparser
+import json
 
 
 interactive_login_fields_to_pop = [
@@ -36,8 +36,10 @@ def b64_encode_url_safe(value: bytes):
     return base64.urlsafe_b64encode(value).decode('utf-8').replace('=', '')
 
 
+# this base class expects self.credentials to be a dict - so sub classes need to convert to dict
 class CredentialManager:
-    def __init__(self, tenant_name: str, tenant_alias: str):
+    def __init__(self, tenant_name: str, tenant_alias: str, cli: object):
+        self.cli = cli
         self.tenant = tenant_name
         self.alias = tenant_alias
         self.base_url = f'https://{self.tenant}.britive-app.com'
@@ -50,9 +52,9 @@ class CredentialManager:
         self.credentials = self.load() or {}
 
     def perform_interactive_login(self):
-        typer.echo(f'Performing interacive login against tenant {self.tenant}')
+        self.cli.print(f'Performing interactive login against tenant {self.tenant}')
         url = f'{self.base_url}/login?token={self.auth_token}'
-        webbrowser.get().open(url)
+        click.launch(url)
         time.sleep(3)
         num_tries = 1
         while True:
@@ -77,7 +79,7 @@ class CredentialManager:
                     credentials.pop(field, None)
 
                 self.save(credentials)
-                typer.echo(f'Authenticated to tenant {self.tenant} via interactive login.')
+                self.cli.print(f'Authenticated to tenant {self.tenant} via interactive login.')
                 break
 
     def retrieve_tokens(self):
@@ -94,18 +96,15 @@ class CredentialManager:
 
     def load(self, full=False):
         # we should NEVER here exception but adding here just in case
-        typer.echo('Must use a subclass of CredentialManager')
-        raise typer.Abort()
+        raise click.ClickException('Must use a subclass of CredentialManager')
 
     def save(self, credentials: dict):
         # we should NEVER get here but adding here just in case
-        typer.echo('Must use a subclass of CredentialManager')
-        raise typer.Abort()
+        raise click.ClickException('Must use a subclass of CredentialManager')
 
     def delete(self):
         # we should NEVER get here but adding here just in case
-        typer.echo('Must use a subclass of CredentialManager')
-        raise typer.Abort()
+        raise click.ClickException('Must use a subclass of CredentialManager')
 
     def get_credentials(self):
         if self.has_valid_credentials():
@@ -119,18 +118,18 @@ class CredentialManager:
 
     def has_valid_credentials(self):
         if not self.credentials or self.credentials == {}:
-            typer.echo(f'Credentials for tenant {self.tenant} not found.')
+            self.cli.print(f'Credentials for tenant {self.tenant} not found.')
             return False
         if int(time.time() * 1000) <= int(self.credentials.get('safeExpirationTime', 0)):
             return True
-        typer.echo(f'Credentials for tenant {self.tenant} have expired.')
+        self.cli.print(f'Credentials for tenant {self.tenant} have expired.')
         return False
 
 
 class FileCredentialManager(CredentialManager):
-    def __init__(self, tenant_name: str, tenant_alias: str):
-        self.path = str(Path.home() / '.pybritive' / 'credentials.yaml')
-        super().__init__(tenant_name, tenant_alias)
+    def __init__(self, tenant_name: str, tenant_alias: str, cli: object):
+        self.path = str(Path.home() / '.britive' / 'pybritive.credentials')
+        super().__init__(tenant_name, tenant_alias, cli)
 
     def load(self, full=False):
         path = Path(self.path)
@@ -138,16 +137,14 @@ class FileCredentialManager(CredentialManager):
             path.parent.mkdir(exist_ok=True, parents=True)
             path.write_text('')
 
-        # now load the credentials file
-        with open(self.path, 'r') as f:
-            try:
-                credentials = yaml.safe_load(f) or {}
-                if full:
-                    return credentials
-                return credentials.get(self.alias, None)
-            except yaml.YAMLError:
-                typer.echo(f'Invalid YAML file at {self.path}')
-                raise typer.Abort()
+        # open the file with configparser
+        credentials = configparser.ConfigParser()
+        credentials.optionxform = str  # maintain key case
+        credentials.read(str(path))
+        credentials = json.loads(json.dumps(credentials._sections))  # TODO this is messy but works for now
+        if full:
+            return credentials
+        return credentials.get(self.alias, None)
 
     def save(self, credentials: dict):
         full_credentials = self.load(full=True)
@@ -155,14 +152,15 @@ class FileCredentialManager(CredentialManager):
             full_credentials.pop(self.alias, None)
         else:
             full_credentials[self.alias] = credentials
-        with open(self.path, 'w') as f:
-            f.write(yaml.safe_dump(full_credentials))
+
+        config = configparser.ConfigParser()
+        config.optionxform = str  # maintain key case
+        config.read_dict(full_credentials)
+
+        # write the new credentials file
+        with open(str(self.path), 'w') as f:
+            config.write(f, space_around_delimiters=False)
         self.credentials = credentials
 
     def delete(self):
         self.save(None)
-
-
-
-
-

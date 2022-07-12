@@ -1,33 +1,27 @@
-from typing import Optional
-import typer
-from helpers.inject_common_options import inject_common_options
-from arguments.profile import ProfileArgument
-from enums.mode import Mode
-from options.alias import AliasOption
-from options.mode import ModeOption
-from options.blocktime import BlockTimeOption
-from options.maxpolltime import MaxPollTimeOption
+import click
+from helpers.build_britive import build_britive
+from options.britive_options import britive_options
 
 
-app = typer.Typer(add_completion=False)
-
-
-@app.callback()
-@inject_common_options
-def checkout(
-        ctx: typer.Context,
-        profilename: str = ProfileArgument,
-        alias: Optional[str] = AliasOption,
-        mode: Mode = ModeOption,
-        blocktime: int = BlockTimeOption,
-        maxpolltime: int = MaxPollTimeOption
-):
+@click.command()
+@build_britive
+@britive_options(names='alias,blocktime,console,justification,mode,maxpolltime,silent,tenant,token')
+@click.argument('profile')
+def checkout(ctx, alias, blocktime, console, justification, mode, maxpolltime, silent, tenant, token, profile):
     """
     Checkout a profile.
+
+    This command takes 1 required argument PROFILE. This should be a string representation of the profile
+    that should be checked out. Format is "application name/environment name/profile name".
     """
-    if not profilename:  # build the profile via interactive prompts
-        pass
 
-
-if __name__ == "__main__":
-    app()
+    # silent will get passed in via @build_britive
+    ctx.obj.britive.checkout(
+        alias=alias,
+        blocktime=blocktime,
+        console=console,
+        justification=justification,
+        mode=mode,
+        maxpolltime=maxpolltime,
+        profile=profile
+    )

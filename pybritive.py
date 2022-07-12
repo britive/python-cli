@@ -1,37 +1,33 @@
-from typing import Optional
-import typer
-import commands.configure as configure
-import commands.login as login
-import commands.logout as logout
-import commands.ls as ls
-import commands.user as user
-import commands.checkout as checkout
-from options.version import VersionOption, version_callback
-
-app = typer.Typer(add_completion=False)
-app.add_typer(configure.app, name="configure")
-app.add_typer(login.app, name="login")
-app.add_typer(logout.app, name="logout")
-app.add_typer(ls.app, name="ls")
-app.add_typer(user.app, name="user")
-app.add_typer(checkout.app, name="checkout")
-typer.Typer.
-
-
-@app.command()
-def version():
-    """Prints the PyBritive CLI version."""
-    version_callback(True)
-
+import click
+from options.britive_options import britive_options
+from commands.user import user as command_user
+from commands.configure import configure as group_configure
+from commands.login import login as command_login
+from commands.logout import logout as command_logout
+from commands.ls import ls as group_ls
+from commands.checkout import checkout as command_checkout
+from commands.checkin import checkin as command_checkin
+from commands.viewsecret import viewsecret as command_viewsecret
 
 # this is the "main" app - it really does nothing but print the overview/help section
-# all CLI functions are handled by the various commands, as decorated by @app.command()
-@app.callback()
-def base(cli_version: Optional[bool] = VersionOption):
+@click.group()
+@britive_options(names='version')
+def cli(version):
     """
     PyBritive CLI - Pure Python Implementation for a Britive CLI
     """
 
 
+cli.add_command(command_user)
+cli.add_command(group_ls)
+cli.add_command(command_login)
+cli.add_command(command_logout)
+cli.add_command(command_checkout)
+cli.add_command(group_configure)
+cli.add_command(command_checkin)
+cli.add_command(command_viewsecret)
+
+
 if __name__ == "__main__":
-    app()
+    cli()
+
