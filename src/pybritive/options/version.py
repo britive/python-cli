@@ -1,12 +1,12 @@
 import click
 import platform
-from ..version import __version__
+import pkg_resources
 
 
 # for --version we need to print the version and exit - nothing more, nothing less
 def version_callback(ctx, self, value):
     if value:
-        cli_version = __version__
+        cli_version = pkg_resources.get_distribution('pybritive').version
         click.echo(f'pybritve: {cli_version} / platform: {platform.platform()} / python: {platform.python_version()}')
         raise click.exceptions.Exit()
 
