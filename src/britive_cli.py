@@ -9,6 +9,7 @@ from tabulate import tabulate
 import yaml
 import helpers.cloud_credential_printer as printer
 from britive import exceptions
+from pathlib import Path
 
 
 default_table_format = 'fancy_grid'
@@ -72,7 +73,6 @@ class BritiveCli:
         self.login()
         self.b.delete(f'https://{self.tenant_name}.britive-app.com/api/auth')
         self._cleanup_credentials()
-
 
     # will take a list of dicts and print to the screen based on the format specified in the config file
     # dict can only be 1 level deep (no nesting) - caller needs to massage the data accordingly
@@ -250,13 +250,21 @@ class BritiveCli:
         env_name = parts[1]
         profile_name = parts[2]
 
-        response = self.b.my_access.checkout_by_name(
-            profile_name=profile_name,
-            environment_name=env_name,
-            application_name=app_name,
-            programmatic=False if console else True,
-            include_credentials=True
-        )
+        try:
+            response = self.b.my_access.checkout_by_name(
+                profile_name=profile_name,
+                environment_name=env_name,
+                application_name=app_name,
+                programmatic=False if console else True,
+                include_credentials=True,
+                wait_time=blocktime,
+                max_wait_time=maxpolltime,
+                justification=justification
+            )
+        except exceptions.ApprovalRequiredButNoJustificationProvided:
+            raise click.ClickException('approval required and no justification provided.')
+        except ValueError as e:
+            raise click.BadParameter(str(e))
 
         if alias:  # do this down here so we know that the profile is valid and a checkout was successful
             self.config.save_profile_alias(alias=alias, profile=profile)
@@ -310,12 +318,18 @@ class BritiveCli:
 
     def viewsecret(self, path, blocktime, justification,maxpolltime):
         self.login()
-        value = self.b.my_secrets.view(
-            path=path,
-            justification=justification,
-            wait_time=blocktime,
-            max_wait_time=maxpolltime
-        )
+
+        try:
+            value = self.b.my_secrets.view(
+                path=path,
+                justification=justification,
+                wait_time=blocktime,
+                max_wait_time=maxpolltime
+            )
+        except exceptions.AccessDenied:
+            raise click.ClickException('user does not have access to the secret.')
+        except exceptions.ApprovalRequiredButNoJustificationProvided:
+            raise click.ClickException('approval required and no justification provided.')
 
         # handle the generic note template type for a better UX
         if len(value.keys()) == 1 and 'Note' in value.keys():
@@ -331,6 +345,41 @@ class BritiveCli:
 
         # and finally print the secret data
         self.print(value)
+
+    def downloadsecret(self, path, blocktime, justification,maxpolltime, file):
+        self.login()
+
+        try:
+            response = self.b.my_secrets.download(
+                path=path,
+                justification=justification,
+                wait_time=blocktime,
+                max_wait_time=maxpolltime
+            )
+        except exceptions.AccessDenied:
+            raise click.ClickException('user does not have access to the secret.')
+        except exceptions.ApprovalRequiredButNoJustificationProvided:
+            raise click.ClickException('approval required and no justification provided.')
+
+        filename_from_secret = response['filename']
+        content = response['content_bytes']
+
+        if file == '-':
+            try:
+                self.print(content.decode('utf-8'))
+            except UnicodeDecodeError as e:
+                raise click.ClickException(
+                    'Secret file contents cannot be decoded to utf-8. '
+                    'Save the contents of the file to disk instead.'
+                )
+            return
+
+        filename = file or filename_from_secret
+        path = str(Path(filename).absolute())
+        with open(path, 'wb') as f:
+            f.write(content)
+        self.print(f'wrote contents of secret file to {path}')
+
 
 
 

@@ -14,6 +14,7 @@ from options.justification import option as justification
 from options.silent import option as silent
 from options.console import option as console
 from options.checked_out import option as checked_out
+from options.file import option as file
 
 options_map = {
     'tenant': tenant,
@@ -31,7 +32,8 @@ options_map = {
     'justification': justification,
     'silent': silent,
     'console': console,
-    'checked_out': checked_out
+    'checked_out': checked_out,
+    'file': file
 }
 
 
