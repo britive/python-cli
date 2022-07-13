@@ -1,6 +1,6 @@
 import click
 import platform
-from version import __version__
+from ..version import __version__
 
 
 # for --version we need to print the version and exit - nothing more, nothing less

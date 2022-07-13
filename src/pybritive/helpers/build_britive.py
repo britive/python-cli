@@ -1,4 +1,4 @@
-from britive_cli import BritiveCli
+from ..britive_cli import BritiveCli
 import click
 from functools import wraps
 from merge_args import merge_args

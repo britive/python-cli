@@ -1,13 +1,13 @@
 import click
-from options.britive_options import britive_options
-from commands.user import user as command_user
-from commands.configure import configure as group_configure
-from commands.login import login as command_login
-from commands.logout import logout as command_logout
-from commands.ls import ls as group_ls
-from commands.checkout import checkout as command_checkout
-from commands.checkin import checkin as command_checkin
-from commands.secret import secret as group_secret
+from .options.britive_options import britive_options
+from .commands.user import user as command_user
+from .commands.configure import configure as group_configure
+from .commands.login import login as command_login
+from .commands.logout import logout as command_logout
+from .commands.ls import ls as group_ls
+from .commands.checkout import checkout as command_checkout
+from .commands.checkin import checkin as command_checkin
+from .commands.secret import secret as group_secret
 
 
 def safe_cli():

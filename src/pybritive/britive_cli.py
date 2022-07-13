@@ -1,13 +1,13 @@
 import io
 from britive.britive import Britive
-from helpers.config import ConfigManager
-from helpers.credentials import FileCredentialManager
+from .helpers.config import ConfigManager
+from .helpers.credentials import FileCredentialManager
 import json
 import click
 import csv
 from tabulate import tabulate
 import yaml
-import helpers.cloud_credential_printer as printer
+from .helpers import cloud_credential_printer as printer
 from britive import exceptions
 from pathlib import Path
 

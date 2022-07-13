@@ -1,7 +1,7 @@
 import click
-from choices.output_format import output_format_choices
-from options.britive_options import britive_options
-from helpers.build_britive import build_britive
+from ..choices.output_format import output_format_choices
+from ..options.britive_options import britive_options
+from ..helpers.build_britive import build_britive
 
 
 @click.group()

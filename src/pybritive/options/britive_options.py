@@ -1,20 +1,20 @@
 import click
-from options.tenant import option as tenant
-from options.token import option as token
-from options.output_format import option as output_format
-from options.alias import option as alias
-from options.blocktime import option as blocktime
-from options.mode import option as mode
-from options.maxpolltime import option as maxpolltime
-from options.version import option as version
-from options.configure_tenant import option as configure_tenant
-from options.configure_alias import option as configure_alias
-from options.configure_prompt import option as configure_prompt
-from options.justification import option as justification
-from options.silent import option as silent
-from options.console import option as console
-from options.checked_out import option as checked_out
-from options.file import option as file
+from ..options.tenant import option as tenant
+from ..options.token import option as token
+from ..options.output_format import option as output_format
+from ..options.alias import option as alias
+from ..options.blocktime import option as blocktime
+from ..options.mode import option as mode
+from ..options.maxpolltime import option as maxpolltime
+from ..options.version import option as version
+from ..options.configure_tenant import option as configure_tenant
+from ..options.configure_alias import option as configure_alias
+from ..options.configure_prompt import option as configure_prompt
+from ..options.justification import option as justification
+from ..options.silent import option as silent
+from ..options.console import option as console
+from ..options.checked_out import option as checked_out
+from ..options.file import option as file
 
 options_map = {
     'tenant': tenant,

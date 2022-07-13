@@ -1,5 +1,5 @@
 import click
-from choices.mode import mode_choices
+from ..choices.mode import mode_choices
 
 
 option = click.option(
