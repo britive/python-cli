@@ -1,14 +1,48 @@
 # Britive CLI - Pure Python Implementation
 
+
+## Requirements
+
+* Python 3.7 or higher
+* Active Britive tenant (or nothing is really going to work)
+
+## Installation
+
+`pybritive` will be installed via Python `pip`. The package is not available in PyPi at this time so it will be 
+installed via the published tar balls in the Github repo.
+
+~~~bash
+pip install https://github.com/britive/python-cli/releases/download/v1.0.0/pybritive-1.0.0.tar.gz
+~~~
+
+The end user is free to install the CLI into a virtual environment or in the global scope so it is available
+everywhere.
+
+## Tenant Configuration
+
+Before `pybritive` can connect to a Britive tenant, it needs to know some details about that tenant.
+This is where `pybritive configure` will help us.
+
+There are 2 ways to tell `pybritive` about tenants.
+
+1. `pybritive configure import`: this will import an existing configuration from the Node.js version of the Britive CLI.
+2. `pybritive configure tenant`: This will prompt (or optionally the values can be passed via flags) for tenant details.
+
+An alias for a tenant can be created in case more than 1 tenant is configured for us. This may be the case for admins
+who may have access to an EA and GA tenant.
+
 ## Tenant Selection Logic
 
 There are numerous ways to provide the CLI with the Britive tenant that should be used. The below list is the
 order of operations for determining the tenant.
 
-1. Value retrieved from CLI option/flag `--tenant`
+The tenant excludes `.britive-app.com`. Just include the leftmost part.
+Example: `example.britive-app.com` will have a tenant name in the CLI of `example`.
+
+1. Value retrieved from CLI option/flag `--tenant/-t`
 2. Value retrieved from environment variable `BRITIVE_TENANT`
-3. Value retrieved from `~/.pybritive/config.yaml` attribute key `default_tenant`
-4. If none of the above are available then check for configured tenants in `~/.pybritive/config.yaml` and if there is only 1 tenant configured use it
+3. Value retrieved from `~/.britive/pybritive.config` global variable `default_tenant`
+4. If none of the above are available then check for configured tenants in `~/.britive/pybritive.config` and if there is only 1 tenant configured use it
 5. If all the above fail then error
 
 
@@ -17,18 +51,60 @@ order of operations for determining the tenant.
 There are numerous ways to provide the CLI with the Britive credentials that should be used to authenticate to the
 Britive tenant. The below list is the order of operations for determining the tenant.
 
-1. Value retrieved from CLI option/flag `--token`
+1. Value retrieved from CLI option/flag `--token/-T`
 2. Value retrieved from environment variable `BRITIVE_API_TOKEN`
-3. If none of the above are available an interactive login will be performed and temporary credentials will be stored locally for future use of the CLI
+3. If none of the above are available an interactive login will be performed and temporary credentials will be stored locally for future use with the CLI
 
 
 ## Credential Stores
 
-The CLI offers a few ways in which temporary credentials obtained via interactive login can be stored.
+The CLI currently offers only one way in which temporary credentials obtained via interactive login can be stored.
+Future enhancements aim to offer other credential storage options.
 
-* File: credentials will be stored in an unencrypted file located at `~/.pybritive/credentials.yaml`
-* Encrypted File: credentials will be stored in an encrypted file located at `~/.pybritive/credentials.yaml`
-* Vault: credentials will be stored in the local OS credential vault
-    * MacOS: Keychain
-    * Windows: Credential Vault
-    * Linux: TODO
+* File: credentials will be stored in a plaintext file located at `~/.britive/pybritive.credentials`
+
+
+## Shell Completion
+Behind the scenes the `pybritive` CLI tool uses the python `click` package. `click` offers shell completion for
+the following shells.
+
+* Bash
+* Zsh
+* Fish
+
+In order to set up shell completion, follow these steps. Once complete either `source` your environment again
+or start a new shell in order for the changes to be loaded.
+
+### Bash
+Save the completion script somewhere.
+
+~~~bash
+_PYBRITIVE_COMPLETE=bash_source pybritive > ~/.pybritive-complete.bash
+~~~
+
+Source the file in `~/.bashrc`.
+
+~~~
+. ~/.pybritive-complete.bash
+~~~
+
+### Zsh
+Save the completion script somewhere.
+
+~~~bash
+_PYBRITIVE_COMPLETE=zsh_source pybritive > ~/.pybritive-complete.zsh
+~~~
+
+Source the file in `~/.zshrc`.
+
+~~~
+. ~/.pybritive-complete.zsh
+~~~
+
+### Fish
+Save the completion script to the `fish` completions directory.
+
+~~~bash
+_PYBRITIVE_COMPLETE=fish_source pybritive > ~/.config/fish/completions/foo-bar.fish
+~~~
+

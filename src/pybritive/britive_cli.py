@@ -25,6 +25,7 @@ class BritiveCli:
         self.b = None
         self.available_profiles = None
         self.config = ConfigManager(tenant_name=tenant_name, cli=self)
+        self.list_separator = '|'
 
     def set_output_format(self, output_format: str):
         self.output_format = self.config.get_output_format(output_format)
@@ -86,6 +87,9 @@ class BritiveCli:
 
         if self.output_format == 'json':
             click.echo(json.dumps(data, indent=2, default=str))
+        elif self.output_format == 'list':
+            for row in data:
+                click.echo(self.list_separator.join(row.values()))
         elif self.output_format == 'csv':
             fields = list(data[0].keys())
             output = io.StringIO()
@@ -135,6 +139,10 @@ class BritiveCli:
                             'Description': profile['profileDescription'],
                             'Type': app['catalogAppName']
                         }
+                        if self.output_format == 'list':
+                            self.list_separator = '/'
+                            row.pop('Description')
+                            row.pop('Type')
                         data.append(row)
         self.print(data)
 

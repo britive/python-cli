@@ -6,6 +6,7 @@ output_format_choices = click.Choice(
         'yaml',
         'csv',
         'table',
+        'list',
         'table-plain',
         'table-simple',
         'table-github',
