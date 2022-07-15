@@ -71,6 +71,7 @@ the following shells.
 * Bash
 * Zsh
 * Fish
+* PowerShell
 
 In order to set up shell completion, follow these steps. Once complete either `source` your environment again
 or start a new shell in order for the changes to be loaded.
@@ -108,3 +109,37 @@ Save the completion script to the `fish` completions directory.
 _PYBRITIVE_COMPLETE=fish_source pybritive > ~/.config/fish/completions/foo-bar.fish
 ~~~
 
+### PowerShell
+Append the below code to your PowerShell profile.
+
+~~~
+if ((Test-Path Function:\TabExpansion) -and -not (Test-Path Function:\pybritiveTabExpansionBackup)) {
+    Rename-Item Function:\TabExpansion pybritiveTabExpansionBackup
+}
+
+function TabExpansion($line, $lastWord) {
+    $lastBlock = [regex]::Split($line, '[|;]')[-1].TrimStart()
+    $aliases = @("pybritive") + @(Get-Alias | where { $_.Definition -eq "pybritive" } | select -Exp Name)
+    $aliasPattern = "($($aliases -join '|'))"
+    if($lastBlock -match "^$aliasPattern ") {
+        $Env:_PYBRITIVE_COMPLETE = "complete-powershell"
+        $Env:COMMANDLINE = "$lastBlock"
+        (pybritive) | ? {$_.trim() -ne "" }
+        Remove-Item Env:_PYBRITIVE_COMPLETE
+        Remove-Item Env:COMMANDLINE
+    }
+    elseif (Test-Path Function:\pybritiveTabExpansionBackup) {
+        # Fall back on existing tab expansion
+        pybritiveTabExpansionBackup $line $lastWord
+    }
+}
+~~~
+
+
+The location of your PowerShell profile can be found with command
+
+~~~bash
+echo $profile
+~~~
+
+And is generally something like `C:\Users\{user}\Documents\WindowsPowerShell\Microsoft.PowerShell_profile.ps1`.
