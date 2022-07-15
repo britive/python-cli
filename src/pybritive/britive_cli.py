@@ -8,6 +8,7 @@ import csv
 from tabulate import tabulate
 import yaml
 from .helpers import cloud_credential_printer as printer
+from .helpers.cache import Cache
 from britive import exceptions
 from pathlib import Path
 
@@ -387,6 +388,18 @@ class BritiveCli:
         with open(path, 'wb') as f:
             f.write(content)
         self.print(f'wrote contents of secret file to {path}')
+
+    def cache_profiles(self):
+        self.login()
+        self._set_available_profiles()
+        profiles = []
+        for p in self.available_profiles:
+            profiles.append(f"{p['app_name']}/{p['env_name']}/{p['profile_name']}")
+        Cache().save_profiles(profiles)
+
+    @staticmethod
+    def cache_clear():
+        Cache().clear()
 
 
 

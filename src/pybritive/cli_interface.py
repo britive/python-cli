@@ -8,6 +8,7 @@ from .commands.ls import ls as group_ls
 from .commands.checkout import checkout as command_checkout
 from .commands.checkin import checkin as command_checkin
 from .commands.secret import secret as group_secret
+from .commands.cache import cache as group_cache
 
 
 def safe_cli():
@@ -34,6 +35,7 @@ cli.add_command(command_checkout)
 cli.add_command(group_configure)
 cli.add_command(command_checkin)
 cli.add_command(group_secret)
+cli.add_command(group_cache)
 
 
 if __name__ == "__main__":
