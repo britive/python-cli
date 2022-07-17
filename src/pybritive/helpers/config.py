@@ -48,12 +48,12 @@ class ConfigManager:
         path = Path(self.path)
 
         if not path.is_file():
-            return {}
-
-        config = configparser.ConfigParser()
-        config.optionxform = str  # maintain key case
-        config.read(str(path))
-        config = json.loads(json.dumps(config._sections))  # TODO this is messy but works for now
+            config = {}
+        else:
+            config = configparser.ConfigParser()
+            config.optionxform = str  # maintain key case
+            config.read(str(path))
+            config = json.loads(json.dumps(config._sections))  # TODO this is messy but works for now
         self.config = lowercase(config)
         self.alias = None  # will be set in self.get_tenant()
         self.default_tenant = self.config.get('global', {}).get('default_tenant')
@@ -105,6 +105,7 @@ class ConfigManager:
             config.write(f, space_around_delimiters=False)
 
     def save_tenant(self, tenant: str, alias: str = None, output_format: str = None):
+        self.load()
         if not alias:
             alias = tenant
         if f'tenant-{alias}' not in self.config.keys():
@@ -115,6 +116,7 @@ class ConfigManager:
         self.save()
 
     def save_global(self, default_tenant_name: str = None, output_format: str = None):
+        self.load()
         if not default_tenant_name and not output_format:
             return
         if 'global' not in self.config.keys():
@@ -132,6 +134,7 @@ class ConfigManager:
 
     # returns a dict of profile aliases that need to be created after listing profiles
     def import_global_npm_config(self):
+        self.load()
         path = str(Path.home() / '.britive' / 'config')  # handle os specific separators properly
         with open(path, 'r') as f:
             npm_config = toml.load(f)

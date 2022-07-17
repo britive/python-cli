@@ -8,7 +8,7 @@ def validate_tenant(ctx, self, value):
 
 
 option = click.option(
-    '--tenant', '-t',
+    '--tenant', '-t', 'configure_tenant',
     callback=validate_tenant,
     default=None,
     help='The name of the tenant: [tenant].britive-app.com.'

@@ -24,6 +24,9 @@ def build_britive(f):
             token=kwargs.get('token'),
             silent=kwargs.get('silent', False)
         ))
-        ctx.obj.britive.set_output_format(kwargs.get('output_format'))
+
+        parent_command = ctx.parent.command.name
+        if parent_command != 'configure':
+            ctx.obj.britive.set_output_format(kwargs.get('output_format'))
         return f(ctx=ctx, **kwargs)
     return wrapper
