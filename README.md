@@ -61,7 +61,15 @@ Britive tenant. The below list is the order of operations for determining the te
 The CLI currently offers only one way in which temporary credentials obtained via interactive login can be stored.
 Future enhancements aim to offer other credential storage options.
 
-* File: credentials will be stored in a plaintext file located at `~/.britive/pybritive.credentials`
+### File
+
+Credentials will be stored in a plaintext file located at `~/.britive/pybritive.credentials`
+
+### Encrypted File
+Credentials will be stored in an encrypted file located at `~/.britive/pybritive.credentials.encrypted`.
+
+The user will be prompted for a passphrase to use to encrypt the file. The user can also pass in the passphrase
+via flag `--passphrase/-p` or via environment variable `PYBRITIVE_ENCRYPTED_CREDENTIAL_PASSPHRASE`.
 
 
 ## Shell Completion

@@ -9,13 +9,16 @@ from .commands.checkout import checkout as command_checkout
 from .commands.checkin import checkin as command_checkin
 from .commands.secret import secret as group_secret
 from .commands.cache import cache as group_cache
+import sys
+
+# sys.tracebacklimit = 0
 
 
 def safe_cli():
     try:
         cli()
     except Exception as e:
-        raise click.ClickException(str(e)) #from None
+        raise click.ClickException(str(e)) # from None
 
 
 # this is the "main" app - it really does nothing but print the overview/help section

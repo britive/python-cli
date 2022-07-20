@@ -1,7 +1,7 @@
 import io
 from britive.britive import Britive
 from .helpers.config import ConfigManager
-from .helpers.credentials import FileCredentialManager
+from .helpers.credentials import FileCredentialManager, EncryptedFileCredentialManager
 import json
 import click
 import csv
@@ -49,13 +49,16 @@ class BritiveCli:
         else:
             while True:  # will break after we successfully get logged in
                 try:
+                    credential_manager = EncryptedFileCredentialManager(
+                        tenant_alias=self.tenant_alias,
+                        tenant_name=self.tenant_name,
+                        cli=self,
+                        passphrase="test"
+                    )
+
                     self.b = Britive(
                         tenant=self.tenant_name,
-                        token=FileCredentialManager(
-                            tenant_alias=self.tenant_alias,
-                            tenant_name=self.tenant_name,
-                            cli=self
-                        ).get_token(),
+                        token=credential_manager.get_token(),
                         query_features=True
                     )
                     break

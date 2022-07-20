@@ -7,6 +7,13 @@ from pathlib import Path
 import click
 import configparser
 import json
+from cryptography.fernet import Fernet, InvalidToken
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+from .config import ConfigManager
+import uuid
+import os
 
 
 interactive_login_fields_to_pop = [
@@ -38,7 +45,7 @@ def b64_encode_url_safe(value: bytes):
 
 # this base class expects self.credentials to be a dict - so sub classes need to convert to dict
 class CredentialManager:
-    def __init__(self, tenant_name: str, tenant_alias: str, cli: object):
+    def __init__(self, tenant_name: str, tenant_alias: str, cli: ConfigManager):
         self.cli = cli
         self.tenant = tenant_name
         self.alias = tenant_alias
@@ -127,7 +134,7 @@ class CredentialManager:
 
 
 class FileCredentialManager(CredentialManager):
-    def __init__(self, tenant_name: str, tenant_alias: str, cli: object):
+    def __init__(self, tenant_name: str, tenant_alias: str, cli: ConfigManager):
         self.path = str(Path.home() / '.britive' / 'pybritive.credentials')
         super().__init__(tenant_name, tenant_alias, cli)
 
@@ -159,6 +166,91 @@ class FileCredentialManager(CredentialManager):
 
         # write the new credentials file
         with open(str(self.path), 'w') as f:
+            config.write(f, space_around_delimiters=False)
+        self.credentials = credentials
+
+    def delete(self):
+        self.save(None)
+
+
+class EncryptedFileCredentialManager(CredentialManager):
+    def __init__(self, tenant_name: str, tenant_alias: str, cli: ConfigManager, passphrase: str = None):
+        self.path = str(Path.home() / '.britive' / 'pybritive.credentials.encrypted')
+        self.passphrase = passphrase
+        self.prompt()
+        super().__init__(tenant_name, tenant_alias, cli)
+
+    @staticmethod
+    def salt():
+        return base64.b64encode(os.urandom(32)).decode('utf-8')
+
+    def key(self, salt: str):
+        kdf = PBKDF2HMAC(
+            algorithm=hashes.SHA256(),
+            length=32,
+            salt=base64.b64decode(salt.encode()),
+            iterations=100000,
+            backend=default_backend()
+        )
+        key = base64.urlsafe_b64encode(kdf.derive(self.passphrase.encode()))
+        return key
+        # return [Fernet(key), base64.b64encode(salt).decode("utf-8")]
+
+    def prompt(self):
+        if not self.passphrase:
+            self.passphrase = click.prompt('Enter passphrase to be used to encrypt/decrypt the credentials file')
+
+    def decrypt(self, encrypted_access_token: str):
+        try:
+            encrypted_access_token, b64salt = encrypted_access_token.split(':')
+            key = self.key(b64salt)
+            return Fernet(key).decrypt(base64.b64decode(encrypted_access_token.encode())).decode('utf-8')
+        except InvalidToken:
+            raise click.ClickException('Invalid passphrase provided. Unable to decrypt credentials.')
+
+    def encrypt(self, decrypted_access_token: str):
+        salt = self.salt()
+        key = self.key(salt)
+        encrypted_access_token = Fernet(key).encrypt(decrypted_access_token.encode())
+        return f'{base64.b64encode(encrypted_access_token).decode("utf-8")}:{salt}'
+
+    def load(self, full=False):
+        path = Path(self.path)
+        if not path.is_file():  # credentials file does not yet exist, create it as an empty file
+            path.parent.mkdir(exist_ok=True, parents=True)
+            path.write_text('')
+
+        # open the file with configparser
+        credentials = configparser.ConfigParser()
+        credentials.optionxform = str  # maintain key case
+        credentials.read(self.path)
+        credentials = json.loads(json.dumps(credentials._sections))  # TODO this is messy but works for now
+
+        # perform the decryption of the accessToken
+        for alias, details in credentials.items():
+            details['accessToken'] = self.decrypt(details['accessToken'])
+
+        if full:
+            return credentials
+        return credentials.get(self.alias, None)
+
+    def save(self, credentials: dict):
+        full_credentials = self.load(full=True)
+        if credentials is None:
+            full_credentials.pop(self.alias, None)
+        else:
+            full_credentials[self.alias] = credentials
+
+        # perform the encryption of the accessToken
+        for alias, details in full_credentials.items():
+            details['accessToken'] = self.encrypt(details['accessToken'])
+
+        config = configparser.ConfigParser()
+        config.optionxform = str  # maintain key case
+        config.read_dict(full_credentials)
+
+        # write the new credentials file
+        with open(self.path, 'w') as f:
             config.write(f, space_around_delimiters=False)
         self.credentials = credentials
 
