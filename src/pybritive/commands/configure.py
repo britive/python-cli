@@ -1,5 +1,6 @@
 import click
 from ..choices.output_format import output_format_choices
+from ..choices.backend import backend_choices
 from ..options.britive_options import britive_options
 from ..helpers.build_britive import build_britive
 
@@ -61,8 +62,8 @@ def tenant(ctx, configure_tenant, configure_alias, output_format, configure_prom
 
 @configure.command(name='global')  # have to specify the name since global is a reserved word
 @build_britive
-@britive_options(names='configure_tenant,format,configure_prompt')
-def global_command(ctx, configure_tenant, output_format, configure_prompt):
+@britive_options(names='configure_tenant,format,configure_prompt,configure_backend')
+def global_command(ctx, configure_tenant, output_format, configure_prompt, configure_backend):
     """
     Configures global level settings for the PyBritive CLI.
 
@@ -71,6 +72,7 @@ def global_command(ctx, configure_tenant, output_format, configure_prompt):
     default_tenant_name = configure_tenant
     no_prompt = configure_prompt
     output_format = output_format
+    backend = configure_backend
 
     if not no_prompt:
         if not default_tenant_name:
@@ -80,17 +82,24 @@ def global_command(ctx, configure_tenant, output_format, configure_prompt):
             )
         if not output_format:
             output_format = click.prompt(
-                'Output format (csv|json|table|yaml): ',
+                'Output format (csv|json|table|yaml)',
                 default='json',
                 type=output_format_choices
             )
         if not output_format or output_format not in output_format_choices.choices:
             ctx.obj.britive.print(f'Invalid output format {output_format} provided. Defaulting to "json".')
             output_format = 'json'
+        if not backend:
+            backend = click.prompt(
+                'Britive temporary credential storage backend',
+                default='file',
+                type=backend_choices
+            )
 
     ctx.obj.britive.configure_global(
         default_tenant_name=default_tenant_name,
-        output_format=output_format
+        output_format=output_format,
+        backend=backend
     )
 
 

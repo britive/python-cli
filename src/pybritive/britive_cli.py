@@ -17,7 +17,7 @@ default_table_format = 'fancy_grid'
 
 
 class BritiveCli:
-    def __init__(self, tenant_name: str = None, token: str = None, silent: bool = False):
+    def __init__(self, tenant_name: str = None, token: str = None, silent: bool = False, passphrase: str = None):
         self.silent = silent
         self.output_format = None
         self.tenant_name = None
@@ -27,9 +27,31 @@ class BritiveCli:
         self.available_profiles = None
         self.config = ConfigManager(tenant_name=tenant_name, cli=self)
         self.list_separator = '|'
+        self.passphrase = passphrase
+        self.credential_manager = None
 
     def set_output_format(self, output_format: str):
         self.output_format = self.config.get_output_format(output_format)
+
+    def set_credential_manager(self):
+        if self.credential_manager:
+            return
+        backend = self.config.backend()
+        if backend == 'file':
+            self.credential_manager = FileCredentialManager(
+                tenant_alias=self.tenant_alias,
+                tenant_name=self.tenant_name,
+                cli=self
+            )
+        elif backend == 'encrypted-file':
+            self.credential_manager = EncryptedFileCredentialManager(
+                tenant_alias=self.tenant_alias,
+                tenant_name=self.tenant_name,
+                cli=self,
+                passphrase=self.passphrase
+            )
+        else:
+            raise click.ClickException(f'invalid credential backend {backend}.')
 
     def login(self, explicit: bool = False):
         self.tenant_name = self.config.get_tenant()['name']
@@ -49,16 +71,10 @@ class BritiveCli:
         else:
             while True:  # will break after we successfully get logged in
                 try:
-                    credential_manager = EncryptedFileCredentialManager(
-                        tenant_alias=self.tenant_alias,
-                        tenant_name=self.tenant_name,
-                        cli=self,
-                        passphrase="test"
-                    )
-
+                    self.set_credential_manager()
                     self.b = Britive(
                         tenant=self.tenant_name,
-                        token=credential_manager.get_token(),
+                        token=self.credential_manager.get_token(),
                         query_features=True
                     )
                     break
@@ -66,11 +82,8 @@ class BritiveCli:
                     self._cleanup_credentials()
 
     def _cleanup_credentials(self):
-        FileCredentialManager(
-            tenant_alias=self.tenant_alias,
-            tenant_name=self.tenant_name,
-            cli=self
-        ).delete()
+        self.set_credential_manager()
+        self.credential_manager.delete()
 
     def logout(self):
         if self.token:
@@ -322,10 +335,11 @@ class BritiveCli:
             output_format=output_format
         )
 
-    def configure_global(self, default_tenant_name, output_format):
+    def configure_global(self, default_tenant_name, output_format, backend):
         self.config.save_global(
             default_tenant_name=default_tenant_name,
-            output_format=output_format
+            output_format=output_format,
+            backend=backend
         )
 
     def viewsecret(self, path, blocktime, justification,maxpolltime):
@@ -403,6 +417,7 @@ class BritiveCli:
     @staticmethod
     def cache_clear():
         Cache().clear()
+
 
 
 

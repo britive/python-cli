@@ -15,6 +15,8 @@ from ..options.silent import option as silent
 from ..options.console import option as console
 from ..options.checked_out import option as checked_out
 from ..options.file import option as file
+from ..options.configure_backend import option as configure_backend
+from ..options.passphrase import option as passphrase
 
 options_map = {
     'tenant': tenant,
@@ -33,7 +35,9 @@ options_map = {
     'silent': silent,
     'console': console,
     'checked_out': checked_out,
-    'file': file
+    'file': file,
+    'configure_backend': configure_backend,
+    'passphrase': passphrase
 }
 
 

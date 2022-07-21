@@ -22,7 +22,8 @@ def build_britive(f):
         ctx.obj = Common(BritiveCli(
             tenant_name=kwargs.get('tenant'),
             token=kwargs.get('token'),
-            silent=kwargs.get('silent', False)
+            silent=kwargs.get('silent', False),
+            passphrase=kwargs.get('passphrase')
         ))
 
         parent_command = ctx.parent.command.name

@@ -6,9 +6,10 @@ from ..completers.profile import profile_completer
 
 @click.command()
 @build_britive
-@britive_options(names='alias,blocktime,console,justification,mode,maxpolltime,silent,tenant,token')
+@britive_options(names='alias,blocktime,console,justification,mode,maxpolltime,silent,tenant,token,passphrase')
 @click.argument('profile', shell_complete=profile_completer)
-def checkout(ctx, alias, blocktime, console, justification, mode, maxpolltime, silent, tenant, token, profile):
+def checkout(ctx, alias, blocktime, console, justification, mode, maxpolltime, silent, tenant, token,
+             passphrase, profile):
     """
     Checkout a profile.
 

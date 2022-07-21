@@ -194,11 +194,13 @@ class EncryptedFileCredentialManager(CredentialManager):
         )
         key = base64.urlsafe_b64encode(kdf.derive(self.passphrase.encode()))
         return key
-        # return [Fernet(key), base64.b64encode(salt).decode("utf-8")]
 
     def prompt(self):
         if not self.passphrase:
-            self.passphrase = click.prompt('Enter passphrase to be used to encrypt/decrypt the credentials file')
+            self.passphrase = click.prompt(
+                'Enter passphrase to be used to encrypt/decrypt the credentials file',
+                hide_input=True
+            )
 
     def decrypt(self, encrypted_access_token: str):
         try:
@@ -240,6 +242,8 @@ class EncryptedFileCredentialManager(CredentialManager):
             full_credentials.pop(self.alias, None)
         else:
             full_credentials[self.alias] = credentials
+            # effectively a deep copy, must set before encryption!
+            self.credentials = json.loads(json.dumps(credentials))
 
         # perform the encryption of the accessToken
         for alias, details in full_credentials.items():
@@ -250,9 +254,8 @@ class EncryptedFileCredentialManager(CredentialManager):
         config.read_dict(full_credentials)
 
         # write the new credentials file
-        with open(self.path, 'w') as f:
+        with open(str(self.path), 'w') as f:
             config.write(f, space_around_delimiters=False)
-        self.credentials = credentials
 
     def delete(self):
         self.save(None)

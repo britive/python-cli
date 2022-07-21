@@ -35,6 +35,7 @@ class ConfigManager:
         self.tenants = None
         self.profile_aliases = None
         self.cli = cli
+        self.loaded = False
 
     def get_output_format(self, output_format: str = None):
         return coalesce(
@@ -45,6 +46,8 @@ class ConfigManager:
         )
 
     def load(self):
+        if self.loaded:
+            return
         path = Path(self.path)
 
         if not path.is_file():
@@ -63,6 +66,7 @@ class ConfigManager:
                 ignore, alias = key.split('-')
                 self.tenants[alias] = self.config[key]
         self.profile_aliases = self.config.get('profile-aliases', {})
+        self.loaded = True
 
     def get_tenant(self):
         # load up the config - doing it here instead of __init__ for the configure commands since config won't
@@ -115,9 +119,9 @@ class ConfigManager:
             self.config[f'tenant-{alias}']['output_format'] = output_format
         self.save()
 
-    def save_global(self, default_tenant_name: str = None, output_format: str = None):
+    def save_global(self, default_tenant_name: str = None, output_format: str = None, backend: str = None):
         self.load()
-        if not default_tenant_name and not output_format:
+        if not default_tenant_name and not output_format and not backend:
             return
         if 'global' not in self.config.keys():
             self.config['global'] = {}
@@ -125,6 +129,8 @@ class ConfigManager:
             self.config['global']['default_tenant'] = default_tenant_name
         if output_format:
             self.config['global']['output_format'] = output_format
+        if backend:
+            self.config['global']['credential_backend'] = backend
         self.save()
 
     def save_profile_alias(self, alias, profile):
@@ -160,3 +166,6 @@ class ConfigManager:
 
         return npm_config.get('envProfileMap', {})
 
+    def backend(self):
+        self.load()
+        return self.config.get('global', {}).get('credential_backend', 'file')

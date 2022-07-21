@@ -5,8 +5,8 @@ from ..options.britive_options import britive_options
 
 @click.command()
 @build_britive
-@britive_options(names='tenant')
-def logout(ctx, tenant):
+@britive_options(names='tenant,passphrase')
+def logout(ctx, tenant, passphrase):
     """
     Logout of an interactive login session.
 
