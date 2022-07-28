@@ -113,15 +113,15 @@ class CredentialManager:
         # we should NEVER get here but adding here just in case
         raise click.ClickException('Must use a subclass of CredentialManager')
 
-    def get_credentials(self):
-        if self.has_valid_credentials():
-            return self.credentials
-        else:  # no credentials or expired creds for the given tenant so perform interactive login
-            self.perform_interactive_login()  # will write the credentials out and update self.credentials as needed
-            return self.credentials
+    # this helper exists since subclasses may need to override the method due to how the
+    # access token may be encrypted and/or stored
+    def _get_token(self):
+        return self.credentials['accessToken']
 
     def get_token(self):
-        return self.get_credentials()['accessToken']
+        if not self.has_valid_credentials():  # no credentials or expired creds for the  tenant so do interactive login
+            self.perform_interactive_login()  # will write the credentials out and update self.credentials as needed
+        return self._get_token()
 
     def has_valid_credentials(self):
         if not self.credentials or self.credentials == {}:
@@ -228,26 +228,23 @@ class EncryptedFileCredentialManager(CredentialManager):
         credentials.read(self.path)
         credentials = json.loads(json.dumps(credentials._sections))  # TODO this is messy but works for now
 
-        # perform the decryption of the accessToken
-        for alias, details in credentials.items():
-            details['accessToken'] = self.decrypt(details['accessToken'])
-
         if full:
             return credentials
         return credentials.get(self.alias, None)
+
+    def _get_token(self):
+        # we should do a just-in-time decryption so unencrypted creds are not stored in memory
+        return self.decrypt(self.credentials['accessToken'])
 
     def save(self, credentials: dict):
         full_credentials = self.load(full=True)
         if credentials is None:
             full_credentials.pop(self.alias, None)
         else:
+            credentials['accessToken'] = self.encrypt(credentials['accessToken'])
             full_credentials[self.alias] = credentials
-            # effectively a deep copy, must set before encryption!
+            # effectively a deep copy
             self.credentials = json.loads(json.dumps(credentials))
-
-        # perform the encryption of the accessToken
-        for alias, details in full_credentials.items():
-            details['accessToken'] = self.encrypt(details['accessToken'])
 
         config = configparser.ConfigParser()
         config.optionxform = str  # maintain key case
