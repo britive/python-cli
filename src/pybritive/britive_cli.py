@@ -64,7 +64,7 @@ class BritiveCli:
                 self.b = Britive(
                     tenant=self.tenant_name,
                     token=self.token,
-                    query_features=True
+                    query_features=False
                 )
             except exceptions.UnauthorizedRequest as e:
                 raise click.ClickException('Invalid API token provided.')
@@ -75,7 +75,7 @@ class BritiveCli:
                     self.b = Britive(
                         tenant=self.tenant_name,
                         token=self.credential_manager.get_token(),
-                        query_features=True
+                        query_features=False
                     )
                     break
                 except exceptions.UnauthorizedRequest as e:
@@ -143,34 +143,40 @@ class BritiveCli:
 
     def list_profiles(self, checked_out: bool = False):
         self.login()
+        self._set_available_profiles()
         data = []
         checked_out = [p['papId'] for p in self.b.my_access.list_checked_out_profiles()] if checked_out else []
-        for app in self.b.my_access.list_profiles():
-            for profile in app.get('profiles', []):
-                for env in profile.get('environments', []):
-                    if not checked_out or profile['profileId'] in checked_out:
-                        row = {
-                            'Application': app['appName'],
-                            'Environment Name': env['environmentName'],
-                            'Profile Name': profile['profileName'],
-                            'Description': profile['profileDescription'],
-                            'Type': app['catalogAppName']
-                        }
-                        if self.output_format == 'list':
-                            self.list_separator = '/'
-                            row.pop('Description')
-                            row.pop('Type')
-                        data.append(row)
+
+        for profile in self.available_profiles:
+            if not checked_out or profile['profileId'] in checked_out:
+                row = {
+                    'Application': profile['app_name'],
+                    'Environment Name': profile['env_name'],
+                    'Profile Name': profile['profile_name'],
+                    'Description': profile['profile_description'],
+                    'Type': profile['app_type']
+                }
+                if self.output_format == 'list':
+                    self.list_separator = '/'
+                    row.pop('Description')
+                    row.pop('Type')
+                data.append(row)
         self.print(data)
 
     def list_applications(self):
         self.login()
+        self._set_available_profiles()
+        keys = ['app_name', 'app_type', 'app_description']
+        apps = []
+        for profile in self.available_profiles:
+            apps.append({k: v for k, v in profile.items() if k in keys})
+        apps = [dict(t) for t in {tuple(d.items()) for d in apps}]  # de-dup
         data = []
-        for app in self.b.my_access.list_profiles():
+        for app in apps:
             row = {
-                'Application': app['appName'],
-                'Type': app['catalogAppName'],
-                'Description': app['appDescription'],
+                'Application': app['app_name'],
+                'Type': app['app_type'],
+                'Description': app['app_description'],
 
             }
             data.append(row)
@@ -178,17 +184,22 @@ class BritiveCli:
 
     def list_environments(self):
         self.login()
+        self._set_available_profiles()
+        envs = []
+        keys = ['app_name', 'app_type', 'env_name', 'env_description']
+        for profile in self.available_profiles:
+            envs.append({k: v for k, v in profile.items() if k in keys})
+        envs = [dict(t) for t in {tuple(d.items()) for d in envs}]  # de-dup
+
         data = []
-        for app in self.b.my_access.list_profiles():
-            for profile in app.get('profiles', []):
-                for env in profile.get('environments', []):
-                    row = {
-                        'Application': app['appName'],
-                        'Environment': env['environmentName'],
-                        'Description': env['environmentDescription'],
-                        'Type': app['catalogAppName']
-                    }
-                    data.append(row)
+        for env in envs:
+            row = {
+                'Application': env['app_name'],
+                'Environment': env['env_name'],
+                'Description': env['env_description'],
+                'Type': env['app_type']
+            }
+            data.append(row)
         self.print(data)
 
     def _set_available_profiles(self):
@@ -201,15 +212,20 @@ class BritiveCli:
                             'app_name': app['appName'],
                             'app_id': app['appContainerId'],
                             'app_type': app['catalogAppName'],
+                            'app_description': app['appDescription'],
                             'env_name': env['environmentName'],
                             'env_id': env['environmentId'],
+                            'env_description': env['environmentDescription'],
                             'profile_name': profile['profileName'],
                             'profile_id': profile['profileId'],
                             'profile_allows_console': profile['consoleAccess'],
-                            'profile_allows_programmatic': profile['programmaticAccess']
+                            'profile_allows_programmatic': profile['programmaticAccess'],
+                            'profile_description': profile['profileDescription']
                         }
                         data.append(row)
             self.available_profiles = data
+        if self.config.auto_refresh_profile_cache():
+            self.cache_profiles(load=False)
 
     def _get_app_type(self, application_id):
         self._set_available_profiles()
@@ -406,9 +422,10 @@ class BritiveCli:
             f.write(content)
         self.print(f'wrote contents of secret file to {path}')
 
-    def cache_profiles(self):
-        self.login()
-        self._set_available_profiles()
+    def cache_profiles(self, load=True):
+        if load:
+            self.login()
+            self._set_available_profiles()
         profiles = []
         for p in self.available_profiles:
             profiles.append(f"{p['app_name']}/{p['env_name']}/{p['profile_name']}")

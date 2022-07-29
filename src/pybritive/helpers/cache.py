@@ -18,7 +18,10 @@ class Cache:
             path.write_text(json.dumps(cache, indent=2, default=str))
 
         with open(str(self.path), 'r') as f:
-            self.cache = json.loads(f.read())
+            try:
+                self.cache = json.loads(f.read())
+            except json.decoder.JSONDecodeError:
+                self.cache = {}
 
         if 'profiles' not in self.cache.keys():
             self.cache['profiles'] = []

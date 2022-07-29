@@ -8,14 +8,14 @@
 
 ## Installation
 
-`pybritive` will be installed via Python `pip`. The package is not available in PyPi at this time so it will be 
-installed via the published tar balls in the Github repo.
+`pybritive` will be installed via Python `pip`. The package is not available in PyPi at this time, so it will be 
+installed via the published tar balls in the GitHub repo.
 
 ~~~bash
 pip install https://github.com/britive/python-cli/releases/download/v1.0.0/pybritive-1.0.0.tar.gz
 ~~~
 
-The end user is free to install the CLI into a virtual environment or in the global scope so it is available
+The end user is free to install the CLI into a virtual environment or in the global scope, so it is available
 everywhere.
 
 ## Tenant Configuration
@@ -28,7 +28,7 @@ There are 2 ways to tell `pybritive` about tenants.
 1. `pybritive configure import`: this will import an existing configuration from the Node.js version of the Britive CLI.
 2. `pybritive configure tenant`: This will prompt (or optionally the values can be passed via flags) for tenant details.
 
-An alias for a tenant can be created in case more than 1 tenant is configured for us. This may be the case for admins
+An alias for a tenant can be created in case more than 1 tenant is configured for use. This may be the case for admins
 who may have access to an EA and GA tenant.
 
 ## Tenant Selection Logic
@@ -58,7 +58,7 @@ Britive tenant. The below list is the order of operations for determining the te
 
 ## Credential Stores
 
-The CLI currently offers only one way in which temporary credentials obtained via interactive login can be stored.
+The CLI currently offers two ways in which temporary credentials obtained via interactive login can be stored.
 Future enhancements aim to offer other credential storage options.
 
 ### File
@@ -79,7 +79,7 @@ the following shells.
 * Bash
 * Zsh
 * Fish
-* PowerShell
+* PowerShell (work in progress for the `pybritive` cli - NOT WORKING YET)
 
 In order to set up shell completion, follow these steps. Once complete either `source` your environment again
 or start a new shell in order for the changes to be loaded.
@@ -151,3 +151,34 @@ echo $profile
 ~~~
 
 And is generally something like `C:\Users\{user}\Documents\WindowsPowerShell\Microsoft.PowerShell_profile.ps1`.
+
+### Shell Completion - Profiles - Local Cache
+
+By default, shell completion only completes commands and options/flags as those values are available without
+any authentication to a Britive tenant.
+
+There is an option to enable shell completion for profiles and profile aliases for use with `checkout` and `checkin`.
+
+In order enable this, run the following command.
+
+~~~bash
+pybritive cache profiles
+~~~
+
+This will locally cache profiles for which the authenticated user has permissions. If multiple tenants are being used
+then each tenant will need to be cached individually. All profiles across all tenants will be available during shell
+completion.
+
+The cache will not be updated over time. In order to update the cache more regularly run the following command.
+Note that this config flag is NOT available directly via `pybrtitve configure global ...`.
+
+~~~bash
+pybritive configure update global auto-refresh-profile-cache true
+~~~
+
+To turn the feature off run
+
+~~~bash
+pybritive configure update global auto-refresh-profile-cache false
+pybritive cache clear
+~~~

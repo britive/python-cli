@@ -256,3 +256,10 @@ class ConfigManager:
                 error = f'Invalid {section} field {field} value {value} provided. Tenant name cannot include ' \
                         'britive-app.com'
                 self.validation_error_messages.append(error)
+
+    def auto_refresh_profile_cache(self):
+        self.load()
+        value = self.config.get('global', {}).get('auto-refresh-profile-cache', 'false')
+        if value == 'true':
+            return True
+        return False
