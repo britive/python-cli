@@ -7,7 +7,7 @@ import pkg_resources
 def version_callback(ctx, self, value):
     if value:
         cli_version = pkg_resources.get_distribution('pybritive').version
-        click.echo(f'pybritve: {cli_version} / platform: {platform.platform()} / python: {platform.python_version()}')
+        click.echo(f'pybritive: {cli_version} / platform: {platform.platform()} / python: {platform.python_version()}')
         raise click.exceptions.Exit()
 
 
