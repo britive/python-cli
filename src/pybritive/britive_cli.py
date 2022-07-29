@@ -418,6 +418,11 @@ class BritiveCli:
     def cache_clear():
         Cache().clear()
 
+    def configure_update(self, section, field, value):
+        self.config.update(section=section, field=field, value=value)
+
+
+
 
 
 

@@ -3,6 +3,8 @@ import click
 import configparser
 import json
 import toml
+from ..choices.output_format import output_format_choices
+from ..choices.backend import backend_choices
 
 
 def lowercase(obj):
@@ -25,6 +27,24 @@ def coalesce(*arg):
     return None
 
 
+non_tenant_sections = [
+    'global',
+    'profile-aliases'
+]
+
+global_fields = [
+    'default_tenant',
+    'output_format',
+    'credential_backend',
+    'auto-refresh-profile-cache'
+]
+
+tenant_fields = [
+    'name',
+    'output_format'
+]
+
+
 class ConfigManager:
     def __init__(self, cli: object, tenant_name: str = None):
         self.tenant_name = tenant_name
@@ -36,6 +56,7 @@ class ConfigManager:
         self.profile_aliases = None
         self.cli = cli
         self.loaded = False
+        self.validation_error_messages = []
 
     def get_output_format(self, output_format: str = None):
         return coalesce(
@@ -100,6 +121,7 @@ class ConfigManager:
         return self.tenants.get(provided_tenant_name, {'name': name})
 
     def save(self):
+        self.validate()  # ensure we are actually writing a valid config
         config = configparser.ConfigParser()
         config.optionxform = str  # maintain key case
         config.read_dict(self.config)
@@ -169,3 +191,68 @@ class ConfigManager:
     def backend(self):
         self.load()
         return self.config.get('global', {}).get('credential_backend', 'file')
+
+    def update(self, section, field, value):
+        self.load()
+        if section not in self.config.keys():
+            self.config[section] = {}
+        if field not in self.config[section].keys():
+            self.config[section][field] = ''
+        self.config[section][field] = value
+        self.save()
+
+    def validate(self):
+        self.validation_error_messages = []
+
+        for section, fields in self.config.items():
+            if section not in non_tenant_sections and not section.startswith('tenant-'):
+                self.validation_error_messages.append(f'Invalid section {section} provided.')
+            if section == 'global':
+                self.validate_global(section, fields)
+            if section == 'profile-aliases':
+                self.validate_profile_aliases(section, fields)
+            if section.startswith('tenant-'):
+                self.validate_tenant(section, fields)
+
+        if len(self.validation_error_messages) > 0:
+            message = 'Cannot save config file due to invalid data provided. Details below.'
+            errors = [message] + [f'* {m}' for m in self.validation_error_messages]
+            raise click.ClickException('\n'.join(errors))
+
+    def validate_global(self, section, fields):
+        for field, value in fields.items():
+            if field not in global_fields:
+                self.validation_error_messages.append(f'Invalid {section} field {field} provided.')
+            if field == 'output_format' and value not in output_format_choices.choices:
+                error = f'Invalid {section} field {field} value {value} provided. Invalid value choice.'
+                self.validation_error_messages.append(error)
+            if field == 'credential_backend' and value not in backend_choices.choices:
+                error = f'Invalid {section} field {field} value {value} provided. Invalid value choice.'
+                self.validation_error_messages.append(error)
+            if field == 'auto-refresh-profile-cache' and value not in ['true', 'false']:
+                error = f'Invalid {section} field {field} value {value} provided. Invalid value choice.'
+                self.validation_error_messages.append(error)
+            if field == 'default_tenant':
+                tenant_aliases_from_sections = [t.split('-')[1] for t in self.config.keys() if t.startswith('tenant-')]
+                if value not in tenant_aliases_from_sections:
+                    error = f'Invalid {section} field {field} value {value} provided. Tenant not found..'
+                    self.validation_error_messages.append(error)
+
+    def validate_profile_aliases(self, section, fields):
+        for field, value in fields.items():
+            if len(value.split('/')) != 3:
+                error = f'Invalid {section} field {field} value {value} provided. Value must be 3 parts ' \
+                        'separated by a /'
+                self.validation_error_messages.append(error)
+
+    def validate_tenant(self, section, fields):
+        for field, value in fields.items():
+            if field not in tenant_fields:
+                self.validation_error_messages.append(f'Invalid {section} field {field} provided.')
+            if field == 'output_format' and value not in output_format_choices.choices:
+                error = f'Invalid {section} field {field} value {value} provided. Invalid value choice.'
+                self.validation_error_messages.append(error)
+            if field == 'name' and 'britive-app.com' in value:
+                error = f'Invalid {section} field {field} value {value} provided. Tenant name cannot include ' \
+                        'britive-app.com'
+                self.validation_error_messages.append(error)

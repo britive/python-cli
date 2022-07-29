@@ -111,3 +111,32 @@ def import_command(ctx, silent):  # silent is handled by @build_britive
     Import an existing configuration from the Node.js/NPM version of the Britive CLI.
     """
     ctx.obj.britive.import_existing_npm_config()
+
+
+@configure.command()
+@build_britive
+@britive_options(names='silent')
+@click.argument('section')
+@click.argument('field')
+@click.argument('value')
+def update(ctx, silent, section, field, value):  # silent is handled by @build_britive
+    """
+    Provides a mechanism to directly update any section/field/value in the config file.
+
+    All arguments provided will be converted to lowercase before being persisted.
+
+    SECTION: The config section (example: global, tenant-foo)
+
+    FIELD: The field within the section (example: default_tenant, name, output_format)
+
+    VALUE: The value of the field.
+
+    Example: pybritive configure update global output_format json
+    """
+    section = section.lower().strip()
+    field = field.lower().strip()
+    value = value.lower().strip()
+    ctx.obj.britive.configure_update(section=section, field=field, value=value)
+
+
+
