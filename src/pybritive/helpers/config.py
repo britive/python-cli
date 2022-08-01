@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 import click
 import configparser
@@ -5,6 +6,10 @@ import json
 import toml
 from ..choices.output_format import output_format_choices
 from ..choices.backend import backend_choices
+
+
+def extract_tenant(tenant_key):
+    return tenant_key.replace('tenant-', '')
 
 
 def lowercase(obj):
@@ -48,12 +53,13 @@ tenant_fields = [
 class ConfigManager:
     def __init__(self, cli: object, tenant_name: str = None):
         self.tenant_name = tenant_name
-        self.path = str(Path.home() / '.britive' / 'pybritive.config')  # handle os specific separators properly
+        self.home = os.getenv('PYBRITIVE_HOME_DIR', str(Path.home()))
+        self.path = str(Path(self.home) / '.britive' / 'pybritive.config')  # handle os specific separators properly
         self.config = None
         self.alias = None
         self.default_tenant = None
         self.tenants = None
-        self.profile_aliases = None
+        self.profile_aliases = {}
         self.cli = cli
         self.loaded = False
         self.validation_error_messages = []
@@ -66,28 +72,31 @@ class ConfigManager:
             'json'  # set to json if no output format is provided
         )
 
-    def load(self):
-        if self.loaded:
+    def load(self, force=False):
+        if self.loaded and not force:
             return
         path = Path(self.path)
 
-        if not path.is_file():
-            config = {}
-        else:
-            config = configparser.ConfigParser()
-            config.optionxform = str  # maintain key case
-            config.read(str(path))
-            config = json.loads(json.dumps(config._sections))  # TODO this is messy but works for now
+        if not path.is_file():  # config file does not yet exist, create it as an empty file
+            path.parent.mkdir(exist_ok=True, parents=True)
+            path.write_text('')
+
+        config = configparser.ConfigParser()
+        config.optionxform = str  # maintain key case
+        config.read(str(path))
+        config = json.loads(json.dumps(config._sections))  # TODO this is messy but works for now
+
         self.config = lowercase(config)
         self.alias = None  # will be set in self.get_tenant()
         self.default_tenant = self.config.get('global', {}).get('default_tenant')
         self.tenants = {}
         for key in list(self.config.keys()):
             if key.startswith('tenant-'):
-                ignore, alias = key.split('-')
+                alias = extract_tenant(key)
                 self.tenants[alias] = self.config[key]
         self.profile_aliases = self.config.get('profile-aliases', {})
         self.loaded = True
+
 
     def get_tenant(self):
         # load up the config - doing it here instead of __init__ for the configure commands since config won't
@@ -163,7 +172,7 @@ class ConfigManager:
     # returns a dict of profile aliases that need to be created after listing profiles
     def import_global_npm_config(self):
         self.load()
-        path = str(Path.home() / '.britive' / 'config')  # handle os specific separators properly
+        path = str(Path(self.home) / '.britive' / 'config')  # handle os specific separators properly
         with open(path, 'r') as f:
             npm_config = toml.load(f)
         tenant = npm_config.get('tenantURL', '').replace('https://', '').replace('.britive-app.com', '').lower()
@@ -184,7 +193,7 @@ class ConfigManager:
             self.config['global']['output_format'] = output_format
 
         self.save()
-        self.load()
+        self.load(force=True)
 
         return npm_config.get('envProfileMap', {})
 
@@ -233,9 +242,11 @@ class ConfigManager:
                 error = f'Invalid {section} field {field} value {value} provided. Invalid value choice.'
                 self.validation_error_messages.append(error)
             if field == 'default_tenant':
-                tenant_aliases_from_sections = [t.split('-')[1] for t in self.config.keys() if t.startswith('tenant-')]
+                tenant_aliases_from_sections = [
+                    extract_tenant(t) for t in self.config.keys() if t.startswith('tenant-')
+                ]
                 if value not in tenant_aliases_from_sections:
-                    error = f'Invalid {section} field {field} value {value} provided. Tenant not found..'
+                    error = f'Invalid {section} field {field} value {value} provided. Tenant not found.'
                     self.validation_error_messages.append(error)
 
     def validate_profile_aliases(self, section, fields):

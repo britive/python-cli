@@ -12,7 +12,6 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from .config import ConfigManager
-import uuid
 import os
 
 
@@ -135,7 +134,8 @@ class CredentialManager:
 
 class FileCredentialManager(CredentialManager):
     def __init__(self, tenant_name: str, tenant_alias: str, cli: ConfigManager):
-        self.path = str(Path.home() / '.britive' / 'pybritive.credentials')
+        home = os.getenv('PYBRITIVE_HOME_DIR', str(Path.home()))
+        self.path = str(Path(home) / '.britive' / 'pybritive.credentials')
         super().__init__(tenant_name, tenant_alias, cli)
 
     def load(self, full=False):
@@ -175,7 +175,8 @@ class FileCredentialManager(CredentialManager):
 
 class EncryptedFileCredentialManager(CredentialManager):
     def __init__(self, tenant_name: str, tenant_alias: str, cli: ConfigManager, passphrase: str = None):
-        self.path = str(Path.home() / '.britive' / 'pybritive.credentials.encrypted')
+        home = os.getenv('PYBRITIVE_HOME_DIR', str(Path.home()))
+        self.path = str(Path(home) / '.britive' / 'pybritive.credentials.encrypted')
         self.passphrase = passphrase
         self.prompt()
         super().__init__(tenant_name, tenant_alias, cli)

@@ -1,10 +1,12 @@
 from pathlib import Path
 import json
+import os
 
 
 class Cache:
     def __init__(self):
-        self.path = str(Path.home() / '.britive' / 'pybritive.cache')  # handle os specific separators properly
+        home = os.getenv('PYBRITIVE_HOME_DIR', str(Path.home()))
+        self.path = str(Path(home) / '.britive' / 'pybritive.cache')  # handle os specific separators properly
         self.cache = {}
         self.load()
 

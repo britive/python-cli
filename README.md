@@ -72,6 +72,13 @@ The user will be prompted for a passphrase to use to encrypt the file. The user 
 via flag `--passphrase/-p` or via environment variable `PYBRITIVE_ENCRYPTED_CREDENTIAL_PASSPHRASE`.
 
 
+## Home Directory
+By default, files that `pybritive` requires will be persisted to `~/.britive/`. 
+
+This can be overwritten by specifying environment variable `PYBRITIVE_HOME_DIR`. This should be a path to where
+the end user wants to persist the `.britive` directory. Note that `.britive` will still be created so do not specify
+that as part of the path.
+
 ## Shell Completion
 Behind the scenes the `pybritive` CLI tool uses the python `click` package. `click` offers shell completion for
 the following shells.

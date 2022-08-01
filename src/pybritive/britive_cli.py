@@ -1,4 +1,6 @@
 import io
+import os
+
 from britive.britive import Britive
 from .helpers.config import ConfigManager
 from .helpers.credentials import FileCredentialManager, EncryptedFileCredentialManager
@@ -22,7 +24,7 @@ class BritiveCli:
         self.output_format = None
         self.tenant_name = None
         self.tenant_alias = None
-        self.token = token
+        self.token = token or os.getenv('BRITIVE_API_TOKEN')  # or is required here for configure import
         self.b = None
         self.available_profiles = None
         self.config = ConfigManager(tenant_name=tenant_name, cli=self)
@@ -151,8 +153,8 @@ class BritiveCli:
             if not checked_out or profile['profileId'] in checked_out:
                 row = {
                     'Application': profile['app_name'],
-                    'Environment Name': profile['env_name'],
-                    'Profile Name': profile['profile_name'],
+                    'Environment': profile['env_name'],
+                    'Profile': profile['profile_name'],
                     'Description': profile['profile_description'],
                     'Type': profile['app_type']
                 }
@@ -335,7 +337,7 @@ class BritiveCli:
         self.print('')
 
         for alias, ids in profile_aliases.items():
-            if '/' in alias:
+            if '/' in alias:  # no need to import the aliases that aren't really aliases
                 continue
             app, env, profile, cloud = ids.split('/')
             for p in self.available_profiles:
