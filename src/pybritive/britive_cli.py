@@ -24,7 +24,7 @@ class BritiveCli:
         self.output_format = None
         self.tenant_name = None
         self.tenant_alias = None
-        self.token = token or os.getenv('BRITIVE_API_TOKEN')  # or is required here for configure import
+        self.token = token
         self.b = None
         self.available_profiles = None
         self.config = ConfigManager(tenant_name=tenant_name, cli=self)

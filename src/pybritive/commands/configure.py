@@ -105,8 +105,8 @@ def global_command(ctx, configure_tenant, output_format, configure_prompt, confi
 
 @configure.command(name='import')  # have to specify the name since import is a reserved word
 @build_britive
-@britive_options(names='silent')
-def import_command(ctx, silent):  # silent is handled by @build_britive
+@britive_options(names='silent, token')
+def import_command(ctx, silent, token):  # silent is handled by @build_britive
     """
     Import an existing configuration from the Node.js/NPM version of the Britive CLI.
     """

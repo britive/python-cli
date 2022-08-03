@@ -21,8 +21,7 @@ def prepare_dot_britive():
     prepare = os.getenv('PYBRITIVE_PREPARE_DOT_BRITIVE', 'false')
     if prepare == 'true':
         local_home = os.getenv('PYBRITIVE_HOME_DIR')
-        unit = os.getenv('PYBRITIVE_UNIT_TESTING')
-        if home and not unit:
+        if home:
             rm_tree(Path(local_home) / '.britive')
 
 
