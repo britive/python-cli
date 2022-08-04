@@ -68,7 +68,7 @@ class BritiveCli:
                     token=self.token,
                     query_features=False
                 )
-            except exceptions.UnauthorizedRequest as e:
+            except exceptions.UnauthorizedRequest:
                 raise click.ClickException('Invalid API token provided.')
         else:
             while True:  # will break after we successfully get logged in
@@ -82,6 +82,11 @@ class BritiveCli:
                     break
                 except exceptions.UnauthorizedRequest as e:
                     self._cleanup_credentials()
+
+        # if user called `pybritive login` and we should refresh the profile cache...do so
+        if explicit and self.config.auto_refresh_profile_cache():
+            self._set_available_profiles()
+            self.cache_profiles()
 
     def _cleanup_credentials(self):
         self.set_credential_manager()

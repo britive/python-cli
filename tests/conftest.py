@@ -3,6 +3,7 @@ from click.testing import CliRunner
 from pybritive import cli_interface
 import os
 from pathlib import Path
+import json
 
 
 def rm_tree(pth: Path):
@@ -57,6 +58,15 @@ def runner():
 def cli():
     return cli_interface.cli
 
+
+@pytest.fixture
+def profile():
+    local_home = os.getenv('PYBRITIVE_HOME_DIR')
+    path = Path(Path(local_home) / '.britive' / 'pybritive.cache')
+    with open(str(path), 'r') as f:
+        data = json.loads(f.read())
+    profile = [p for p in data['profiles'] if 'AWS' in p][-1]
+    return profile
 
 
 
