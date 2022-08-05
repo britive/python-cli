@@ -14,7 +14,7 @@
 installed via the published tar balls in the GitHub repo.
 
 ~~~bash
-pip install https://github.com/britive/python-cli/releases/download/v0.1.0/pybritive-0.1.0.tar.gz
+pip install https://github.com/britive/python-cli/releases/download/v0.1.1/pybritive-0.1.1.tar.gz
 ~~~
 
 The end user is free to install the CLI into a virtual environment or in the global scope, so it is available
