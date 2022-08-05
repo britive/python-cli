@@ -7,6 +7,7 @@ __pycache__/
 .out
 .idea*
 testing-variables.txt
+.DS_Store
 
 # C extensions
 *.so
