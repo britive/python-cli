@@ -1,3 +1,5 @@
+# BETA - NOTE: This is a BETA release. This codebase should not be used for production workloads.
+
 # Britive CLI - Pure Python Implementation
 
 
@@ -12,7 +14,7 @@
 installed via the published tar balls in the GitHub repo.
 
 ~~~bash
-pip install https://github.com/britive/python-cli/releases/download/v1.0.0/pybritive-1.0.0.tar.gz
+pip install https://github.com/britive/python-cli/releases/download/v0.1.0/pybritive-0.1.0.tar.gz
 ~~~
 
 The end user is free to install the CLI into a virtual environment or in the global scope, so it is available
@@ -101,7 +103,7 @@ _PYBRITIVE_COMPLETE=bash_source pybritive > ~/.pybritive-complete.bash
 Source the file in `~/.bashrc`.
 
 ~~~
-. ~/.pybritive-complete.bash
+source ~/.pybritive-complete.bash
 ~~~
 
 ### Zsh
@@ -114,7 +116,7 @@ _PYBRITIVE_COMPLETE=zsh_source pybritive > ~/.pybritive-complete.zsh
 Source the file in `~/.zshrc`.
 
 ~~~
-. ~/.pybritive-complete.zsh
+source ~/.pybritive-complete.zsh
 ~~~
 
 ### Fish
