@@ -5,8 +5,8 @@ from ..options.britive_options import britive_options
 
 @click.command()
 @build_britive
-@britive_options(names='tenant,passphrase')
-def login(ctx, tenant, passphrase):
+@britive_options(names='tenant,token,passphrase')
+def login(ctx, tenant, token, passphrase):
     """
     Perform an interactive login to obtain temporary credentials.
 
