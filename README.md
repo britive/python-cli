@@ -14,7 +14,7 @@
 installed via the published tar balls in the GitHub repo.
 
 ~~~bash
-pip install https://github.com/britive/python-cli/releases/download/v0.1.1/pybritive-0.1.1.tar.gz
+pip install https://github.com/britive/python-cli/releases/download/v0.1.2/pybritive-0.1.2.tar.gz
 ~~~
 
 The end user is free to install the CLI into a virtual environment or in the global scope, so it is available
@@ -82,13 +82,19 @@ the end user wants to persist the `.britive` directory. Note that `.britive` wil
 that as part of the path.
 
 ## Shell Completion
+
+TODO: Provide more automated scripts here to automatically add the required configs to the profiles. For now the below works just fine though.
+
 Behind the scenes the `pybritive` CLI tool uses the python `click` package. `click` offers shell completion for
 the following shells.
 
 * Bash
 * Zsh
 * Fish
-* PowerShell (work in progress for the `pybritive` cli - NOT WORKING YET)
+
+A shell completion script has been written for the following shells as well.
+
+* PowerShell
 
 In order to set up shell completion, follow these steps. Once complete either `source` your environment again
 or start a new shell in order for the changes to be loaded.
@@ -130,26 +136,40 @@ _PYBRITIVE_COMPLETE=fish_source pybritive > ~/.config/fish/completions/foo-bar.f
 Append the below code to your PowerShell profile.
 
 ~~~
-if ((Test-Path Function:\TabExpansion) -and -not (Test-Path Function:\pybritiveTabExpansionBackup)) {
-    Rename-Item Function:\TabExpansion pybritiveTabExpansionBackup
+$pybritive_completion = {
+    param($wordToComplete, $commandAst, $cursorPosition)
+
+    # in case of scripts, this object holds the current line after string conversion
+    $line = "$commandAst"
+
+    # The behaviour of completion should depend on the trailing spaces in the current line:
+    # * "command subcommand " --> TAB --> Completion items parameters/sub-subcommands of "subcommand"
+    # * "command subcom" --> TAB --> Completion items to extend "subcom" into matching subcommands.
+    # $line never contains the trailing spaces. However, $cursorPosition is the length of the original
+    # line (with trailing spaces) in this case. This comparison allows the expected user experience.
+    if ($cursorPosition -gt $line.Length) {
+        $line = "$line "
+    }
+
+    # set environment variables that pybritive completion will use
+    New-Item -Path Env: -Name COMP_LINE -Value $line | Out-Null # Current line
+    New-Item -Path Env: -Name _PYBRITIVE_COMPLETE -Value "powershell_complete" | Out-Null
+
+    # call pybritive and it will inspect env vars and provide completion results
+    Invoke-Expression pybritive -ErrorAction SilentlyContinue | Tee-Object -Var completionResult | Out-Null
+
+    # cleanup environment variables
+    Remove-Item Env:\COMP_LINE | Out-Null
+    Remove-Item Env:\_PYBRITIVE_COMPLETE | Out-Null
+
+    # get list of completion items
+    $items = $completionResult -split '\r?\n'
+
+    $items | ForEach-Object {"$_ "} # trailing space important as completion is "done"
 }
 
-function TabExpansion($line, $lastWord) {
-    $lastBlock = [regex]::Split($line, '[|;]')[-1].TrimStart()
-    $aliases = @("pybritive") + @(Get-Alias | where { $_.Definition -eq "pybritive" } | select -Exp Name)
-    $aliasPattern = "($($aliases -join '|'))"
-    if($lastBlock -match "^$aliasPattern ") {
-        $Env:_PYBRITIVE_COMPLETE = "complete-powershell"
-        $Env:COMMANDLINE = "$lastBlock"
-        (pybritive) | ? {$_.trim() -ne "" }
-        Remove-Item Env:_PYBRITIVE_COMPLETE
-        Remove-Item Env:COMMANDLINE
-    }
-    elseif (Test-Path Function:\pybritiveTabExpansionBackup) {
-        # Fall back on existing tab expansion
-        pybritiveTabExpansionBackup $line $lastWord
-    }
-}
+# register tab completion
+Register-ArgumentCompleter -Native -CommandName pybritive -ScriptBlock $pybritive_completion
 ~~~
 
 
@@ -160,6 +180,8 @@ echo $profile
 ~~~
 
 And is generally something like `C:\Users\{user}\Documents\WindowsPowerShell\Microsoft.PowerShell_profile.ps1`.
+Create the file (and any needed directories) if needed.
+
 
 ### Shell Completion - Profiles - Local Cache
 
