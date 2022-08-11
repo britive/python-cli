@@ -1,6 +1,4 @@
 import io
-import os
-
 from britive.britive import Britive
 from .helpers.config import ConfigManager
 from .helpers.credentials import FileCredentialManager, EncryptedFileCredentialManager
@@ -13,6 +11,7 @@ from .helpers import cloud_credential_printer as printer
 from .helpers.cache import Cache
 from britive import exceptions
 from pathlib import Path
+from datetime import datetime
 
 
 default_table_format = 'fancy_grid'
@@ -286,46 +285,71 @@ class BritiveCli:
             application_name=app_name
         )
 
-    def checkout(self, alias, blocktime, console, justification, mode, maxpolltime, profile):
-        self.login()
+    def checkout(self, alias, blocktime, console, justification, mode, maxpolltime, profile, passphrase):
         # first check if this is a profile alias
         profile_or_alias = alias or profile
-        profile = self.config.profile_aliases.get(profile, profile)
-        parts = profile.split('/')
-        if len(parts) != 3:
-            raise click.ClickException('Provided profile string does not have the required 3 parts.')
-        app_name = parts[0]
-        env_name = parts[1]
-        profile_name = parts[2]
 
-        try:
-            response = self.b.my_access.checkout_by_name(
-                profile_name=profile_name,
-                environment_name=env_name,
-                application_name=app_name,
-                programmatic=False if console else True,
-                include_credentials=True,
-                wait_time=blocktime,
-                max_wait_time=maxpolltime,
-                justification=justification
-            )
-        except exceptions.ApprovalRequiredButNoJustificationProvided:
-            raise click.ClickException('approval required and no justification provided.')
-        except ValueError as e:
-            raise click.BadParameter(str(e))
+        credentials = None
+        app_type = None
 
-        if alias:  # do this down here so we know that the profile is valid and a checkout was successful
-            self.config.save_profile_alias(alias=alias, profile=profile)
+        if mode == 'awscredentialprocess':
+            self.silent = True  # the aws credential process CANNOT output anything other than the expected JSON
+            # we need to check the credential process cache for the credentials first
+            # then check to see if they are expired
+            # if not simply return those credentials
+            # if they are expired
+            app_type = 'AWS'  # just hardcode as we know for sure this is for AWS
+            credentials = Cache(passphrase=passphrase).get_awscredentialprocess(profile_name=profile_or_alias)
+            if credentials:
+                expiration_timestamp_str = credentials['expirationTime'].replace('Z', '')
+                expires = datetime.fromisoformat(expiration_timestamp_str)
+                now = datetime.utcnow()
+                if now >= expires:  # check to ensure the credentials are still valid, if not, set to None and get new
+                    credentials = None
 
-        app_container_id = response['appContainerId']
-        app_type = self._get_app_type(app_container_id)
+        if not credentials:  # nothing found via aws credential process or not aws credential process mode
+            self.login()
+            profile = self.config.profile_aliases.get(profile, profile)
+            parts = profile.split('/')
+            if len(parts) != 3:
+                raise click.ClickException('Provided profile string does not have the required 3 parts.')
+            app_name = parts[0]
+            env_name = parts[1]
+            profile_name = parts[2]
+
+            try:
+                response = self.b.my_access.checkout_by_name(
+                    profile_name=profile_name,
+                    environment_name=env_name,
+                    application_name=app_name,
+                    programmatic=False if console else True,
+                    include_credentials=True,
+                    wait_time=blocktime,
+                    max_wait_time=maxpolltime,
+                    justification=justification
+                )
+                credentials = response['credentials']
+                app_type = self._get_app_type(response['appContainerId'])
+            except exceptions.ApprovalRequiredButNoJustificationProvided:
+                raise click.ClickException('approval required and no justification provided.')
+            except ValueError as e:
+                raise click.BadParameter(str(e))
+
+            if alias:  # do this down here so we know that the profile is valid and a checkout was successful
+                self.config.save_profile_alias(alias=alias, profile=profile)
+            if mode == 'awscredentialprocess':
+                Cache(passphrase=passphrase).save_awscredentialprocess(
+                    profile_name=profile_or_alias,
+                    credentials=credentials
+                )
+
         cc_printer = self.__get_cloud_credential_printer(
             app_type,
             console,
             mode,
             profile_or_alias,
             self.silent,
-            response['credentials']
+            credentials
         )
         cc_printer.print()
 
