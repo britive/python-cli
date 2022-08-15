@@ -11,7 +11,7 @@ mode_choices = click.Choice(
         'env-nix',                  # environment variable output specifying "export"
         'env-wincmd',               # environment variable output specifying "set"
         'env-winps',                # environment variable output specifying "$env:"
-        'awscredentialprocess',     # aws credential process output
+        'awscredentialprocess',     # aws credential process output with additional caching to make the credential process more performant
         'azlogin',                  # azure az login command with all fields populated (suitable for eval)
         'azps',                     # azure powershell script
         'browser'                   # when console access is checked out open the browser to the URL provided

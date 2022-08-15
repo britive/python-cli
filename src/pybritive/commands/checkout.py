@@ -25,5 +25,6 @@ def checkout(ctx, alias, blocktime, console, justification, mode, maxpolltime, s
         justification=justification,
         mode=mode,
         maxpolltime=maxpolltime,
-        profile=profile
+        profile=profile,
+        passphrase=passphrase
     )
