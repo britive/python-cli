@@ -175,16 +175,8 @@ class EncryptedFileCredentialManager(CredentialManager):
         home = os.getenv('PYBRITIVE_HOME_DIR', str(Path.home()))
         self.path = str(Path(home) / '.britive' / 'pybritive.credentials.encrypted')
         self.passphrase = passphrase
-        self.prompt()
         self.string_encryptor = StringEncryption(passphrase=self.passphrase)
         super().__init__(tenant_name, tenant_alias, cli)
-
-    def prompt(self):
-        if not self.passphrase:
-            self.passphrase = click.prompt(
-                'Enter passphrase to be used to encrypt/decrypt the credentials file',
-                hide_input=True
-            )
 
     def decrypt(self, encrypted_access_token: str):
         try:
