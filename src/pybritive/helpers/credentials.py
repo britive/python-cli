@@ -7,12 +7,9 @@ from pathlib import Path
 import click
 import configparser
 import json
-from cryptography.fernet import Fernet, InvalidToken
-from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from .config import ConfigManager
 import os
+from .encryption import StringEncryption, InvalidPassphraseException
 
 
 interactive_login_fields_to_pop = [
@@ -179,22 +176,8 @@ class EncryptedFileCredentialManager(CredentialManager):
         self.path = str(Path(home) / '.britive' / 'pybritive.credentials.encrypted')
         self.passphrase = passphrase
         self.prompt()
+        self.string_encryptor = StringEncryption(passphrase=self.passphrase)
         super().__init__(tenant_name, tenant_alias, cli)
-
-    @staticmethod
-    def salt():
-        return base64.b64encode(os.urandom(32)).decode('utf-8')
-
-    def key(self, salt: str):
-        kdf = PBKDF2HMAC(
-            algorithm=hashes.SHA256(),
-            length=32,
-            salt=base64.b64decode(salt.encode()),
-            iterations=100000,
-            backend=default_backend()
-        )
-        key = base64.urlsafe_b64encode(kdf.derive(self.passphrase.encode()))
-        return key
 
     def prompt(self):
         if not self.passphrase:
@@ -205,17 +188,12 @@ class EncryptedFileCredentialManager(CredentialManager):
 
     def decrypt(self, encrypted_access_token: str):
         try:
-            encrypted_access_token, b64salt = encrypted_access_token.split(':')
-            key = self.key(b64salt)
-            return Fernet(key).decrypt(base64.b64decode(encrypted_access_token.encode())).decode('utf-8')
-        except InvalidToken:
-            raise click.ClickException('Invalid passphrase provided. Unable to decrypt credentials.')
+            return self.string_encryptor.decrypt(ciphertext=encrypted_access_token)
+        except InvalidPassphraseException:
+            click.ClickException('invalid passphrase provided - cannot decrypt credentials.')
 
     def encrypt(self, decrypted_access_token: str):
-        salt = self.salt()
-        key = self.key(salt)
-        encrypted_access_token = Fernet(key).encrypt(decrypted_access_token.encode())
-        return f'{base64.b64encode(encrypted_access_token).decode("utf-8")}:{salt}'
+        return self.string_encryptor.encrypt(plaintext=decrypted_access_token)
 
     def load(self, full=False):
         path = Path(self.path)
