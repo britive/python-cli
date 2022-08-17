@@ -68,7 +68,7 @@ This will create a new directory `site`.
 
 As we are using source code control we have added `site/` to `.gitignore` so you will have to build the docs locally.
 
-We will ultimately deploy via `readthedocs.org`. But you can also copy everything in `site/` and host as a static website anywhere you want.
+We will ultimately deploy via GitHub pages. But you can also copy everything in `site/` and host as a static website anywhere you want.
 
 To deploy to GitHub project pages....
 
