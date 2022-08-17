@@ -69,3 +69,13 @@ This will create a new directory `site`.
 As we are using source code control we have added `site/` to `.gitignore` so you will have to build the docs locally.
 
 We will ultimately deploy via `readthedocs.org`. But you can also copy everything in `site/` and host as a static website anywhere you want.
+
+To deploy to GitHub project pages....
+
+~~~
+# checkout whichever branch is needed (main or develop most likely)
+mkdocs gh-deploy
+~~~
+
+This will build the docs by performing the actions of `mkdocs build` and shove those built docs into the `gh-pages` branch of the repo.
+`gh-pages` is auto-linked to `https://britive.github.io/python-cli/` and will update that site in near real time.
