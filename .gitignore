@@ -8,6 +8,7 @@ __pycache__/
 .idea*
 testing-variables.txt
 .DS_Store
+site/
 
 # C extensions
 *.so

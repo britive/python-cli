@@ -41,3 +41,31 @@ Additionally, the identity will need access to 2 secrets
 * one standard secret with path `/pybritive-test-standard` to test `view` - the value of the secret should be generic note with note of `test`
 * one file secret with path `/pybritive-test-file` to test `download` - the filename should be `pybritive-test-secret-file.txt` and contain contents of `test`
 
+
+## Docs
+
+https://docs.readthedocs.io/en/stable/intro/getting-started-with-mkdocs.html
+
+To set up the doc infrastructure the first time run the following from the base directory
+
+~~~
+pip install mkdocs
+mkdocs new .
+~~~
+
+For real time local updates in HTML...
+~~~
+mkdocs serve
+~~~
+
+To build...
+
+~~~
+mkdocs build
+~~~
+
+This will create a new directory `site`.
+
+As we are using source code control we have added `site/` to `.gitignore` so you will have to build the docs locally.
+
+We will ultimately deploy via `readthedocs.org`. But you can also copy everything in `site/` and host as a static website anywhere you want.

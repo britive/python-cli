@@ -10,11 +10,10 @@ from ..completers.profile import profile_completer
 @click.argument('profile', shell_complete=profile_completer)
 def checkout(ctx, alias, blocktime, console, justification, mode, maxpolltime, silent, tenant, token,
              passphrase, profile):
-    """
-    Checkout a profile.
+    """Checkout a profile.
 
-    This command takes 1 required argument PROFILE. This should be a string representation of the profile
-    that should be checked out. Format is "application name/environment name/profile name".
+    This command takes 1 required argument `PROFILE`. This should be a string representation of the profile
+    that should be checked out. Format is `application name/environment name/profile name`.
     """
 
     # silent will get passed in via @build_britive

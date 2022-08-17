@@ -199,7 +199,7 @@ class ConfigManager:
 
     def backend(self):
         self.load()
-        return self.config.get('global', {}).get('credential_backend', 'file')
+        return self.config.get('global', {}).get('credential_backend', 'encrypted-file')
 
     def update(self, section, field, value):
         self.load()

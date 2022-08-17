@@ -7,17 +7,14 @@ from ..helpers.build_britive import build_britive
 
 @click.group()
 def configure():
-    """
-    Configures the PyBritive CLI.
-    """
+    """Configures the PyBritive CLI."""
 
 
 @configure.command()
 @build_britive
 @britive_options(names='configure_tenant,configure_alias,format,configure_prompt')
 def tenant(ctx, configure_tenant, configure_alias, output_format, configure_prompt):
-    """
-    Configures tenant level settings for the PyBritive CLI.
+    """Configures tenant level settings for the PyBritive CLI.
 
     If CLI options/flags are not provided an interactive data entry process will collect any needed data.
     """
@@ -64,8 +61,7 @@ def tenant(ctx, configure_tenant, configure_alias, output_format, configure_prom
 @build_britive
 @britive_options(names='configure_tenant,format,configure_prompt,configure_backend')
 def global_command(ctx, configure_tenant, output_format, configure_prompt, configure_backend):
-    """
-    Configures global level settings for the PyBritive CLI.
+    """Configures global level settings for the PyBritive CLI.
 
     If CLI options/flags are not provided an interactive data entry process will collect any needed data.
     """
@@ -107,9 +103,7 @@ def global_command(ctx, configure_tenant, output_format, configure_prompt, confi
 @build_britive
 @britive_options(names='silent, token')
 def import_command(ctx, silent, token):  # silent is handled by @build_britive
-    """
-    Import an existing configuration from the Node.js/NPM version of the Britive CLI.
-    """
+    """Import an existing configuration from the Node.js/NPM version of the Britive CLI."""
     ctx.obj.britive.import_existing_npm_config()
 
 
@@ -120,18 +114,17 @@ def import_command(ctx, silent, token):  # silent is handled by @build_britive
 @click.argument('field')
 @click.argument('value')
 def update(ctx, silent, section, field, value):  # silent is handled by @build_britive
-    """
-    Provides a mechanism to directly update any section/field/value in the config file.
+    """Provides a mechanism to directly update any section/field/value in the config file.
 
     All arguments provided will be converted to lowercase before being persisted.
 
-    SECTION: The config section (example: global, tenant-foo)
+    `SECTION`: The config section (example: global, tenant-foo)
 
-    FIELD: The field within the section (example: default_tenant, name, output_format)
+    `FIELD`: The field within the section (example: default_tenant, name, output_format)
 
-    VALUE: The value of the field.
+    `VALUE`: The value of the field.
 
-    Example: pybritive configure update global output_format json
+    Example: `pybritive configure update global output_format json`
     """
     section = section.lower().strip()
     field = field.lower().strip()

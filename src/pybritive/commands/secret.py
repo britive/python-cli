@@ -5,9 +5,7 @@ from ..options.britive_options import britive_options
 
 @click.group()
 def secret():
-    """
-    View or download a secret.
-    """
+    """View or download a secret."""
     pass
 
 
@@ -16,11 +14,10 @@ def secret():
 @britive_options(names='blocktime,justification,maxpolltime,format,tenant,token,passphrase')
 @click.argument('path')
 def view(ctx, blocktime, justification, maxpolltime, output_format, tenant, token, passphrase, path):
-    """
-    Display the secret value of the provided secret.
+    """Display the secret value of the provided secret.
 
-    This command takes 1 required argument PATH. This should be a string representation of the secret path.
-    Ensure the leading / is provided.
+    This command takes 1 required argument `PATH`. This should be a string representation of the secret path.
+    Ensure the leading `/` is provided.
     """
     if not path.startswith('/'):
         path = f'/{path}'
@@ -38,11 +35,10 @@ def view(ctx, blocktime, justification, maxpolltime, output_format, tenant, toke
 @britive_options(names='file,blocktime,justification,maxpolltime,format,silent,tenant,token,passphrase')
 @click.argument('path')
 def download(ctx, file, blocktime, justification, maxpolltime, output_format, silent, tenant, token, passphrase, path):
-    """
-    Download the secret file.
+    """Download the secret file.
 
-    This command takes 1 required argument PATH. This should be a string representation of the secret path.
-    Ensure the leading / is provided.
+    This command takes 1 required argument `PATH`. This should be a string representation of the secret path.
+    Ensure the leading `/` is provided.
     """
     if not path.startswith('/'):
         path = f'/{path}'
