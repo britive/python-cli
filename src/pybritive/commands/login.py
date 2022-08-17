@@ -7,10 +7,9 @@ from ..options.britive_options import britive_options
 @build_britive
 @britive_options(names='tenant,token,passphrase')
 def login(ctx, tenant, token, passphrase):
-    """
-    Perform an interactive login to obtain temporary credentials.
+    """Perform an interactive login to obtain temporary credentials.
 
-    This only applies when an API token has not been specified via --token,-T or via environment variable
-    BRITIVE_API_TOKEN.
+    This only applies when an API token has not been specified via `--token,-T` or via environment variable
+    `BRITIVE_API_TOKEN`.
     """
     ctx.obj.britive.login(explicit=True)

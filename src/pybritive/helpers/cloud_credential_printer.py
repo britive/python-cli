@@ -157,7 +157,8 @@ class AwsCloudCredentialPrinter(CloudCredentialPrinter):
 class AzureCloudCredentialPrinter(CloudCredentialPrinter):
     def __init__(self, console, mode, profile, silent, credentials, cli):
         key = list(credentials.keys())[0]
-        credentials = json.loads(credentials[key])
+        if key != 'url':  # console url is handled differently than programmatic keys so account for it here
+            credentials = json.loads(credentials[key])
         super().__init__('Azure', console, mode, profile, silent, credentials, cli)
 
     def print_text(self):

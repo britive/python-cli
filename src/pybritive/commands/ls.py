@@ -5,9 +5,7 @@ from ..options.britive_options import britive_options
 
 @click.group()
 def ls():
-    """
-    List resources available for currently authenticated identity.
-    """
+    """List resources available for currently authenticated identity."""
     pass
 
 

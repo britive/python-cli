@@ -1,0 +1,18 @@
+site_name: pybritive documentation
+nav:
+  - Documentation: index.md
+  - Resources:
+      - Support: https://support.britive.com
+      - Company Home Page: https://www.britive.com
+      - GitHub Repo: https://github.com/britive/python-cli
+theme: readthedocs
+repo_url: https://github.com/britive/python-cli
+edit_uri: ''
+copyright: 2022 Britive, Inc.
+markdown_extensions:
+  - attr_list
+  - mkdocs-click
+  - admonition
+watch:
+  - src/pybritive/commands/
+  - src/pybritive/

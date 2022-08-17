@@ -5,9 +5,7 @@ from ..options.britive_options import britive_options
 
 @click.group()
 def cache():
-    """
-    Add data to the local cache to facilitate auto-completion of certain arguments.
-    """
+    """Manage local cache settings."""
     pass
 
 

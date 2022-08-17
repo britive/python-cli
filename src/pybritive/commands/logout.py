@@ -7,10 +7,9 @@ from ..options.britive_options import britive_options
 @build_britive
 @britive_options(names='tenant,passphrase')
 def logout(ctx, tenant, passphrase):
-    """
-    Logout of an interactive login session.
+    """Logout of an interactive login session.
 
-    This only applies when an API token has not been specified via --token,-T or via environment variable
-    BRITIVE_API_TOKEN.
+    This only applies when an API token has not been specified via `--token,-T` or via environment variable
+    `BRITIVE_API_TOKEN`.
     """
     ctx.obj.britive.logout()
