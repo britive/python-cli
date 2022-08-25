@@ -141,7 +141,10 @@ class ConfigManager:
 
     def save_tenant(self, tenant: str, alias: str = None, output_format: str = None):
         self.load()
-        if not alias:
+        tenant = tenant.replace('.britive-app.com', '')
+        if alias:
+            alias = alias.replace('.britive-app.com', '')
+        else:
             alias = tenant
         if f'tenant-{alias}' not in self.config.keys():
             self.config[f'tenant-{alias}'] = {}
@@ -157,7 +160,7 @@ class ConfigManager:
         if 'global' not in self.config.keys():
             self.config['global'] = {}
         if default_tenant_name:
-            self.config['global']['default_tenant'] = default_tenant_name
+            self.config['global']['default_tenant'] = default_tenant_name.replace('.britive-app.com', '')
         if output_format:
             self.config['global']['output_format'] = output_format
         if backend:

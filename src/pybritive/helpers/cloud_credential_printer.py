@@ -83,8 +83,9 @@ class CloudCredentialPrinter:
 
 
 class AwsCloudCredentialPrinter(CloudCredentialPrinter):
-    def __init__(self, console, mode, profile, silent, credentials, cli):
+    def __init__(self, console, mode, profile, silent, credentials, cli, aws_credentials_file):
         super().__init__('AWS', console, mode, profile, silent, credentials, cli)
+        self.aws_credentials_file = aws_credentials_file
 
     def print_text(self):
         self.cli.print('AWS_ACCESS_KEY_ID', ignore_silent=True)
@@ -123,7 +124,7 @@ class AwsCloudCredentialPrinter(CloudCredentialPrinter):
 
     def print_integrate(self):
         # get path to aws credentials file
-        env_path = os.getenv('AWS_SHARED_CREDENTIALS_FILE')
+        env_path = self.aws_credentials_file
         if not env_path:
             path = Path.home() / '.aws' / 'credentials'  # handle os specific separators properly
         else:
