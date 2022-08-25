@@ -17,6 +17,8 @@ from ..options.checked_out import option as checked_out
 from ..options.file import option as file
 from ..options.configure_backend import option as configure_backend
 from ..options.passphrase import option as passphrase
+from ..options.force_renew import option as force_renew
+from ..options.aws_credentials_file import option as aws_credentials_file
 
 options_map = {
     'tenant': tenant,
@@ -37,7 +39,9 @@ options_map = {
     'checked_out': checked_out,
     'file': file,
     'configure_backend': configure_backend,
-    'passphrase': passphrase
+    'passphrase': passphrase,
+    'force_renew': force_renew,
+    'aws_credentials_file': aws_credentials_file
 }
 
 

@@ -1,4 +1,4 @@
-https://github.com/britive/python-sdk/releases/download/v2.7.0/britive-2.7.0.tar.gz
+https://github.com/britive/python-sdk/releases/download/v2.7.1/britive-2.7.1.tar.gz
 certifi==2022.6.15
 charset-normalizer==2.1.0
 click==8.1.3

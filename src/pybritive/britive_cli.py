@@ -1,4 +1,6 @@
 import io
+import time
+
 from britive.britive import Britive
 from .helpers.config import ConfigManager
 from .helpers.credentials import FileCredentialManager, EncryptedFileCredentialManager
@@ -240,7 +242,8 @@ class BritiveCli:
                 return profile['app_type']
         raise click.ClickException(f'Application {application_id} not found')
 
-    def __get_cloud_credential_printer(self, app_type, console, mode, profile, silent, credentials):
+    def __get_cloud_credential_printer(self, app_type, console, mode, profile, silent, credentials,
+                                       aws_credentials_file):
         if app_type in ['AWS', 'AWS Standalone']:
             return printer.AwsCloudCredentialPrinter(
                 console=console,
@@ -248,7 +251,8 @@ class BritiveCli:
                 profile=profile,
                 credentials=credentials,
                 silent=silent,
-                cli=self
+                cli=self,
+                aws_credentials_file=aws_credentials_file
             )
         if app_type in ['Azure']:
             return printer.AzureCloudCredentialPrinter(
@@ -285,12 +289,34 @@ class BritiveCli:
             application_name=app_name
         )
 
-    def checkout(self, alias, blocktime, console, justification, mode, maxpolltime, profile, passphrase):
-        # first check if this is a profile alias
-        profile_or_alias = alias or profile
+    def _checkout(self, profile_name, env_name, app_name, programmatic, blocktime, maxpolltime, justification):
+        try:
+            self.login()
+            return self.b.my_access.checkout_by_name(
+                profile_name=profile_name,
+                environment_name=env_name,
+                application_name=app_name,
+                programmatic=programmatic,
+                include_credentials=True,
+                wait_time=blocktime,
+                max_wait_time=maxpolltime,
+                justification=justification
+            )
+        except exceptions.ApprovalRequiredButNoJustificationProvided:
+            raise click.ClickException('approval required and no justification provided.')
+        except ValueError as e:
+            raise click.BadParameter(str(e))
 
+    @staticmethod
+    def _should_check_force_renew(app, force_renew, console):
+        return app in ['AWS', 'AWS Standalone'] and force_renew and not console
+
+    def checkout(self, alias, blocktime, console, justification, mode, maxpolltime, profile, passphrase,
+                 force_renew, aws_credentials_file):
         credentials = None
         app_type = None
+        credential_process_creds_found = False
+        response = None
 
         if mode == 'awscredentialprocess':
             self.silent = True  # the aws credential process CANNOT output anything other than the expected JSON
@@ -299,59 +325,68 @@ class BritiveCli:
             # if not simply return those credentials
             # if they are expired
             app_type = 'AWS'  # just hardcode as we know for sure this is for AWS
-            credentials = Cache(passphrase=passphrase).get_awscredentialprocess(profile_name=profile_or_alias)
+            credentials = Cache(passphrase=passphrase).get_awscredentialprocess(profile_name=alias or profile)
             if credentials:
                 expiration_timestamp_str = credentials['expirationTime'].replace('Z', '')
                 expires = datetime.fromisoformat(expiration_timestamp_str)
                 now = datetime.utcnow()
                 if now >= expires:  # check to ensure the credentials are still valid, if not, set to None and get new
                     credentials = None
+                else:
+                    credential_process_creds_found = True
 
-        if not credentials:  # nothing found via aws credential process or not aws credential process mode
-            self.login()
-            profile = self.config.profile_aliases.get(profile, profile)
-            parts = profile.split('/')
-            if len(parts) != 3:
-                raise click.ClickException('Provided profile string does not have the required 3 parts.')
-            app_name = parts[0]
-            env_name = parts[1]
-            profile_name = parts[2]
+        profile_real = self.config.profile_aliases.get(profile, profile)
+        parts = profile_real.split('/')
+        if len(parts) != 3:
+            raise click.ClickException('Provided profile string does not have the required 3 parts.')
 
-            try:
-                response = self.b.my_access.checkout_by_name(
-                    profile_name=profile_name,
-                    environment_name=env_name,
-                    application_name=app_name,
-                    programmatic=False if console else True,
-                    include_credentials=True,
-                    wait_time=blocktime,
-                    max_wait_time=maxpolltime,
-                    justification=justification
-                )
+        # create this params once so we can use it multiple places
+        params = {
+            'profile_name': parts[2],
+            'env_name': parts[1],
+            'app_name': parts[0],
+            'programmatic': False if console else True,
+            'blocktime': blocktime,
+            'maxpolltime': maxpolltime,
+            'justification': justification
+        }
+
+        if not credential_process_creds_found:  # nothing found via aws cred process or not aws cred process mode
+            response = self._checkout(**params)
+            app_type = self._get_app_type(response['appContainerId'])
+            credentials = response['credentials']
+
+        # this handles the --force-renew flag
+        # lets check to see if the we should checkin this profile first and check it out again
+        if self._should_check_force_renew(app_type, force_renew, console):
+            expiration = datetime.fromisoformat(credentials['expirationTime'].replace('Z', ''))
+            now = datetime.utcnow()
+            diff = (expiration - now).total_seconds() / 60.0
+            if diff < force_renew:  # time to checkin the profile so we can refresh creds
+                self.print('checking in the profile to get renewed credentials....standby')
+                self.checkin(profile=profile_real)
+                response = self._checkout(**params)
+                credential_process_creds_found = False  # need to write new creds to cache
                 credentials = response['credentials']
-                app_type = self._get_app_type(response['appContainerId'])
-            except exceptions.ApprovalRequiredButNoJustificationProvided:
-                raise click.ClickException('approval required and no justification provided.')
-            except ValueError as e:
-                raise click.BadParameter(str(e))
 
-            if alias:  # do this down here so we know that the profile is valid and a checkout was successful
-                self.config.save_profile_alias(alias=alias, profile=profile)
-            if mode == 'awscredentialprocess':
-                Cache(passphrase=passphrase).save_awscredentialprocess(
-                    profile_name=profile_or_alias,
-                    credentials=credentials
-                )
+        if alias:  # do this down here so we know that the profile is valid and a checkout was successful
+            self.config.save_profile_alias(alias=alias, profile=profile)
 
-        cc_printer = self.__get_cloud_credential_printer(
+        if mode == 'awscredentialprocess' and not credential_process_creds_found:
+            Cache(passphrase=passphrase).save_awscredentialprocess(
+                profile_name=alias or profile,
+                credentials=credentials
+            )
+
+        self.__get_cloud_credential_printer(
             app_type,
             console,
             mode,
-            profile_or_alias,
+            alias or profile,
             self.silent,
-            credentials
-        )
-        cc_printer.print()
+            credentials,
+            aws_credentials_file
+        ).print()
 
     def import_existing_npm_config(self):
         profile_aliases = self.config.import_global_npm_config()
