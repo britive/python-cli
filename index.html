@@ -548,6 +548,18 @@ that should be checked out. Format is <code>application name/environment name/pr
 <td><code>False</code></td>
 </tr>
 <tr>
+<td><code>--force-renew</code></td>
+<td>integer</td>
+<td>AWS Programmatic Only - If the credentials are to expire within the specified number of minutes, check in the profile first and check it out again to get a new set of credentials.</td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>--aws-credentials-file</code></td>
+<td>text</td>
+<td>AWS Programmatic Only - When mode is <code>integrate</code> specify a non-default location for the AWS credentials file.</td>
+<td>None</td>
+</tr>
+<tr>
 <td><code>-t</code>, <code>--tenant</code></td>
 <td>text</td>
 <td>Name of tenant.</td>
@@ -1350,5 +1362,5 @@ Ensure the leading <code>/</code> is provided.</p>
 
 <!--
 MkDocs version : 1.3.1
-Build Date UTC : 2022-08-23 20:32:56.565350+00:00
+Build Date UTC : 2022-08-25 17:55:38.835444+00:00
 -->
