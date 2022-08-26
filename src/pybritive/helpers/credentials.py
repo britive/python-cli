@@ -2,6 +2,7 @@ import random
 import base64
 import hashlib
 import time
+import webbrowser
 import requests
 from pathlib import Path
 import click
@@ -57,7 +58,14 @@ class CredentialManager:
     def perform_interactive_login(self):
         self.cli.print(f'Performing interactive login against tenant {self.tenant}')
         url = f'{self.base_url}/login?token={self.auth_token}'
-        click.launch(url)
+
+        try:
+            webbrowser.get()
+            webbrowser.open(url)
+        except webbrowser.Error:
+            self.cli.print('No web browser found. Please navigate to the link below manually and authenticate.')
+            self.cli.print(url)
+
         time.sleep(3)
         num_tries = 1
         while True:
