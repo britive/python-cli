@@ -63,7 +63,7 @@ class CredentialManager:
             webbrowser.get()
             webbrowser.open(url)
         except webbrowser.Error:
-            self.cli.print('No web browser found. Please navigate to the link below manually and authenticate.')
+            self.cli.print('No web browser found. Please manually navigate to the link below and authenticate.')
             self.cli.print(url)
 
         time.sleep(3)
