@@ -20,6 +20,12 @@ python -m build
 * Cut a new release in GitHub with the version tag
 * Add the assets from `dist` directory to the release
 
+## Github Actions
+There are 2 Github Actions in play that publish to PyPI.
+
+1. Trigger off of a push to the `develop` branch. Will deploy to test PyPI.
+2. Trigger off of a new release being published. Will deploy to real PyPI.
+
 ## Testing
 It is generally advisable to set environment variable `PYBRITIVE_HOME_DIR` to some temp location if you
 will be performing the full suite of tests. This will ensure that no changes are made to your existing
