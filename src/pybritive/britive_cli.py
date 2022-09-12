@@ -153,10 +153,10 @@ class BritiveCli:
         self.login()
         self._set_available_profiles()
         data = []
-        checked_out = [p['papId'] for p in self.b.my_access.list_checked_out_profiles()] if checked_out else []
+        checked_out_profiles = [p['papId'] for p in self.b.my_access.list_checked_out_profiles()] if checked_out else []
 
         for profile in self.available_profiles:
-            if not checked_out or profile['profileId'] in checked_out:
+            if not checked_out or profile['profile_id'] in checked_out_profiles:
                 row = {
                     'Application': profile['app_name'],
                     'Environment': profile['env_name'],
@@ -275,18 +275,12 @@ class BritiveCli:
 
     def checkin(self, profile):
         self.login()
-        profile = self.config.profile_aliases.get(profile, profile)
-        parts = profile.split('/')
-        if len(parts) != 3:
-            raise click.ClickException('Provided profile string does not have the required 3 parts.')
-        app_name = parts[0]
-        env_name = parts[1]
-        profile_name = parts[2]
+        parts = self._split_profile_into_parts(profile)
 
         self.b.my_access.checkin_by_name(
-            profile_name=profile_name,
-            environment_name=env_name,
-            application_name=app_name
+            profile_name=parts['profile'],
+            environment_name=parts['env'],
+            application_name=parts['app']
         )
 
     def _checkout(self, profile_name, env_name, app_name, programmatic, blocktime, maxpolltime, justification):
@@ -310,6 +304,19 @@ class BritiveCli:
     @staticmethod
     def _should_check_force_renew(app, force_renew, console):
         return app in ['AWS', 'AWS Standalone'] and force_renew and not console
+
+
+    def _split_profile_into_parts(self, profile):
+        profile_real = self.config.profile_aliases.get(profile, profile)
+        parts = profile_real.split('/')
+        if len(parts) != 3:
+            raise click.ClickException('Provided profile string does not have the required 3 parts.')
+        parts_dict = {
+            'app': parts[0],
+            'env': parts[1],
+            'profile': parts[2]
+        }
+        return parts_dict
 
     def checkout(self, alias, blocktime, console, justification, mode, maxpolltime, profile, passphrase,
                  force_renew, aws_credentials_file):
@@ -335,16 +342,13 @@ class BritiveCli:
                 else:
                     credential_process_creds_found = True
 
-        profile_real = self.config.profile_aliases.get(profile, profile)
-        parts = profile_real.split('/')
-        if len(parts) != 3:
-            raise click.ClickException('Provided profile string does not have the required 3 parts.')
+        parts = self._split_profile_into_parts(profile)
 
         # create this params once so we can use it multiple places
         params = {
-            'profile_name': parts[2],
-            'env_name': parts[1],
-            'app_name': parts[0],
+            'profile_name': parts['profile'],
+            'env_name': parts['env'],
+            'app_name': parts['app'],
             'programmatic': False if console else True,
             'blocktime': blocktime,
             'maxpolltime': maxpolltime,
@@ -503,6 +507,28 @@ class BritiveCli:
 
     def configure_update(self, section, field, value):
         self.config.update(section=section, field=field, value=value)
+
+    def request_submit(self, profile, justification):
+        self.login()
+        parts = self._split_profile_into_parts(profile)
+
+        self.b.my_access.request_approval_by_name(
+            profile_name=parts['profile'],
+            environment_name=parts['env'],
+            application_name=parts['app'],
+            block_until_disposition=False,
+            justification=justification
+        )
+
+    def request_withdraw(self, profile):
+        self.login()
+        parts = self._split_profile_into_parts(profile)
+
+        self.b.my_access.withdraw_approval_request_by_name(
+            profile_name=parts['profile'],
+            environment_name=parts['env'],
+            application_name=parts['app']
+        )
 
 
 
