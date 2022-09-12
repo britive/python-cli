@@ -95,6 +95,8 @@
     </li>
     <li class="toctree-l4"><a class="reference internal" href="#pybritive-ls">ls</a>
     </li>
+    <li class="toctree-l4"><a class="reference internal" href="#pybritive-request">request</a>
+    </li>
     <li class="toctree-l4"><a class="reference internal" href="#pybritive-secret">secret</a>
     </li>
     <li class="toctree-l4"><a class="reference internal" href="#pybritive-user">user</a>
@@ -151,13 +153,10 @@
 <li>Active Britive tenant (or nothing is really going to work)</li>
 </ul>
 <h2 id="installation">Installation</h2>
-<p><code>pybritive</code> will be installed via Python <code>pip</code>. The package is not available in PyPi at this time, so it will be 
-installed via the published tar balls in the GitHub repo. Determine the most recent version that has been published
-and add the version below.</p>
-<pre><code class="language-bash">version=x.y.z
-pip install https://github.com/britive/python-cli/releases/download/v$version/pybritive-$version.tar.gz
+<p><code>pybritive</code> will be installed via Python <code>pip</code>. </p>
+<pre><code class="language-bash">pip install pybritive
 </code></pre>
-<p>Or you can always pull the latest version using one of the following commands</p>
+<p>Or you can always pull the latest version directly from Github using one of the following commands.</p>
 <pre><code>pip install $(curl -s https://api.github.com/repos/britive/python-cli/releases/latest | jq -r '.assets[] | select(.content_type == &quot;application/x-gzip&quot;) | .browser_download_url')
 
 OR
@@ -345,6 +344,7 @@ pybritive cache clear
 <li><em><a href="#pybritive-login">login</a></em>: Perform an interactive login to obtain temporary credentials.</li>
 <li><em><a href="#pybritive-logout">logout</a></em>: Logout of an interactive login session.</li>
 <li><em><a href="#pybritive-ls">ls</a></em>: List resources available for currently authenticated identity.</li>
+<li><em><a href="#pybritive-request">request</a></em>: Provides functionality related to requesting approval to checkout a profile.</li>
 <li><em><a href="#pybritive-secret">secret</a></em>: View or download a secret.</li>
 <li><em><a href="#pybritive-user">user</a></em>: Print details about the authenticated identity.</li>
 </ul>
@@ -1096,6 +1096,133 @@ that should be checked out. Format is <code>application name/environment name/pr
 </tr>
 </tbody>
 </table>
+<h4 id="pybritive-request">pybritive request</h4>
+<p>Provides functionality related to requesting approval to checkout a profile.</p>
+<p><strong>Usage:</strong></p>
+<pre><code>pybritive request [OPTIONS] COMMAND [ARGS]...
+</code></pre>
+<p><strong>Options:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--help</code></td>
+<td>boolean</td>
+<td>Show this message and exit.</td>
+<td><code>False</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Subcommands</strong></p>
+<ul>
+<li><em><a href="#pybritive-request-submit">submit</a></em>: Submit a request to checkout a profile.</li>
+<li><em><a href="#pybritive-request-withdraw">withdraw</a></em>: Withdraw a request to checkout a profile.</li>
+</ul>
+<h5 id="pybritive-request-submit">pybritive request submit</h5>
+<p>Submit a request to checkout a profile.</p>
+<p>Only applicable for profiles which require approval. This command will NOT block/wait until the request is
+approved or rejected. If you want to wait for the request to be approved, run the <code>checkout</code> command which will
+wait until the request is approved and then checkout the profile.</p>
+<p>This command takes 1 required argument <code>PROFILE</code>. This should be a string representation of the profile
+that should be checked out. Format is <code>application name/environment name/profile name</code>.</p>
+<p><strong>Usage:</strong></p>
+<pre><code>pybritive request submit [OPTIONS] PROFILE
+</code></pre>
+<p><strong>Options:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--justification</code>, <code>-j</code></td>
+<td>text</td>
+<td>Justification for the checkout approval process, if the profile checkout requires approval.</td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>-t</code>, <code>--tenant</code></td>
+<td>text</td>
+<td>Name of tenant.</td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>-T</code>, <code>--token</code></td>
+<td>text</td>
+<td>API token.</td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>--passphrase</code>, <code>-p</code></td>
+<td>text</td>
+<td>The passphrase to use for encrypting credentials.</td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>--help</code></td>
+<td>boolean</td>
+<td>Show this message and exit.</td>
+<td><code>False</code></td>
+</tr>
+</tbody>
+</table>
+<h5 id="pybritive-request-withdraw">pybritive request withdraw</h5>
+<p>Withdraw a request to checkout a profile.</p>
+<p>Only applicable for profiles which require approval.</p>
+<p>This command takes 1 required argument <code>PROFILE</code>. This should be a string representation of the profile
+that should be checked out. Format is <code>application name/environment name/profile name</code>.</p>
+<p><strong>Usage:</strong></p>
+<pre><code>pybritive request withdraw [OPTIONS] PROFILE
+</code></pre>
+<p><strong>Options:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>-t</code>, <code>--tenant</code></td>
+<td>text</td>
+<td>Name of tenant.</td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>-T</code>, <code>--token</code></td>
+<td>text</td>
+<td>API token.</td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>--passphrase</code>, <code>-p</code></td>
+<td>text</td>
+<td>The passphrase to use for encrypting credentials.</td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>--help</code></td>
+<td>boolean</td>
+<td>Show this message and exit.</td>
+<td><code>False</code></td>
+</tr>
+</tbody>
+</table>
 <h4 id="pybritive-secret">pybritive secret</h4>
 <p>View or download a secret.</p>
 <p><strong>Usage:</strong></p>
@@ -1362,5 +1489,5 @@ Ensure the leading <code>/</code> is provided.</p>
 
 <!--
 MkDocs version : 1.3.1
-Build Date UTC : 2022-08-25 17:55:38.835444+00:00
+Build Date UTC : 2022-09-12 13:40:34.030730+00:00
 -->
