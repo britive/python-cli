@@ -56,7 +56,7 @@ class CredentialManager:
         self.credentials = self.load() or {}
 
     def perform_interactive_login(self):
-        self.cli.print(f'Performing interactive login against tenant {self.tenant}')
+        self.cli.print(f'Performing interactive login against tenant {self.tenant}.')
         url = f'{self.base_url}/login?token={self.auth_token}'
 
         try:
@@ -190,7 +190,10 @@ class EncryptedFileCredentialManager(CredentialManager):
         try:
             return self.string_encryptor.decrypt(ciphertext=encrypted_access_token)
         except InvalidPassphraseException:
-            click.ClickException('invalid passphrase provided - cannot decrypt credentials.')
+            self.cli.print('invalid passphrase provided - wiping credentials and forcing a re-authentication.')
+            self.delete()
+            self.credentials = self.load() or {}
+            return self.get_token()
 
     def encrypt(self, decrypted_access_token: str):
         return self.string_encryptor.encrypt(plaintext=decrypted_access_token)
