@@ -55,7 +55,10 @@ class CloudCredentialPrinter:
         if self.mode == 'browser':
             click.launch(self.credentials['url'])
         else:
-            self.cli.print(self.credentials['url'], ignore_silent=True)
+            if 'url' in self.credentials.keys():
+                self.cli.print(self.credentials['url'], ignore_silent=True)
+            else:
+                self.cli.print(self.credentials, ignore_silent=True)
 
     def print_text(self):
         self._not_implemented()
@@ -80,6 +83,17 @@ class CloudCredentialPrinter:
 
     def _not_implemented(self):
         raise click.ClickException(f'Application type {self.app_type} does not support the specified mode.')
+
+
+class GenericCloudCredentialPrinter(CloudCredentialPrinter):
+    def __init__(self, console, mode, profile, silent, credentials, cli):
+        super().__init__('Generic', console, mode, profile, silent, credentials, cli)
+
+    def print_json(self):
+        try:
+            self.cli.print(json.dumps(self.credentials, indent=2), ignore_silent=True)
+        except json.JSONDecodeError:
+            self.cli.print(self.credentials, ignore_silent=True)
 
 
 class AwsCloudCredentialPrinter(CloudCredentialPrinter):
