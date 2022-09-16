@@ -254,7 +254,7 @@ class BritiveCli:
                 cli=self,
                 aws_credentials_file=aws_credentials_file
             )
-        if app_type in ['Azure']:
+        elif app_type in ['Azure']:
             return printer.AzureCloudCredentialPrinter(
                 console=console,
                 mode=mode,
@@ -263,8 +263,17 @@ class BritiveCli:
                 silent=silent,
                 cli=self
             )
-        if app_type in ['GCP']:
+        elif app_type in ['GCP']:
             return printer.GcpCloudCredentialPrinter(
+                console=console,
+                mode=mode,
+                profile=profile,
+                credentials=credentials,
+                silent=silent,
+                cli=self
+            )
+        else:
+            return printer.GenericCloudCredentialPrinter(
                 console=console,
                 mode=mode,
                 profile=profile,
@@ -304,7 +313,6 @@ class BritiveCli:
     @staticmethod
     def _should_check_force_renew(app, force_renew, console):
         return app in ['AWS', 'AWS Standalone'] and force_renew and not console
-
 
     def _split_profile_into_parts(self, profile):
         profile_real = self.config.profile_aliases.get(profile, profile)
@@ -368,7 +376,7 @@ class BritiveCli:
             diff = (expiration - now).total_seconds() / 60.0
             if diff < force_renew:  # time to checkin the profile so we can refresh creds
                 self.print('checking in the profile to get renewed credentials....standby')
-                self.checkin(profile=profile_real)
+                self.checkin(profile=profile)
                 response = self._checkout(**params)
                 credential_process_creds_found = False  # need to write new creds to cache
                 credentials = response['credentials']

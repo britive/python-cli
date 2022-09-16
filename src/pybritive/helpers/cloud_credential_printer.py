@@ -82,6 +82,14 @@ class CloudCredentialPrinter:
         raise click.ClickException(f'Application type {self.app_type} does not support the specified mode.')
 
 
+class GenericCloudCredentialPrinter(CloudCredentialPrinter):
+    def __init__(self, console, mode, profile, silent, credentials, cli):
+        super().__init__('Generic', console, mode, profile, silent, credentials, cli)
+
+    def print_json(self):
+        self.cli.print(json.dumps(self.credentials, indent=2), ignore_silent=True)
+
+
 class AwsCloudCredentialPrinter(CloudCredentialPrinter):
     def __init__(self, console, mode, profile, silent, credentials, cli, aws_credentials_file):
         super().__init__('AWS', console, mode, profile, silent, credentials, cli)
