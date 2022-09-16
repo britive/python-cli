@@ -11,15 +11,20 @@ from .commands.secret import secret as group_secret
 from .commands.cache import cache as group_cache
 from .commands.request import request as group_request
 import sys
-
-# sys.tracebacklimit = 0
+import os
 
 
 def safe_cli():
+    debug = os.getenv('PYBRITIVE_DEBUG')
     try:
+        if not debug:
+            sys.tracebacklimit = 0
         cli()
     except Exception as e:
-        raise click.ClickException(str(e)) # from None
+        if debug:
+            raise click.ClickException(str(e))
+        else:
+            raise click.ClickException(str(e)) from None
 
 
 # this is the "main" app - it really does nothing but print the overview/help section

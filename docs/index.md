@@ -229,6 +229,27 @@ pybritive configure update global auto-refresh-profile-cache false
 pybritive cache clear
 ~~~
 
+## `pybritive` with the AWS `credential_process`
+
+`pybritive` natively supports the AWS `credential_process` option present in the AWS credentials file.
+
+~~~
+[profile-a]
+credential_process=pybritive checkout britive-profile-alias -m awscredentialprocess
+region=us-east-1
+~~~
+
+As of v0.4.0 a new "side-car" helper script/CLI program has been created. `pybritive-aws-cred-process` provides a minimal codebase in an effort 
+to reduce the latency of obtaining credentials via the AWS `credential_process` command.
+
+`pybritive-aws-cred-process` reduces the latency of the call by ~50% while still maintaining basic functionality.
+
+~~~
+[profile-a]
+credential_process=pybritive-aws-cred-process --profile britive-profile-alias
+region=us-east-1
+~~~
+
 ## Command Documentation
 
 ::: mkdocs-click
