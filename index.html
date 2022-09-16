@@ -77,6 +77,8 @@
     </li>
         </ul>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="#pybritive-with-the-aws-credential_process">pybritive with the AWS credential_process</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="#command-documentation">Command Documentation</a>
         <ul>
     <li class="toctree-l3"><a class="reference internal" href="#pybritive">pybritive</a>
@@ -303,6 +305,19 @@ Note that this config flag is NOT available directly via <code>pybritive configu
 <p>To turn the feature off run</p>
 <pre><code class="language-bash">pybritive configure update global auto-refresh-profile-cache false
 pybritive cache clear
+</code></pre>
+<h2 id="pybritive-with-the-aws-credential_process"><code>pybritive</code> with the AWS <code>credential_process</code></h2>
+<p><code>pybritive</code> natively supports the AWS <code>credential_process</code> option present in the AWS credentials file.</p>
+<pre><code>[profile-a]
+credential_process=pybritive checkout britive-profile-alias -m awscredentialprocess
+region=us-east-1
+</code></pre>
+<p>As of v0.4.0 a new "side-car" helper script/CLI program has been created. <code>pybritive-aws-cred-process</code> provides a minimal codebase in an effort 
+to reduce the latency of obtaining credentials via the AWS <code>credential_process</code> command.</p>
+<p><code>pybritive-aws-cred-process</code> reduces the latency of the call by ~50% while still maintaining basic functionality.</p>
+<pre><code>[profile-a]
+credential_process=pybritive-aws-cred-process --profile britive-profile-alias
+region=us-east-1
 </code></pre>
 <h2 id="command-documentation">Command Documentation</h2>
 <h3 id="pybritive">pybritive</h3>
@@ -1489,5 +1504,5 @@ Ensure the leading <code>/</code> is provided.</p>
 
 <!--
 MkDocs version : 1.3.1
-Build Date UTC : 2022-09-12 13:40:34.030730+00:00
+Build Date UTC : 2022-09-16 12:48:51.522941+00:00
 -->
