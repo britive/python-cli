@@ -153,10 +153,13 @@ class BritiveCli:
         self.login()
         self._set_available_profiles()
         data = []
-        checked_out_profiles = [p['papId'] for p in self.b.my_access.list_checked_out_profiles()] if checked_out else []
+        checked_out_profiles = [
+            f'{p["papId"]}-{p["environmentId"]}'
+            for p in self.b.my_access.list_checked_out_profiles()
+        ] if checked_out else []
 
         for profile in self.available_profiles:
-            if not checked_out or profile['profile_id'] in checked_out_profiles:
+            if not checked_out or f'{profile["profile_id"]}-{profile["env_id"]}' in checked_out_profiles:
                 row = {
                     'Application': profile['app_name'],
                     'Environment': profile['env_name'],

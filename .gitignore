@@ -9,6 +9,7 @@ __pycache__/
 testing-variables.txt
 .DS_Store
 site/
+lock-test.py
 
 # C extensions
 *.so
