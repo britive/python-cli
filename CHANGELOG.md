@@ -2,7 +2,7 @@
 
 All changes to the package starting with v0.3.1 will be logged here.
 
-## v0.4.1 [2022-09-27]
+## v0.4.1 [2022-09-30]
 #### What's New
 * None
 
@@ -13,7 +13,7 @@ All changes to the package starting with v0.3.1 will be logged here.
 * Fix and issue with `pybritive ls profile --checked-out` where all environments for the checked out profile were being returned instead of just the actual environments checked out.
 
 #### Dependencies
-* None
+* `britive~=2.9.0` from `britive~=2.8.0`
 
 #### Other
 * None
