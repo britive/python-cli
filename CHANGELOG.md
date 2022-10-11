@@ -2,6 +2,22 @@
 
 All changes to the package starting with v0.3.1 will be logged here.
 
+## v0.5.0 [2022-10-11]
+#### What's New
+* None
+
+#### Enhancements
+* Allow for non `*.britive-app.com` tenants. Default to `britive-app.com` if no valid URL is provided (for backwards compatibility)
+
+#### Bug Fixes
+* None
+
+#### Dependencies
+* `britive~=2.10.0` from `britive~=2.9.0`
+
+#### Other
+* None
+
 ## v0.4.1 [2022-09-30]
 #### What's New
 * None

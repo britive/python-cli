@@ -42,7 +42,7 @@ def tenant(ctx, configure_tenant, configure_alias, output_format, configure_prom
                 type=output_format_choices
             )
 
-    if not tenant_name  or len(tenant_name.strip()) == 0:
+    if not tenant_name or len(tenant_name.strip()) == 0:
         raise click.ClickException('Tenant Name not provided.')
     if not alias:
         alias = tenant_name
