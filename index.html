@@ -178,10 +178,14 @@ This is where <code>pybritive configure</code> will help us.</p>
 <p>An alias for a tenant can be created in case more than 1 tenant is configured for use. This may be the case for admins
 who may have access to an EA and GA tenant.</p>
 <h2 id="tenant-selection-logic">Tenant Selection Logic</h2>
+<p>Given the URL <code>https://example.britive-app.com</code> used to access your Britive tenant, tenant value can be provided in a number of formats.</p>
+<ol>
+<li><code>example</code></li>
+<li><code>example.britive-app.com</code></li>
+<li><code>https://example.britive-app.com</code></li>
+</ol>
 <p>There are numerous ways to provide the CLI with the Britive tenant that should be used. The below list is the
 order of operations for determining the tenant.</p>
-<p>The tenant excludes <code>.britive-app.com</code>. Just include the leftmost part.
-Example: <code>example.britive-app.com</code> will have a tenant name in the CLI of <code>example</code>.</p>
 <ol>
 <li>Value retrieved from CLI option/flag <code>--tenant/-t</code></li>
 <li>Value retrieved from environment variable <code>BRITIVE_TENANT</code></li>
@@ -1504,5 +1508,5 @@ Ensure the leading <code>/</code> is provided.</p>
 
 <!--
 MkDocs version : 1.3.1
-Build Date UTC : 2022-09-16 12:48:51.522941+00:00
+Build Date UTC : 2022-10-11 19:27:32.255743+00:00
 -->
