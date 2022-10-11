@@ -1,6 +1,5 @@
 import io
-import time
-
+import socket
 from britive.britive import Britive
 from .helpers.config import ConfigManager
 from .helpers.credentials import FileCredentialManager, EncryptedFileCredentialManager
@@ -35,6 +34,22 @@ class BritiveCli:
 
     def set_output_format(self, output_format: str):
         self.output_format = self.config.get_output_format(output_format)
+
+    # it is preferable to do this in the sdk as a static method
+    # as this will eliminate the duplicate code
+    def parse_tenant(self):
+        domain = self.tenant_name.replace('https://', '').replace('http://', '')  # remove scheme
+        domain = domain.split('/')[0]  # remove any paths as they will not be needed
+        try:
+            socket.gethostbyname_ex(domain)  # if success then a full domain was provided
+            return domain
+        except socket.gaierror:  # assume just the tenant name was provided (originally the only supported method)
+            domain = f'{self.tenant_name}.britive-app.com'
+            try:
+                socket.gethostbyname_ex(domain)  # validate the hostname is real
+                return domain
+            except socket.gaierror:
+                raise Exception(f'Invalid tenant provided: {self.tenant_name}')
 
     def set_credential_manager(self):
         if self.credential_manager:
@@ -97,7 +112,7 @@ class BritiveCli:
         if self.token:
             raise click.ClickException('Logout not available when using an API token.')
         self.login()
-        self.b.delete(f'https://{self.tenant_name}.britive-app.com/api/auth')
+        self.b.delete(f'https://{self.parse_tenant()}/api/auth')
         self._cleanup_credentials()
 
     # will take a list of dicts and print to the screen based on the format specified in the config file

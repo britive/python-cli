@@ -48,11 +48,14 @@ who may have access to an EA and GA tenant.
 
 ## Tenant Selection Logic
 
+Given the URL `https://example.britive-app.com` used to access your Britive tenant, tenant value can be provided in a number of formats.
+
+1. `example`
+2. `example.britive-app.com`
+3. `https://example.britive-app.com`
+
 There are numerous ways to provide the CLI with the Britive tenant that should be used. The below list is the
 order of operations for determining the tenant.
-
-The tenant excludes `.britive-app.com`. Just include the leftmost part.
-Example: `example.britive-app.com` will have a tenant name in the CLI of `example`.
 
 1. Value retrieved from CLI option/flag `--tenant/-t`
 2. Value retrieved from environment variable `BRITIVE_TENANT`

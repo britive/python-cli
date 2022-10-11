@@ -8,7 +8,6 @@ from pathlib import Path
 import click
 import configparser
 import json
-from .config import ConfigManager
 import os
 from .encryption import StringEncryption, InvalidPassphraseException
 
@@ -42,11 +41,11 @@ def b64_encode_url_safe(value: bytes):
 
 # this base class expects self.credentials to be a dict - so sub classes need to convert to dict
 class CredentialManager:
-    def __init__(self, tenant_name: str, tenant_alias: str, cli: ConfigManager):
+    def __init__(self, tenant_name: str, tenant_alias: str, cli):
         self.cli = cli
         self.tenant = tenant_name
         self.alias = tenant_alias
-        self.base_url = f'https://{self.tenant}.britive-app.com'
+        self.base_url = f'https://{cli.parse_tenant()}'
 
         # not sure if we really need 32 random bytes or if any random string would work
         # but the current britive-cli in node.js does it this way so it will be done the same
@@ -138,7 +137,7 @@ class CredentialManager:
 
 
 class FileCredentialManager(CredentialManager):
-    def __init__(self, tenant_name: str, tenant_alias: str, cli: ConfigManager):
+    def __init__(self, tenant_name: str, tenant_alias: str, cli):
         home = os.getenv('PYBRITIVE_HOME_DIR', str(Path.home()))
         self.path = str(Path(home) / '.britive' / 'pybritive.credentials')
         super().__init__(tenant_name, tenant_alias, cli)
@@ -179,7 +178,7 @@ class FileCredentialManager(CredentialManager):
 
 
 class EncryptedFileCredentialManager(CredentialManager):
-    def __init__(self, tenant_name: str, tenant_alias: str, cli: ConfigManager, passphrase: str = None):
+    def __init__(self, tenant_name: str, tenant_alias: str, cli, passphrase: str = None):
         home = os.getenv('PYBRITIVE_HOME_DIR', str(Path.home()))
         self.path = str(Path(home) / '.britive' / 'pybritive.credentials.encrypted')
         self.passphrase = passphrase
