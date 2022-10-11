@@ -97,7 +97,6 @@ class ConfigManager:
         self.profile_aliases = self.config.get('profile-aliases', {})
         self.loaded = True
 
-
     def get_tenant(self):
         # load up the config - doing it here instead of __init__ for the configure commands since config won't
         # yet exist and we don't want to error
@@ -141,10 +140,7 @@ class ConfigManager:
 
     def save_tenant(self, tenant: str, alias: str = None, output_format: str = None):
         self.load()
-        tenant = tenant.replace('.britive-app.com', '')
-        if alias:
-            alias = alias.replace('.britive-app.com', '')
-        else:
+        if not alias:
             alias = tenant
         if f'tenant-{alias}' not in self.config.keys():
             self.config[f'tenant-{alias}'] = {}
@@ -160,7 +156,7 @@ class ConfigManager:
         if 'global' not in self.config.keys():
             self.config['global'] = {}
         if default_tenant_name:
-            self.config['global']['default_tenant'] = default_tenant_name.replace('.britive-app.com', '')
+            self.config['global']['default_tenant'] = default_tenant_name
         if output_format:
             self.config['global']['output_format'] = output_format
         if backend:
@@ -265,10 +261,6 @@ class ConfigManager:
                 self.validation_error_messages.append(f'Invalid {section} field {field} provided.')
             if field == 'output_format' and value not in output_format_choices.choices:
                 error = f'Invalid {section} field {field} value {value} provided. Invalid value choice.'
-                self.validation_error_messages.append(error)
-            if field == 'name' and 'britive-app.com' in value:
-                error = f'Invalid {section} field {field} value {value} provided. Tenant name cannot include ' \
-                        'britive-app.com'
                 self.validation_error_messages.append(error)
 
     def auto_refresh_profile_cache(self):
