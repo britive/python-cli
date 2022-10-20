@@ -41,7 +41,8 @@ class BritiveCli:
         domain = self.tenant_name.replace('https://', '').replace('http://', '')  # remove scheme
         domain = domain.split('/')[0]  # remove any paths as they will not be needed
         try:
-            socket.gethostbyname_ex(domain)  # if success then a full domain was provided
+            domain_without_port = domain.split(':')[0]
+            socket.gethostbyname_ex(domain_without_port)  # if success then a full domain was provided
             return domain
         except socket.gaierror:  # assume just the tenant name was provided (originally the only supported method)
             domain = f'{self.tenant_name}.britive-app.com'

@@ -10,6 +10,10 @@ testing-variables.txt
 .DS_Store
 site/
 lock-test.py
+index.html
+login.html
+server.py
+server.pem
 
 # C extensions
 *.so

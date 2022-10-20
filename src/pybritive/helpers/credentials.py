@@ -10,6 +10,7 @@ import configparser
 import json
 import os
 from .encryption import StringEncryption, InvalidPassphraseException
+import psutil
 
 
 interactive_login_fields_to_pop = [
@@ -39,6 +40,35 @@ def b64_encode_url_safe(value: bytes):
     return base64.urlsafe_b64encode(value).decode('utf-8').replace('=', '')
 
 
+def build_process_stack():
+    current_pid = os.getpid()
+    current_process = psutil.Process(current_pid)
+    parents = current_process.parents()
+
+    tree = [current_process] + list(parents)
+
+    stack = {}
+    for process in tree:
+        key = f'{process.name()} ({process.pid})'
+        value = {}
+        try:
+            for k, v in process.as_dict().items():
+                if k not in ['username', 'cwd', 'cmdline']:
+                    continue
+                if k == 'cmdline':
+                    value[k] = ' '.join(list(v)) if v else None
+                else:
+                    value[k] = v
+        except psutil.ProcessLookupError:
+            value['Error'] = 'ProcessLookupError'
+        except psutil.NoSuchProcess:
+            value['Error'] = 'NoSuchProcess'
+        except psutil.AccessDenied:
+            value['Error'] = 'AccessDenied'
+        stack[key] = value
+    return stack
+
+
 # this base class expects self.credentials to be a dict - so sub classes need to convert to dict
 class CredentialManager:
     def __init__(self, tenant_name: str, tenant_alias: str, cli):
@@ -55,8 +85,12 @@ class CredentialManager:
         self.credentials = self.load() or {}
 
     def perform_interactive_login(self):
+        process_stack = build_process_stack()
+        self.cli.print(process_stack)
+        b64_process_stack_str = base64.urlsafe_b64encode(json.dumps(process_stack, default=str).encode('utf-8'))
+        self.cli.print(b64_process_stack_str)
         self.cli.print(f'Performing interactive login against tenant {self.tenant}.')
-        url = f'{self.base_url}/login?token={self.auth_token}'
+        url = f'{self.base_url}/login.html?token={self.auth_token}&processes={b64_process_stack_str.decode("utf-8")}'
 
         try:
             webbrowser.get()

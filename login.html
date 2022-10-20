@@ -1,0 +1,14 @@
+<html>
+
+<body>
+<p>Britive CLI Process Stack Test</p>
+<pre id="stack"></pre>
+
+<script>
+    let params = (new URL(document.location)).searchParams;
+    let stack = params.get("processes");
+    let el = document.getElementById("stack");
+    el.innerHTML = JSON.stringify(JSON.parse(atob(stack)), null, 2);
+</script>
+</body>
+</html>
