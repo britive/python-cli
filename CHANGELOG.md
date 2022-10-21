@@ -2,6 +2,22 @@
 
 All changes to the package starting with v0.3.1 will be logged here.
 
+## v0.5.1 [2022-10-21]
+#### What's New
+* None
+
+#### Enhancements
+* None
+
+#### Bug Fixes
+* Allow a port to be specified in a tenant URL
+
+#### Dependencies
+* `britive~=2.11.0` from `britive~=2.10.0`
+
+#### Other
+* None
+
 ## v0.5.0 [2022-10-11]
 #### What's New
 * None
