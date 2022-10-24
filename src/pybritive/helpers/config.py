@@ -6,6 +6,7 @@ import json
 import toml
 from ..choices.output_format import output_format_choices
 from ..choices.backend import backend_choices
+from britive.britive import Britive
 
 
 def extract_tenant(tenant_key):
@@ -259,6 +260,11 @@ class ConfigManager:
         for field, value in fields.items():
             if field not in tenant_fields:
                 self.validation_error_messages.append(f'Invalid {section} field {field} provided.')
+            if field == 'name':
+                try:
+                    Britive.parse_tenant(value)
+                except Exception as e:
+                    raise click.ClickException(f'Error validating tenant name: {str(e)}')
             if field == 'output_format' and value not in output_format_choices.choices:
                 error = f'Invalid {section} field {field} value {value} provided. Invalid value choice.'
                 self.validation_error_messages.append(error)
