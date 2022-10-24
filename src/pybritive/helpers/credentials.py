@@ -10,6 +10,7 @@ import configparser
 import json
 import os
 from .encryption import StringEncryption, InvalidPassphraseException
+from britive.britive import Britive
 
 
 interactive_login_fields_to_pop = [
@@ -45,7 +46,7 @@ class CredentialManager:
         self.cli = cli
         self.tenant = tenant_name
         self.alias = tenant_alias
-        self.base_url = f'https://{cli.parse_tenant()}'
+        self.base_url = f'https://{Britive.parse_tenant(tenant_name)}'
 
         # not sure if we really need 32 random bytes or if any random string would work
         # but the current britive-cli in node.js does it this way so it will be done the same
