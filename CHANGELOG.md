@@ -13,7 +13,7 @@ All changes to the package starting with v0.3.1 will be logged here.
 * Allow local machine DNS to resolve (e.g. /etc/hosts) for tenant url
 
 #### Dependencies
-* `britive~=2.11.0` from `britive~=2.10.0`
+* `britive~=2.11.1` from `britive~=2.11.0`
 
 #### Other
 * None
