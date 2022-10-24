@@ -1,4 +1,4 @@
-britive~=2.11.0
+britive~=2.11.1
 certifi==2022.6.15
 charset-normalizer==2.1.0
 click==8.1.3

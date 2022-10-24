@@ -2,6 +2,22 @@
 
 All changes to the package starting with v0.3.1 will be logged here.
 
+## v0.5.2 [2022-10-24]
+#### What's New
+* None
+
+#### Enhancements
+* None
+
+#### Bug Fixes
+* Allow local machine DNS to resolve (e.g. /etc/hosts) for tenant url
+
+#### Dependencies
+* `britive~=2.11.1` from `britive~=2.11.0`
+
+#### Other
+* None
+
 ## v0.5.1 [2022-10-21]
 #### What's New
 * None
