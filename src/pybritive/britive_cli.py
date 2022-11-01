@@ -13,9 +13,11 @@ from .helpers.cache import Cache
 from britive import exceptions
 from pathlib import Path
 from datetime import datetime
+import os
 
 
 default_table_format = 'fancy_grid'
+debug_enabled = os.getenv('PYBRITIVE_DEBUG')
 
 
 class BritiveCli:
@@ -98,6 +100,10 @@ class BritiveCli:
         self.login()
         self.b.delete(f'https://{Britive.parse_tenant(self.tenant_name)}/api/auth')
         self._cleanup_credentials()
+
+    def debug(self, data: object, ignore_silent: bool = False):
+        if debug_enabled:
+            self.print(data=data, ignore_silent=ignore_silent)
 
     # will take a list of dicts and print to the screen based on the format specified in the config file
     # dict can only be 1 level deep (no nesting) - caller needs to massage the data accordingly
@@ -297,6 +303,7 @@ class BritiveCli:
     def _checkout(self, profile_name, env_name, app_name, programmatic, blocktime, maxpolltime, justification):
         try:
             self.login()
+
             return self.b.my_access.checkout_by_name(
                 profile_name=profile_name,
                 environment_name=env_name,

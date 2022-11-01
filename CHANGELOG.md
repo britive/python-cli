@@ -2,6 +2,22 @@
 
 All changes to the package starting with v0.3.1 will be logged here.
 
+## v0.5.3 [2022-11-01]
+#### What's New
+* None
+
+#### Enhancements
+* None
+
+#### Bug Fixes
+* None
+
+#### Dependencies
+* `britive~=2.11.2` from `britive~=2.11.1` - reduced # of API calls required to checkout a profile
+
+#### Other
+* None
+
 ## v0.5.2 [2022-10-24]
 #### What's New
 * None
