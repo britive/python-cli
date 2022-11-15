@@ -2,7 +2,7 @@
 
 All changes to the package starting with v0.3.1 will be logged here.
 
-## v0.6.0 [2022-11-XX]
+## v0.6.0 [2022-11-15]
 #### What's New
 * None
 
