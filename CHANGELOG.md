@@ -2,6 +2,23 @@
 
 All changes to the package starting with v0.3.1 will be logged here.
 
+## v0.6.0 [2022-11-XX]
+#### What's New
+* None
+
+#### Enhancements
+* When checking out a profile, the default is to check out programmatic access unless the `--console/-c` flag is set. This
+enhancement will enable auto check out of console access if programmatic access is not available for the specified profile.
+
+#### Bug Fixes
+* None
+
+#### Dependencies
+* None
+
+#### Other
+* None
+
 ## v0.5.3 [2022-11-01]
 #### What's New
 * None

@@ -318,6 +318,14 @@ class BritiveCli:
             raise click.ClickException('approval required and no justification provided.')
         except ValueError as e:
             raise click.BadParameter(str(e))
+        except Exception as e:
+            if 'programmatic access is not enabled' in str(e).lower():
+                # attempt to automatically checkout console access instead
+                # this is a cli only feature - not available in the sdk
+                self.print('no programmatic access available - checking out console access instead')
+                return self._checkout(profile_name, env_name, app_name, False, blocktime, maxpolltime, justification)
+            else:
+                raise e
 
     @staticmethod
     def _should_check_force_renew(app, force_renew, console):
