@@ -5,8 +5,8 @@ from ..options.britive_options import britive_options
 
 @click.command()
 @build_britive
-@britive_options(names='tenant,token,passphrase')
-def user(ctx, tenant, token, passphrase):
+@britive_options(names='tenant,token,passphrase,federation_provider')
+def user(ctx, tenant, token, passphrase, federation_provider):
     """Print details about the authenticated identity."""
     ctx.obj.britive.user()
 

@@ -11,9 +11,10 @@ def secret():
 
 @secret.command()
 @build_britive
-@britive_options(names='blocktime,justification,maxpolltime,format,tenant,token,passphrase')
+@britive_options(names='blocktime,justification,maxpolltime,format,tenant,token,passphrase,federation_provider')
 @click.argument('path')
-def view(ctx, blocktime, justification, maxpolltime, output_format, tenant, token, passphrase, path):
+def view(ctx, blocktime, justification, maxpolltime, output_format, tenant, token, passphrase,
+         federation_provider, path):
     """Display the secret value of the provided secret.
 
     This command takes 1 required argument `PATH`. This should be a string representation of the secret path.
@@ -32,9 +33,11 @@ def view(ctx, blocktime, justification, maxpolltime, output_format, tenant, toke
 
 @secret.command()
 @build_britive
-@britive_options(names='file,blocktime,justification,maxpolltime,format,silent,tenant,token,passphrase')
+@britive_options(names='file,blocktime,justification,maxpolltime,format,silent,tenant,token,'
+                       'passphrase,federation_provider')
 @click.argument('path')
-def download(ctx, file, blocktime, justification, maxpolltime, output_format, silent, tenant, token, passphrase, path):
+def download(ctx, file, blocktime, justification, maxpolltime, output_format, silent, tenant, token, passphrase,
+             federation_provider, path):
     """Download the secret file.
 
     This command takes 1 required argument `PATH`. This should be a string representation of the secret path.

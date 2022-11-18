@@ -11,9 +11,9 @@ def request():
 
 @request.command()
 @build_britive
-@britive_options(names='justification,tenant,token,passphrase')
+@britive_options(names='justification,tenant,token,passphrase,federation_provider')
 @click.argument('profile', shell_complete=profile_completer)
-def submit(ctx, justification, tenant, token, passphrase, profile):
+def submit(ctx, justification, tenant, token, passphrase, federation_provider, profile):
     """Submit a request to checkout a profile.
 
     Only applicable for profiles which require approval. This command will NOT block/wait until the request is
@@ -32,9 +32,9 @@ def submit(ctx, justification, tenant, token, passphrase, profile):
 
 @request.command()
 @build_britive
-@britive_options(names='tenant,token,passphrase')
+@britive_options(names='tenant,token,passphrase,federation_provider')
 @click.argument('profile', shell_complete=profile_completer)
-def withdraw(ctx, tenant, token, passphrase, profile):
+def withdraw(ctx, tenant, token, passphrase, federation_provider, profile):
     """Withdraw a request to checkout a profile.
 
     Only applicable for profiles which require approval.

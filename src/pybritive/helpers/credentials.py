@@ -11,6 +11,7 @@ import json
 import os
 from .encryption import StringEncryption, InvalidPassphraseException
 from britive.britive import Britive
+from dateutil import parser
 
 
 interactive_login_fields_to_pop = [
@@ -30,6 +31,7 @@ interactive_login_fields_to_pop = [
 # in case we need to do things like polling for credentials during
 # an approval process
 credential_expiration_safe_zone_minutes = 10
+federation_provider_default_expiration_seconds = 900
 
 
 class InteractiveLoginTimeout(Exception):
@@ -42,11 +44,12 @@ def b64_encode_url_safe(value: bytes):
 
 # this base class expects self.credentials to be a dict - so sub classes need to convert to dict
 class CredentialManager:
-    def __init__(self, tenant_name: str, tenant_alias: str, cli):
+    def __init__(self, tenant_name: str, tenant_alias: str, cli: any, federation_provider: str = None):
         self.cli = cli
         self.tenant = tenant_name
         self.alias = tenant_alias
         self.base_url = f'https://{Britive.parse_tenant(tenant_name)}'
+        self.federation_provider = federation_provider
 
         # not sure if we really need 32 random bytes or if any random string would work
         # but the current britive-cli in node.js does it this way so it will be done the same
@@ -93,6 +96,58 @@ class CredentialManager:
                 self.cli.print(f'Authenticated to tenant {self.tenant} via interactive login.')
                 break
 
+    def perform_federation_provider_authentication(self):
+        self.cli.print(f'Performing {self.federation_provider} federation provider authentication '
+                       f'against tenant {self.tenant}.')
+
+        # we need to extract the duration, if provided
+        # field format is provider-[something provider specific]_[duration in seconds]
+        helper = self.federation_provider.split('_')
+        duration = federation_provider_default_expiration_seconds
+        if len(helper) == 2:
+            try:
+                duration = int(helper[1])
+            except ValueError:
+                self.cli.print(f'Invalid federation provider duration {helper[1]} provided - defaulting '
+                               f'to {duration} seconds.')
+
+        # generate the token
+        generated_token = Britive.source_federation_token_from(
+            provider=helper[0],
+            tenant=self.tenant,
+            duration_seconds=duration
+        )
+
+        # obtain the provider and expiration time of the token
+        provider, token = generated_token.split('::')
+        provider = provider.lower()
+        token = str(token)
+
+        expiration_time = (time.time_ns() // 1000000) + federation_provider_default_expiration_seconds
+
+        try:
+            if provider == 'aws':
+                token = base64.b64decode(token.encode('utf-8'))
+                token_expires = json.loads(token)['iam_request_headers']['x-britive-expires']
+                expiration_time = int(parser.parse(token_expires).timestamp() * 1000)
+            if provider == 'oidc':
+                ignore1, token, ignore2 = token.split('.')
+                token = base64.b64decode(token.encode('utf-8'))
+                token = json.loads(token)
+                expiration_time = int(token['exp'] * 1000)
+        except Exception as e:
+            self.cli.print(f'Cannot obtain token expiration time for {self.federation_provider}. Defaulting to '
+                           f'{federation_provider_default_expiration_seconds} seconds.')
+
+        # generate the credentials object and save it
+        credentials = {
+            'accessToken': generated_token,
+            'safeExpirationTime': expiration_time
+        }
+
+        self.save(credentials)
+        self.cli.print(f'Authenticated to tenant {self.tenant} via federation provider authentication.')
+
     def retrieve_tokens(self):
         url = f'{self.base_url}/api/auth/cli/retrieve-tokens'
         auth_params = {
@@ -106,15 +161,15 @@ class CredentialManager:
         return requests.post(url, headers=headers, json=auth_params)
 
     def load(self, full=False):
-        # we should NEVER here exception but adding here just in case
+        # we should NEVER be here exception but adding here just in case
         raise click.ClickException('Must use a subclass of CredentialManager')
 
     def save(self, credentials: dict):
-        # we should NEVER get here but adding here just in case
+        # we should NEVER be get here but adding here just in case
         raise click.ClickException('Must use a subclass of CredentialManager')
 
     def delete(self):
-        # we should NEVER get here but adding here just in case
+        # we should NEVER be get here but adding here just in case
         raise click.ClickException('Must use a subclass of CredentialManager')
 
     # this helper exists since subclasses may need to override the method due to how the
@@ -123,8 +178,14 @@ class CredentialManager:
         return self.credentials['accessToken']
 
     def get_token(self):
-        if not self.has_valid_credentials():  # no credentials or expired creds for the  tenant so do interactive login
-            self.perform_interactive_login()  # will write the credentials out and update self.credentials as needed
+        if not self.has_valid_credentials():  # no credentials or expired creds for the tenant so do interactive login
+
+            # both methods below write the credentials out and update self.credentials as needed
+            if self.federation_provider:
+                self.perform_federation_provider_authentication()
+            else:
+                self.perform_interactive_login()
+
         return self._get_token()
 
     def has_valid_credentials(self):
@@ -138,10 +199,10 @@ class CredentialManager:
 
 
 class FileCredentialManager(CredentialManager):
-    def __init__(self, tenant_name: str, tenant_alias: str, cli):
+    def __init__(self, tenant_name: str, tenant_alias: str, cli: any, federation_provider: str = None):
         home = os.getenv('PYBRITIVE_HOME_DIR', str(Path.home()))
         self.path = str(Path(home) / '.britive' / 'pybritive.credentials')
-        super().__init__(tenant_name, tenant_alias, cli)
+        super().__init__(tenant_name, tenant_alias, cli, federation_provider)
 
     def load(self, full=False):
         path = Path(self.path)
@@ -179,12 +240,13 @@ class FileCredentialManager(CredentialManager):
 
 
 class EncryptedFileCredentialManager(CredentialManager):
-    def __init__(self, tenant_name: str, tenant_alias: str, cli, passphrase: str = None):
+    def __init__(self, tenant_name: str, tenant_alias: str, cli: any, passphrase: str = None,
+                 federation_provider: str = None):
         home = os.getenv('PYBRITIVE_HOME_DIR', str(Path.home()))
         self.path = str(Path(home) / '.britive' / 'pybritive.credentials.encrypted')
         self.passphrase = passphrase
         self.string_encryptor = StringEncryption(passphrase=self.passphrase)
-        super().__init__(tenant_name, tenant_alias, cli)
+        super().__init__(tenant_name, tenant_alias, cli, federation_provider)
 
     def decrypt(self, encrypted_access_token: str):
         try:
