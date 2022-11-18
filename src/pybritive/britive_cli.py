@@ -21,7 +21,8 @@ debug_enabled = os.getenv('PYBRITIVE_DEBUG')
 
 
 class BritiveCli:
-    def __init__(self, tenant_name: str = None, token: str = None, silent: bool = False, passphrase: str = None):
+    def __init__(self, tenant_name: str = None, token: str = None, silent: bool = False,
+                 passphrase: str = None, federation_provider: str = None):
         self.silent = silent
         self.output_format = None
         self.tenant_name = None
@@ -32,6 +33,7 @@ class BritiveCli:
         self.config = ConfigManager(tenant_name=tenant_name, cli=self)
         self.list_separator = '|'
         self.passphrase = passphrase
+        self.federation_provider = federation_provider
         self.credential_manager = None
 
     def set_output_format(self, output_format: str):
@@ -45,14 +47,16 @@ class BritiveCli:
             self.credential_manager = FileCredentialManager(
                 tenant_alias=self.tenant_alias,
                 tenant_name=self.tenant_name,
-                cli=self
+                cli=self,
+                federation_provider=self.federation_provider
             )
         elif backend == 'encrypted-file':
             self.credential_manager = EncryptedFileCredentialManager(
                 tenant_alias=self.tenant_alias,
                 tenant_name=self.tenant_name,
                 cli=self,
-                passphrase=self.passphrase
+                passphrase=self.passphrase,
+                federation_provider=self.federation_provider
             )
         else:
             raise click.ClickException(f'invalid credential backend {backend}.')

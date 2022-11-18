@@ -23,7 +23,8 @@ def build_britive(f):
             tenant_name=kwargs.get('tenant'),
             token=kwargs.get('token'),
             silent=kwargs.get('silent', False),
-            passphrase=kwargs.get('passphrase')
+            passphrase=kwargs.get('passphrase'),
+            federation_provider=kwargs.get('federation_provider')
         ))
 
         parent_command = ctx.parent.command.name

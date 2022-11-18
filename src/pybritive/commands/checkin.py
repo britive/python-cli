@@ -6,9 +6,9 @@ from ..completers.profile import profile_completer
 
 @click.command()
 @build_britive
-@britive_options(names='tenant,token,passphrase')
+@britive_options(names='tenant,token,passphrase,federation_provider')
 @click.argument('profile', shell_complete=profile_completer)
-def checkin(ctx, tenant, token, passphrase, profile):
+def checkin(ctx, tenant, token, passphrase, federation_provider, profile):
     """Checkin a profile.
 
     This command takes 1 required argument `PROFILE`. This should be a string representation of the profile
