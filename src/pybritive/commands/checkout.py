@@ -7,10 +7,10 @@ from ..completers.profile import profile_completer
 @click.command()
 @build_britive
 @britive_options(names='alias,blocktime,console,justification,mode,maxpolltime,silent,force_renew,aws_credentials_file,'
-                       'tenant,token,passphrase')
+                       'tenant,token,passphrase,federation_provider')
 @click.argument('profile', shell_complete=profile_completer)
 def checkout(ctx, alias, blocktime, console, justification, mode, maxpolltime, silent, force_renew,
-             aws_credentials_file, tenant, token, passphrase, profile):
+             aws_credentials_file, tenant, token, passphrase, federation_provider, profile):
     """Checkout a profile.
 
     This command takes 1 required argument `PROFILE`. This should be a string representation of the profile

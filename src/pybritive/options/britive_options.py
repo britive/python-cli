@@ -19,6 +19,7 @@ from ..options.configure_backend import option as configure_backend
 from ..options.passphrase import option as passphrase
 from ..options.force_renew import option as force_renew
 from ..options.aws_credentials_file import option as aws_credentials_file
+from ..options.federation_provider import option as federation_provider
 
 options_map = {
     'tenant': tenant,
@@ -41,7 +42,8 @@ options_map = {
     'configure_backend': configure_backend,
     'passphrase': passphrase,
     'force_renew': force_renew,
-    'aws_credentials_file': aws_credentials_file
+    'aws_credentials_file': aws_credentials_file,
+    'federation_provider': federation_provider
 }
 
 
