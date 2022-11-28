@@ -2,6 +2,22 @@
 
 All changes to the package starting with v0.3.1 will be logged here.
 
+## v0.7.0 [2022-11-28]
+#### What's New
+* None
+
+#### Enhancements
+* None
+
+#### Bug Fixes
+* None
+
+#### Dependencies
+* `britive~=2.12.2` from `britive~=2.12.1` - AWS provider tenant logic fix
+
+#### Other
+* None
+
 ## v0.7.0 [2022-11-18]
 #### What's New
 > **_NOTE:_**  This is a pre-release feature. It is being published in anticipation of upcoming features being released to production. This functionality will not yet work in production environments.
