@@ -53,6 +53,8 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#credential-selection-logic">Credential Selection Logic</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="#workload-federation-providers">Workload Federation Providers</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="#credential-stores">Credential Stores</a>
         <ul>
     <li class="toctree-l3"><a class="reference internal" href="#file">File</a>
@@ -195,12 +197,49 @@ order of operations for determining the tenant.</p>
 </ol>
 <h2 id="credential-selection-logic">Credential Selection Logic</h2>
 <p>There are numerous ways to provide the CLI with the Britive credentials that should be used to authenticate to the
-Britive tenant. The below list is the order of operations for determining the tenant.</p>
+Britive tenant. The below list is the order of operations for determining the token to use.</p>
 <ol>
+<li>Workload federation provider token via option/flag <code>--federation-provider/-P</code> (see below for more details on this option)</li>
 <li>Value retrieved from CLI option/flag <code>--token/-T</code></li>
 <li>Value retrieved from environment variable <code>BRITIVE_API_TOKEN</code></li>
 <li>If none of the above are available an interactive login will be performed and temporary credentials will be stored locally for future use with the CLI</li>
 </ol>
+<h2 id="workload-federation-providers">Workload Federation Providers</h2>
+<p><em>NOTE</em>: Before any of the below will work there is required setup and configuration within your Britive tenant 
+so trust can be established between the identity provider and Britive.</p>
+<p><code>pybritive</code> and the Python SDK offer the capability to source an ephemeral token from a federation provider. 
+This use case is targeted for machines/automated workloads and removes the need to store a long-lived API token 
+to interact with Britive. These tokens are mapped to service identities within your Britive tenant.</p>
+<p>At feature launch the following types of identity providers are supported for workload identity federation.</p>
+<ul>
+<li>Open ID Connect (OIDC)</li>
+<li>AWS STS</li>
+</ul>
+<p><code>pybritive</code> offers some native integrations with the following services at the launch of this feature.</p>
+<ul>
+<li>Github Actions</li>
+<li>AWS</li>
+</ul>
+<p>It is possible to source an identity token from a different OIDC provider and explicitly set it via the <code>--token\-T</code> flag.
+However, if you are using one of the above providers, a shortcut is provided to abstract away the complexity of sourcing these tokens.
+Over time this list will grow. Reach out to your customer success manager if you have an identity provider you would like added to
+this list.</p>
+<p>A couple of examples are below which illustrate how to use the above identity providers. Note that these commands will only work
+if they are being run within the context of the identity provider. Otherwise, the necessary data and connections will not be 
+present in the execution environment.</p>
+<pre><code class="language-bash"># github actions
+pybritive checkout &quot;profile&quot; --federation-provider github  # use github actions with the default OIDC audience
+pybritive checkout &quot;profile&quot; --federation-provider github-audience  # use github actions with a custom OIDC audience
+pybritive checkout &quot;profile&quot; --federation-provider github-audience_expirationseconds   # use github actions with a custom OIDC audience and set the Britive expiration (in seconds) of the generated token
+pybritive checkout &quot;profile&quot; --federation-provider github_expirationseconds  # use github actions with the default OIDC audience and set the Britive expiration (in seconds) of the generated token
+
+# aws sts
+pybritive checkout &quot;profile&quot; --federation-provider aws  # use aws sts without an AWS CLI profile (source credentials via the standard credential discovery process)
+pybritive checkout &quot;profile&quot; --federation-provider aws-profile  # use aws sts with an AWS CLI profile
+pybritive checkout &quot;profile&quot; --federation-provider aws-profile_expirationseconds   # use aws sts with an AWS CLI profile and set the Britive expiration (in seconds) of the generated token
+pybritive checkout &quot;profile&quot; --federation-provider aws_expirationseconds  # use aws sts without an AWS CLI profile and set the Britive expiration (in seconds) of the generated token
+</code></pre>
+<p>In general the field format for <code>--federation-provider</code> is <code>provider-[something provider specific]_[duration in seconds]</code>.</p>
 <h2 id="credential-stores">Credential Stores</h2>
 <p>The CLI currently offers two ways in which temporary credentials obtained via interactive login can be stored.
 Future enhancements aim to offer other credential storage options.</p>
@@ -455,6 +494,12 @@ region=us-east-1
 <td>None</td>
 </tr>
 <tr>
+<td><code>--federation-provider</code>, <code>-P</code></td>
+<td>text</td>
+<td>Use a federation provider available in the Britive Python SDK for auto token creation. Valid values are <code>aws[-profile]</code> and github[-audience]<code>. Optionally for the AWS provider a durationin seconds can be provided via</code>aws[-profile]_durationseconds` after which point the auto-generatedcredentials will expire.</td>
+<td>None</td>
+</tr>
+<tr>
 <td><code>--help</code></td>
 <td>boolean</td>
 <td>Show this message and exit.</td>
@@ -496,6 +541,12 @@ that should be checked in. Format is <code>application name/environment name/pro
 <td><code>--passphrase</code>, <code>-p</code></td>
 <td>text</td>
 <td>The passphrase to use for encrypting credentials.</td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>--federation-provider</code>, <code>-P</code></td>
+<td>text</td>
+<td>Use a federation provider available in the Britive Python SDK for auto token creation. Valid values are <code>aws[-profile]</code> and github[-audience]<code>. Optionally for the AWS provider a durationin seconds can be provided via</code>aws[-profile]_durationseconds` after which point the auto-generatedcredentials will expire.</td>
 <td>None</td>
 </tr>
 <tr>
@@ -594,6 +645,12 @@ that should be checked out. Format is <code>application name/environment name/pr
 <td><code>--passphrase</code>, <code>-p</code></td>
 <td>text</td>
 <td>The passphrase to use for encrypting credentials.</td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>--federation-provider</code>, <code>-P</code></td>
+<td>text</td>
+<td>Use a federation provider available in the Britive Python SDK for auto token creation. Valid values are <code>aws[-profile]</code> and github[-audience]<code>. Optionally for the AWS provider a durationin seconds can be provided via</code>aws[-profile]_durationseconds` after which point the auto-generatedcredentials will expire.</td>
 <td>None</td>
 </tr>
 <tr>
@@ -710,6 +767,12 @@ that should be checked out. Format is <code>application name/environment name/pr
 <td><code>-T</code>, <code>--token</code></td>
 <td>text</td>
 <td>API token.</td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>--federation-provider</code>, <code>-P</code></td>
+<td>text</td>
+<td>Use a federation provider available in the Britive Python SDK for auto token creation. Valid values are <code>aws[-profile]</code> and github[-audience]<code>. Optionally for the AWS provider a durationin seconds can be provided via</code>aws[-profile]_durationseconds` after which point the auto-generatedcredentials will expire.</td>
 <td>None</td>
 </tr>
 <tr>
@@ -841,6 +904,12 @@ that should be checked out. Format is <code>application name/environment name/pr
 <td>None</td>
 </tr>
 <tr>
+<td><code>--federation-provider</code>, <code>-P</code></td>
+<td>text</td>
+<td>Use a federation provider available in the Britive Python SDK for auto token creation. Valid values are <code>aws[-profile]</code> and github[-audience]<code>. Optionally for the AWS provider a durationin seconds can be provided via</code>aws[-profile]_durationseconds` after which point the auto-generatedcredentials will expire.</td>
+<td>None</td>
+</tr>
+<tr>
 <td><code>--help</code></td>
 <td>boolean</td>
 <td>Show this message and exit.</td>
@@ -958,6 +1027,12 @@ that should be checked out. Format is <code>application name/environment name/pr
 <td>None</td>
 </tr>
 <tr>
+<td><code>--federation-provider</code>, <code>-P</code></td>
+<td>text</td>
+<td>Use a federation provider available in the Britive Python SDK for auto token creation. Valid values are <code>aws[-profile]</code> and github[-audience]<code>. Optionally for the AWS provider a durationin seconds can be provided via</code>aws[-profile]_durationseconds` after which point the auto-generatedcredentials will expire.</td>
+<td>None</td>
+</tr>
+<tr>
 <td><code>--help</code></td>
 <td>boolean</td>
 <td>Show this message and exit.</td>
@@ -1003,6 +1078,12 @@ that should be checked out. Format is <code>application name/environment name/pr
 <td><code>--passphrase</code>, <code>-p</code></td>
 <td>text</td>
 <td>The passphrase to use for encrypting credentials.</td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>--federation-provider</code>, <code>-P</code></td>
+<td>text</td>
+<td>Use a federation provider available in the Britive Python SDK for auto token creation. Valid values are <code>aws[-profile]</code> and github[-audience]<code>. Optionally for the AWS provider a durationin seconds can be provided via</code>aws[-profile]_durationseconds` after which point the auto-generatedcredentials will expire.</td>
 <td>None</td>
 </tr>
 <tr>
@@ -1060,6 +1141,12 @@ that should be checked out. Format is <code>application name/environment name/pr
 <td>None</td>
 </tr>
 <tr>
+<td><code>--federation-provider</code>, <code>-P</code></td>
+<td>text</td>
+<td>Use a federation provider available in the Britive Python SDK for auto token creation. Valid values are <code>aws[-profile]</code> and github[-audience]<code>. Optionally for the AWS provider a durationin seconds can be provided via</code>aws[-profile]_durationseconds` after which point the auto-generatedcredentials will expire.</td>
+<td>None</td>
+</tr>
+<tr>
 <td><code>--help</code></td>
 <td>boolean</td>
 <td>Show this message and exit.</td>
@@ -1105,6 +1192,12 @@ that should be checked out. Format is <code>application name/environment name/pr
 <td><code>--passphrase</code>, <code>-p</code></td>
 <td>text</td>
 <td>The passphrase to use for encrypting credentials.</td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>--federation-provider</code>, <code>-P</code></td>
+<td>text</td>
+<td>Use a federation provider available in the Britive Python SDK for auto token creation. Valid values are <code>aws[-profile]</code> and github[-audience]<code>. Optionally for the AWS provider a durationin seconds can be provided via</code>aws[-profile]_durationseconds` after which point the auto-generatedcredentials will expire.</td>
 <td>None</td>
 </tr>
 <tr>
@@ -1190,6 +1283,12 @@ that should be checked out. Format is <code>application name/environment name/pr
 <td>None</td>
 </tr>
 <tr>
+<td><code>--federation-provider</code>, <code>-P</code></td>
+<td>text</td>
+<td>Use a federation provider available in the Britive Python SDK for auto token creation. Valid values are <code>aws[-profile]</code> and github[-audience]<code>. Optionally for the AWS provider a durationin seconds can be provided via</code>aws[-profile]_durationseconds` after which point the auto-generatedcredentials will expire.</td>
+<td>None</td>
+</tr>
+<tr>
 <td><code>--help</code></td>
 <td>boolean</td>
 <td>Show this message and exit.</td>
@@ -1232,6 +1331,12 @@ that should be checked out. Format is <code>application name/environment name/pr
 <td><code>--passphrase</code>, <code>-p</code></td>
 <td>text</td>
 <td>The passphrase to use for encrypting credentials.</td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>--federation-provider</code>, <code>-P</code></td>
+<td>text</td>
+<td>Use a federation provider available in the Britive Python SDK for auto token creation. Valid values are <code>aws[-profile]</code> and github[-audience]<code>. Optionally for the AWS provider a durationin seconds can be provided via</code>aws[-profile]_durationseconds` after which point the auto-generatedcredentials will expire.</td>
 <td>None</td>
 </tr>
 <tr>
@@ -1344,6 +1449,12 @@ Ensure the leading <code>/</code> is provided.</p>
 <td>None</td>
 </tr>
 <tr>
+<td><code>--federation-provider</code>, <code>-P</code></td>
+<td>text</td>
+<td>Use a federation provider available in the Britive Python SDK for auto token creation. Valid values are <code>aws[-profile]</code> and github[-audience]<code>. Optionally for the AWS provider a durationin seconds can be provided via</code>aws[-profile]_durationseconds` after which point the auto-generatedcredentials will expire.</td>
+<td>None</td>
+</tr>
+<tr>
 <td><code>--help</code></td>
 <td>boolean</td>
 <td>Show this message and exit.</td>
@@ -1412,6 +1523,12 @@ Ensure the leading <code>/</code> is provided.</p>
 <td>None</td>
 </tr>
 <tr>
+<td><code>--federation-provider</code>, <code>-P</code></td>
+<td>text</td>
+<td>Use a federation provider available in the Britive Python SDK for auto token creation. Valid values are <code>aws[-profile]</code> and github[-audience]<code>. Optionally for the AWS provider a durationin seconds can be provided via</code>aws[-profile]_durationseconds` after which point the auto-generatedcredentials will expire.</td>
+<td>None</td>
+</tr>
+<tr>
 <td><code>--help</code></td>
 <td>boolean</td>
 <td>Show this message and exit.</td>
@@ -1451,6 +1568,12 @@ Ensure the leading <code>/</code> is provided.</p>
 <td><code>--passphrase</code>, <code>-p</code></td>
 <td>text</td>
 <td>The passphrase to use for encrypting credentials.</td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>--federation-provider</code>, <code>-P</code></td>
+<td>text</td>
+<td>Use a federation provider available in the Britive Python SDK for auto token creation. Valid values are <code>aws[-profile]</code> and github[-audience]<code>. Optionally for the AWS provider a durationin seconds can be provided via</code>aws[-profile]_durationseconds` after which point the auto-generatedcredentials will expire.</td>
 <td>None</td>
 </tr>
 <tr>
@@ -1508,5 +1631,5 @@ Ensure the leading <code>/</code> is provided.</p>
 
 <!--
 MkDocs version : 1.3.1
-Build Date UTC : 2022-10-11 19:27:32.255743+00:00
+Build Date UTC : 2022-12-13 14:51:09.613160+00:00
 -->
