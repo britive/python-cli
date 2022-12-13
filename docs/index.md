@@ -67,12 +67,57 @@ order of operations for determining the tenant.
 ## Credential Selection Logic
 
 There are numerous ways to provide the CLI with the Britive credentials that should be used to authenticate to the
-Britive tenant. The below list is the order of operations for determining the tenant.
+Britive tenant. The below list is the order of operations for determining the token to use.
 
-1. Value retrieved from CLI option/flag `--token/-T`
-2. Value retrieved from environment variable `BRITIVE_API_TOKEN`
-3. If none of the above are available an interactive login will be performed and temporary credentials will be stored locally for future use with the CLI
+1. Workload federation provider token via option/flag `--federation-provider/-P` (see below for more details on this option)
+2. Value retrieved from CLI option/flag `--token/-T`
+3. Value retrieved from environment variable `BRITIVE_API_TOKEN`
+4. If none of the above are available an interactive login will be performed and temporary credentials will be stored locally for future use with the CLI
 
+
+## Workload Federation Providers
+
+*NOTE*: Before any of the below will work there is required setup and configuration within your Britive tenant 
+so trust can be established between the identity provider and Britive.
+
+`pybritive` and the Python SDK offer the capability to source an ephemeral token from a federation provider. 
+This use case is targeted for machines/automated workloads and removes the need to store a long-lived API token 
+to interact with Britive. These tokens are mapped to service identities within your Britive tenant.
+
+At feature launch the following types of identity providers are supported for workload identity federation.
+
+* Open ID Connect (OIDC)
+* AWS STS
+
+`pybritive` offers some native integrations with the following services at the launch of this feature.
+
+* Github Actions
+* AWS
+
+It is possible to source an identity token from a different OIDC provider and explicitly set it via the `--token\-T` flag.
+However, if you are using one of the above providers, a shortcut is provided to abstract away the complexity of sourcing these tokens.
+Over time this list will grow. Reach out to your customer success manager if you have an identity provider you would like added to
+this list.
+
+A couple of examples are below which illustrate how to use the above identity providers. Note that these commands will only work
+if they are being run within the context of the identity provider. Otherwise, the necessary data and connections will not be 
+present in the execution environment.
+
+~~~bash
+# github actions
+pybritive checkout "profile" --federation-provider github  # use github actions with the default OIDC audience
+pybritive checkout "profile" --federation-provider github-audience  # use github actions with a custom OIDC audience
+pybritive checkout "profile" --federation-provider github-audience_expirationseconds   # use github actions with a custom OIDC audience and set the Britive expiration (in seconds) of the generated token
+pybritive checkout "profile" --federation-provider github_expirationseconds  # use github actions with the default OIDC audience and set the Britive expiration (in seconds) of the generated token
+
+# aws sts
+pybritive checkout "profile" --federation-provider aws  # use aws sts without an AWS CLI profile (source credentials via the standard credential discovery process)
+pybritive checkout "profile" --federation-provider aws-profile  # use aws sts with an AWS CLI profile
+pybritive checkout "profile" --federation-provider aws-profile_expirationseconds   # use aws sts with an AWS CLI profile and set the Britive expiration (in seconds) of the generated token
+pybritive checkout "profile" --federation-provider aws_expirationseconds  # use aws sts without an AWS CLI profile and set the Britive expiration (in seconds) of the generated token
+~~~
+
+In general the field format for `--federation-provider` is `provider-[something provider specific]_[duration in seconds]`.
 
 ## Credential Stores
 
