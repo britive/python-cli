@@ -2,6 +2,22 @@
 
 All changes to the package starting with v0.3.1 will be logged here.
 
+## v0.7.2 [2022-12-12]
+#### What's New
+* None
+
+#### Enhancements
+* None
+
+#### Bug Fixes
+* None
+
+#### Dependencies
+* `britive~=2.12.3` from `britive~=2.12.2` - AWS provider tenant port removal, disable SSL verification, json decode bug fix
+
+#### Other
+* None
+
 ## v0.7.1 [2022-11-28]
 #### What's New
 * None

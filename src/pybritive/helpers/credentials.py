@@ -4,6 +4,7 @@ import hashlib
 import time
 import webbrowser
 import requests
+from requests.adapters import HTTPAdapter, Retry
 from pathlib import Path
 import click
 import configparser
@@ -50,6 +51,7 @@ class CredentialManager:
         self.alias = tenant_alias
         self.base_url = f'https://{Britive.parse_tenant(tenant_name)}'
         self.federation_provider = federation_provider
+        self.session = None
 
         # not sure if we really need 32 random bytes or if any random string would work
         # but the current britive-cli in node.js does it this way so it will be done the same
@@ -58,9 +60,28 @@ class CredentialManager:
         self.auth_token = b64_encode_url_safe(bytes(hashlib.sha512(self.verifier.encode('utf-8')).digest()))
         self.credentials = self.load() or {}
 
+    def _setup_requests_session(self):
+        self.session = requests.Session()
+        retries = Retry(total=5, backoff_factor=1, status_forcelist=[429, 500, 502, 503, 504])
+        self.session.mount('https://', HTTPAdapter(max_retries=retries))
+
+        # allow the disabling of TLS/SSL verification for testing in development (mostly local development)
+        if os.getenv('BRITIVE_NO_VERIFY_SSL') and '.dev.' in self.tenant:
+            # turn off ssl verification
+            self.session.verify = False
+            # wipe these due to this bug: https://github.com/psf/requests/issues/3829
+            os.environ['CURL_CA_BUNDLE'] = ""
+            os.environ['REQUESTS_CA_BUNDLE'] = ""
+            # disable the warning message
+            import urllib3
+            urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
     def perform_interactive_login(self):
         self.cli.print(f'Performing interactive login against tenant {self.tenant}.')
         url = f'{self.base_url}/login?token={self.auth_token}'
+
+        # establish a requests session which will be used in retrieve_tokens()
+        self._setup_requests_session()
 
         try:
             webbrowser.get()
