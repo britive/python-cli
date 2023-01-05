@@ -237,7 +237,7 @@ class GcpCloudCredentialPrinter(CloudCredentialPrinter):
         else:  # we need to parse out/sanitize what was provided
             path = Path(self.gcloud_key_file).expanduser().absolute()
 
-        # key file does not yet exist, create it as an empty file
+        # key file does not yet exist so write to it
         path.parent.mkdir(exist_ok=True, parents=True)
         path.write_text(json.dumps(self.credentials, indent=2))
 
