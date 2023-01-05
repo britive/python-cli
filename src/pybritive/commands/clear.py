@@ -1,11 +1,10 @@
 import click
 from ..helpers.build_britive import build_britive
-from ..options.britive_options import britive_options
 
 
 @click.group()
 def clear():
-    """Manage local cache settings."""
+    """Clear various local settings and configurations."""
     pass
 
 
