@@ -10,6 +10,7 @@ from .commands.checkin import checkin as command_checkin
 from .commands.secret import secret as group_secret
 from .commands.cache import cache as group_cache
 from .commands.request import request as group_request
+from .commands.clear import clear as group_clear
 import sys
 import os
 
@@ -46,6 +47,7 @@ cli.add_command(command_checkin)
 cli.add_command(group_secret)
 cli.add_command(group_cache)
 cli.add_command(group_request)
+cli.add_command(group_clear)
 
 
 if __name__ == "__main__":
