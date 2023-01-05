@@ -6,7 +6,7 @@ All changes to the package starting with v0.3.1 will be logged here.
 #### What's New
 * Ability to store a GCP `gcloud` key file locally so `eval $(pybritive checkout "profile" -m gcloudauth)` will automatically authenticate the user with the gcloud CLI.
 * Ability to override the default location of the GCP `gcloud` key file with `pybritive checkout "profile" -m gcloudauth --gcloud-key-file /path/to/key.json`
-* New command `clear` with subcommands `cache` and `gcloud-key-files`. `cache` has same functionality as `pybritive cache clear` and `gcloud-key-files` will remove all key files stored in the default location.
+* New command `clear` with subcommands `cache` and `gcloud-key-files`. `cache` has same functionality as `pybritive cache clear` and `gcloud-key-files` will remove all `pybritive` generated temporary key files stored in the default location.
 
 #### Enhancements
 * None
