@@ -2,6 +2,22 @@
 
 All changes to the package starting with v0.3.1 will be logged here.
 
+## v0.7.3 [2023-01-04]
+#### What's New
+* None
+
+#### Enhancements
+* None
+
+#### Bug Fixes
+* None
+
+#### Dependencies
+* `britive~=2.12.4` from `britive~=2.12.3` - AWS provider optional session token
+
+#### Other
+* None
+
 ## v0.7.2 [2022-12-12]
 #### What's New
 * None
