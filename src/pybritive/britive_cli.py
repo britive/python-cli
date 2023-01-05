@@ -255,7 +255,7 @@ class BritiveCli:
         raise click.ClickException(f'Application {application_id} not found')
 
     def __get_cloud_credential_printer(self, app_type, console, mode, profile, silent, credentials,
-                                       aws_credentials_file):
+                                       aws_credentials_file, gcloud_key_file):
         if app_type in ['AWS', 'AWS Standalone']:
             return printer.AwsCloudCredentialPrinter(
                 console=console,
@@ -282,7 +282,8 @@ class BritiveCli:
                 profile=profile,
                 credentials=credentials,
                 silent=silent,
-                cli=self
+                cli=self,
+                gcloud_key_file=gcloud_key_file
             )
         else:
             return printer.GenericCloudCredentialPrinter(
@@ -348,7 +349,7 @@ class BritiveCli:
         return parts_dict
 
     def checkout(self, alias, blocktime, console, justification, mode, maxpolltime, profile, passphrase,
-                 force_renew, aws_credentials_file):
+                 force_renew, aws_credentials_file, gcloud_key_file):
         credentials = None
         app_type = None
         credential_process_creds_found = False
@@ -418,7 +419,8 @@ class BritiveCli:
             alias or profile,
             self.silent,
             credentials,
-            aws_credentials_file
+            aws_credentials_file,
+            gcloud_key_file
         ).print()
 
     def import_existing_npm_config(self):
@@ -558,6 +560,9 @@ class BritiveCli:
             environment_name=parts['env'],
             application_name=parts['app']
         )
+
+    def clear_gcloud_auth_key_files(self):
+        self.config.clear_gcloud_auth_key_files()
 
 
 

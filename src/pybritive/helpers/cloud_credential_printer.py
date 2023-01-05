@@ -1,4 +1,5 @@
 import json
+import uuid
 import click
 import platform
 import configparser
@@ -50,6 +51,8 @@ class CloudCredentialPrinter:
             self.print_awscredentialprocess()
         if mode_prefix == 'azps':
             self.print_azps()
+        if mode_prefix == 'gcloudauth':
+            self.print_gcloudauth()
 
     def print_console(self):
         if self.mode == 'browser':
@@ -79,6 +82,9 @@ class CloudCredentialPrinter:
         self._not_implemented()
 
     def print_azps(self):
+        self._not_implemented()
+
+    def print_gcloudauth(self):
         self._not_implemented()
 
     def _not_implemented(self):
@@ -210,10 +216,11 @@ class AzureCloudCredentialPrinter(CloudCredentialPrinter):
 
 
 class GcpCloudCredentialPrinter(CloudCredentialPrinter):
-    def __init__(self, console, mode, profile, silent, credentials, cli):
+    def __init__(self, console, mode, profile, silent, credentials, cli, gcloud_key_file):
         key = list(credentials.keys())[0]
         credentials = json.loads(credentials[key])
         super().__init__('GCP', console, mode, profile, silent, credentials, cli)
+        self.gcloud_key_file = gcloud_key_file
 
     def print_json(self):
         self.cli.print(json.dumps(self.credentials, indent=2), ignore_silent=True)
@@ -223,3 +230,18 @@ class GcpCloudCredentialPrinter(CloudCredentialPrinter):
             "--key-file <path-where-above-json-is-stored>", ignore_silent=True
         )
 
+    def print_gcloudauth(self):
+        # get path to gcloud key file
+        if not self.gcloud_key_file:  # if --gcloud-key-file not provided
+            path = Path(self.cli.config.path).parent / 'pybritive-gcloud-key-files' / f'{uuid.uuid4().hex}.json'
+        else:  # we need to parse out/sanitize what was provided
+            path = Path(self.gcloud_key_file).expanduser().absolute()
+
+        # key file does not yet exist so write to it
+        path.parent.mkdir(exist_ok=True, parents=True)
+        path.write_text(json.dumps(self.credentials, indent=2))
+
+        self.cli.print(
+            f"gcloud auth activate-service-account {self.credentials['client_email']} --key-file {str(path)}",
+            ignore_silent=True
+        )

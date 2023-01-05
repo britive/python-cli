@@ -45,56 +45,56 @@ def common_asserts(result, substring=None, exit_code=0):
 
 
 def test_configure_tenant_via_flags_no_alias(runner, cli):
-    result = runner.invoke(cli, 'configure tenant -t test1 -f yaml'.split(' '))
-    common_asserts(result, substring='[tenant-test1]')
+    result = runner.invoke(cli, 'configure tenant -t pybritivetest1.dev -f yaml'.split(' '))
+    common_asserts(result, substring='[tenant-pybritivetest1.dev]')
 
 
 def test_configure_tenant_via_flags_no_alias_no_format(runner, cli):
-    result = runner.invoke(cli, 'configure tenant -t test2'.split(' '))
-    common_asserts(result, substring='[tenant-test2]')
+    result = runner.invoke(cli, 'configure tenant -t pybritivetest2.dev'.split(' '))
+    common_asserts(result, substring='[tenant-pybritivetest2.dev]')
 
 
 def test_configure_tenant_via_flags_yes_alias(runner, cli):
-    result = runner.invoke(cli, 'configure tenant -t test -f yaml -a testalias1'.split(' '))
+    result = runner.invoke(cli, 'configure tenant -t pybritivetest1.dev -f yaml -a testalias1'.split(' '))
     common_asserts(result, substring='[tenant-testalias1]')
 
 
 def test_configure_tenant_via_flags_yes_alias_no_format(runner, cli):
-    result = runner.invoke(cli, 'configure tenant -t test -a testalias2'.split(' '))
+    result = runner.invoke(cli, 'configure tenant -t pybritivetest2.dev -a testalias2'.split(' '))
     common_asserts(result, substring='[tenant-testalias2]')
 
 
 def test_configure_tenant_via_prompt_no_alias(runner, cli):
-    result = runner.invoke(cli, 'configure tenant'.split(' '), input='test3\n\njson\n')
-    common_asserts(result, substring='[tenant-test3]')
+    result = runner.invoke(cli, 'configure tenant'.split(' '), input='pybritivetest3.dev\n\njson\n')
+    common_asserts(result, substring='[tenant-pybritivetest3.dev]')
 
 
 def test_configure_tenant_via_prompt_no_alias_no_format(runner, cli):
-    result = runner.invoke(cli, 'configure tenant'.split(' '), input='test4\n\n\n')
-    common_asserts(result, substring='[tenant-test4]')
+    result = runner.invoke(cli, 'configure tenant'.split(' '), input='pybritivetest4.dev\n\n\n')
+    common_asserts(result, substring='[tenant-pybritivetest4.dev]')
 
 
 def test_configure_tenant_via_prompt_yes_alias(runner, cli):
-    result = runner.invoke(cli, ['configure', 'tenant'], input='test4\ntestalias3\nyaml\n')
+    result = runner.invoke(cli, ['configure', 'tenant'], input='pybritivetest3.dev\ntestalias3\nyaml\n')
     common_asserts(result, substring='[tenant-testalias3]')
 
 
 def test_configure_tenant_via_prompt_yes_alias_no_format(runner, cli):
-    result = runner.invoke(cli, ['configure', 'tenant'], input='test4\ntestalias4\n\n')
+    result = runner.invoke(cli, ['configure', 'tenant'], input='pybritivetest4.dev\ntestalias4\n\n')
     common_asserts(result, substring='[tenant-testalias4]')
 
 
 def test_configure_global_via_flags_file_backend(runner, cli):
-    result = runner.invoke(cli, 'configure global -t test1 -f table -b file'.split(' '))
-    common_asserts(result, substring=['default_tenant=test1', 'output_format=table', 'credential_backend=file'])
+    result = runner.invoke(cli, 'configure global -t pybritivetest1.dev -f table -b file'.split(' '))
+    common_asserts(result, substring=['default_tenant=pybritivetest1.dev', 'output_format=table', 'credential_backend=file'])
 
 
 def test_configure_global_via_flags_encrypted_file_backend(runner, cli):
-    result = runner.invoke(cli, 'configure global -t test2 -f yaml -b encrypted-file'.split(' '))
+    result = runner.invoke(cli, 'configure global -t pybritivetest2.dev -f yaml -b encrypted-file'.split(' '))
     common_asserts(
         result,
         substring=[
-            'default_tenant=test2',
+            'default_tenant=pybritivetest2.dev',
             'output_format=yaml',
             'credential_backend=encrypted-file'
         ]
@@ -102,16 +102,16 @@ def test_configure_global_via_flags_encrypted_file_backend(runner, cli):
 
 
 def test_configure_global_via_prompt_file_backend(runner, cli):
-    result = runner.invoke(cli, 'configure global'.split(' '), input='test1\ntable-pretty\nfile\n')
-    common_asserts(result, substring=['default_tenant=test1', 'output_format=table-pretty', 'credential_backend=file'])
+    result = runner.invoke(cli, 'configure global'.split(' '), input='pybritivetest1.dev\ntable-pretty\nfile\n')
+    common_asserts(result, substring=['default_tenant=pybritivetest1.dev', 'output_format=table-pretty', 'credential_backend=file'])
 
 
 def test_configure_global_via_prompt_encrypted_file_backend(runner, cli):
-    result = runner.invoke(cli, 'configure global'.split(' '), input='test2\n\nencrypted-file\n')
+    result = runner.invoke(cli, 'configure global'.split(' '), input='pybritivetest2.dev\n\nencrypted-file\n')
     common_asserts(
         result,
         substring=[
-            'default_tenant=test2',
+            'default_tenant=pybritivetest2.dev',
             'output_format=json',
             'credential_backend=encrypted-file'
         ]
@@ -124,8 +124,8 @@ def test_configure_global_with_invalid_format(runner, cli):
 
 
 def test_configure_global_with_invalid_tenant(runner, cli):
-    result = runner.invoke(cli, 'configure global -t incorect'.split(' '))
-    assert "Invalid global field default_tenant value incorect provided. Tenant not found." in result.output
+    result = runner.invoke(cli, 'configure global -t incorrect'.split(' '))
+    assert "Invalid global field default_tenant value incorrect provided. Tenant not found." in result.output
 
 
 def test_configure_import_simple(runner, cli):
@@ -166,7 +166,7 @@ def test_configure_update_global_correct_data(runner, cli):
 
 def test_configure_update_tenant_correct_data(runner, cli):
     tenant = os.getenv('PYBRITIVE_TEST_TENANT')
-    result = runner.invoke(cli, f'configure update tenant-{tenant} name test'.split(' '))
-    common_asserts(result, substring=['name=test'])
+    result = runner.invoke(cli, f'configure update tenant-{tenant} name pybritivetest1.dev'.split(' '))
+    common_asserts(result, substring=['name=pybritivetest1.dev'])
     # set it back
     runner.invoke(cli, f'configure update tenant-{tenant} name {tenant}'.split(' '))

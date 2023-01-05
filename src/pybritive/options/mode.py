@@ -12,5 +12,7 @@ option = click.option(
          'the cloud providers local credential file (AWS only). Value `env` can optionally include terminal specific '
          'options for setting environment variables '
          '(example: env-nix for Linux/Mac, env-wincmd for Windows Command Prompt, env-winps for Windows PowerShell).'
+         '`gcloudauth` will save the generated key file/credentials to the pybritive config directory  and generate a '
+         'gcloud auth command which can be directly evaluated.'
 )
 
