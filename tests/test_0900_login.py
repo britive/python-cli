@@ -12,7 +12,7 @@ def test_login_interactive(runner, cli, unset_api_token_env_var):
     result = runner.invoke(cli, ['login'])
     assert result.exit_code == 0
     local_home = os.getenv('PYBRITIVE_HOME_DIR')
-    path = Path(Path(local_home) / '.britive' / 'pybritive.credentials')
+    path = Path(Path(local_home) / '.britive' / 'pybritive.credentials.encrypted')
     with open(str(path), 'r') as f:
         data = f.read()
     assert 'accessToken=' in data

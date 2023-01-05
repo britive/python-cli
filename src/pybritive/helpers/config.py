@@ -1,4 +1,5 @@
 import os
+import shutil
 from pathlib import Path
 import click
 import configparser
@@ -64,6 +65,10 @@ class ConfigManager:
         self.cli = cli
         self.loaded = False
         self.validation_error_messages = []
+
+    def clear_gcloud_auth_key_files(self):
+        path = Path(self.path).parent / 'pybritive-gcloud-key-files'
+        shutil.rmtree(str(path), ignore_errors=True)
 
     def get_output_format(self, output_format: str = None):
         return coalesce(

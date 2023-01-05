@@ -2,11 +2,11 @@ from pathlib import Path
 import os
 
 
-def test_logout(runner, cli, profile):
+def test_logout(runner, cli):
     result = runner.invoke(cli, ['logout'])
     assert result.exit_code == 0
     local_home = os.getenv('PYBRITIVE_HOME_DIR')
-    path = Path(Path(local_home) / '.britive' / 'pybritive.credentials')
+    path = Path(Path(local_home) / '.britive' / 'pybritive.credentials.encrypted')
     with open(str(path), 'r') as f:
         data = f.read()
     assert len(data) == 0
