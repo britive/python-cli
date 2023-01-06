@@ -1,5 +1,4 @@
 import io
-import socket
 from britive.britive import Britive
 from .helpers.config import ConfigManager
 from .helpers.credentials import FileCredentialManager, EncryptedFileCredentialManager
@@ -14,6 +13,7 @@ from britive import exceptions
 from pathlib import Path
 from datetime import datetime
 import os
+import sys
 
 
 default_table_format = 'fancy_grid'
@@ -35,6 +35,8 @@ class BritiveCli:
         self.passphrase = passphrase
         self.federation_provider = federation_provider
         self.credential_manager = None
+        self.verbose_checkout = False
+        self.checkout_progress_previous_message = None
 
     def set_output_format(self, output_format: str):
         self.output_format = self.config.get_output_format(output_format)
@@ -108,6 +110,24 @@ class BritiveCli:
     def debug(self, data: object, ignore_silent: bool = False):
         if debug_enabled:
             self.print(data=data, ignore_silent=ignore_silent)
+
+    # will be passed to the britive checkout_by_name progress_func parameter when appropriate
+    def checkout_callback_printer(self, message: str):
+        if self.silent or not sys.stdout.isatty():
+            return
+        if message == 'complete':
+            click.echo('')
+            return
+
+        if self.verbose_checkout:
+            if self.checkout_progress_previous_message != message:
+                newline = '\n' if self.checkout_progress_previous_message else ''
+                self.checkout_progress_previous_message = message
+                click.echo(f'{newline}{message} ', nl=False)
+            else:
+                click.echo('.', nl=False)
+        else:
+            click.echo('.', nl=False)
 
     # will take a list of dicts and print to the screen based on the format specified in the config file
     # dict can only be 1 level deep (no nesting) - caller needs to massage the data accordingly
@@ -317,7 +337,8 @@ class BritiveCli:
                 include_credentials=True,
                 wait_time=blocktime,
                 max_wait_time=maxpolltime,
-                justification=justification
+                justification=justification,
+                progress_func=self.checkout_callback_printer  # callback will handle silent, isatty, etc.
             )
         except exceptions.ApprovalRequiredButNoJustificationProvided:
             raise click.ClickException('approval required and no justification provided.')
@@ -349,11 +370,12 @@ class BritiveCli:
         return parts_dict
 
     def checkout(self, alias, blocktime, console, justification, mode, maxpolltime, profile, passphrase,
-                 force_renew, aws_credentials_file, gcloud_key_file):
+                 force_renew, aws_credentials_file, gcloud_key_file, verbose):
         credentials = None
         app_type = None
         credential_process_creds_found = False
         response = None
+        self.verbose_checkout = verbose
 
         if mode == 'awscredentialprocess':
             self.silent = True  # the aws credential process CANNOT output anything other than the expected JSON

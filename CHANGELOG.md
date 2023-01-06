@@ -2,6 +2,21 @@
 
 All changes to the package starting with v0.3.1 will be logged here.
 
+## v0.9.0 [2023-01-06]
+#### What's New
+* `pybritive checkout` will now report progress of the action by default (if `stdout` is a tty). Can show more verbose output with `--verbose/-v`. Can silence the progress with the already available `--silent\-s` flag.
+#### Enhancements
+* None
+
+#### Bug Fixes
+* None
+
+#### Dependencies
+* `britive~=2.13.0` from `britive~=2.12.4` - checkout progress callback
+
+#### Other
+* None
+
 ## v0.8.0 [2023-01-05]
 #### What's New
 * Ability to store a GCP `gcloud` key file locally so `eval $(pybritive checkout "profile" -m gcloudauth)` will automatically authenticate the user with the gcloud CLI.

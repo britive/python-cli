@@ -21,6 +21,7 @@ from ..options.force_renew import option as force_renew
 from ..options.aws_credentials_file import option as aws_credentials_file
 from ..options.federation_provider import option as federation_provider
 from ..options.gcloud_key_file import option as gcloud_key_file
+from ..options.verbose import option as verbose
 
 options_map = {
     'tenant': tenant,
@@ -45,7 +46,8 @@ options_map = {
     'force_renew': force_renew,
     'aws_credentials_file': aws_credentials_file,
     'federation_provider': federation_provider,
-    'gcloud_key_file': gcloud_key_file
+    'gcloud_key_file': gcloud_key_file,
+    'verbose': verbose
 }
 
 
