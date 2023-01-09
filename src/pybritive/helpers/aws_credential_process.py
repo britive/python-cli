@@ -90,7 +90,9 @@ def main():
             profile=args['profile'],
             passphrase=args['passphrase'],
             force_renew=args['force_renew'],
-            aws_credentials_file=None
+            aws_credentials_file=None,
+            gcloud_key_file=None,
+            verbose=None
         )
         exit()
 

@@ -2,9 +2,25 @@
 
 All changes to the package starting with v0.3.1 will be logged here.
 
+## v0.9.1 [2023-01-09]
+#### What's New
+* None
+#### Enhancements
+* None
+
+#### Bug Fixes
+* Fix console script `pybritive-aws-cred-process` due to recent changes with the `checkout` method
+
+#### Dependencies
+* None
+
+#### Other
+* None
+
 ## v0.9.0 [2023-01-06]
 #### What's New
 * `pybritive checkout` will now report progress of the action by default (if `stdout` is a tty). Can show more verbose output with `--verbose/-v`. Can silence the progress with the already available `--silent\-s` flag.
+
 #### Enhancements
 * None
 
