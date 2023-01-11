@@ -218,7 +218,7 @@ class AzureCloudCredentialPrinter(CloudCredentialPrinter):
 class GcpCloudCredentialPrinter(CloudCredentialPrinter):
     def __init__(self, console, mode, profile, silent, credentials, cli, gcloud_key_file):
         key = list(credentials.keys())[0]
-        credentials = json.loads(credentials[key])
+        credentials = json.loads(credentials[key]) if key != 'url' else credentials
         super().__init__('GCP', console, mode, profile, silent, credentials, cli)
         self.gcloud_key_file = gcloud_key_file
 
