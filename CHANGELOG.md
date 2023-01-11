@@ -2,9 +2,26 @@
 
 All changes to the package starting with v0.3.1 will be logged here.
 
+## v0.9.2 [2023-01-11]
+#### What's New
+* None
+* 
+#### Enhancements
+* None
+
+#### Bug Fixes
+* Fix GCP console checkout issue
+
+#### Dependencies
+* None
+
+#### Other
+* None
+
 ## v0.9.1 [2023-01-09]
 #### What's New
 * None
+* 
 #### Enhancements
 * None
 
