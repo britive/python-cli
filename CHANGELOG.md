@@ -10,7 +10,7 @@ All changes to the package starting with v0.3.1 will be logged here.
 * None
 
 #### Bug Fixes
-* Fix GCP console checkout issue
+* None
 
 #### Dependencies
 * `britive~=2.14.0` from `britive~=2.13.0` - bitbucket federation provider
