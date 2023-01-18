@@ -2,6 +2,22 @@
 
 All changes to the package starting with v0.3.1 will be logged here.
 
+## v0.10.0 [2023-01-18]
+#### What's New
+* Support Bitbucket as a federation provider
+
+#### Enhancements
+* None
+
+#### Bug Fixes
+* None
+
+#### Dependencies
+* `britive~=2.14.0` from `britive~=2.13.0` - bitbucket federation provider
+
+#### Other
+* None
+
 ## v0.9.2 [2023-01-11]
 #### What's New
 * None
