@@ -89,10 +89,11 @@ At feature launch the following types of identity providers are supported for wo
 * Open ID Connect (OIDC)
 * AWS STS
 
-`pybritive` offers some native integrations with the following services at the launch of this feature.
+`pybritive` offers some native integrations with the following services.
 
 * Github Actions
 * AWS
+* Bitbucket
 
 It is possible to source an identity token from a different OIDC provider and explicitly set it via the `--token\-T` flag.
 However, if you are using one of the above providers, a shortcut is provided to abstract away the complexity of sourcing these tokens.
@@ -115,6 +116,9 @@ pybritive checkout "profile" --federation-provider aws  # use aws sts without an
 pybritive checkout "profile" --federation-provider aws-profile  # use aws sts with an AWS CLI profile
 pybritive checkout "profile" --federation-provider aws-profile_expirationseconds   # use aws sts with an AWS CLI profile and set the Britive expiration (in seconds) of the generated token
 pybritive checkout "profile" --federation-provider aws_expirationseconds  # use aws sts without an AWS CLI profile and set the Britive expiration (in seconds) of the generated token
+
+# bitbucket (note that no additional options are available for bitbucket)
+pybritive checkout "profile" --federation-provider bitbucket
 ~~~
 
 In general the field format for `--federation-provider` is `provider-[something provider specific]_[duration in seconds]`.
