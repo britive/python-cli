@@ -167,7 +167,7 @@ class BritiveCli:
 
     def user(self):
         self.login()
-        username = self.b.my_access.whoami()['user']['username']
+        username = self.b.my_access.whoami()['username']
         alias = self.tenant_alias
         output = f'{username} @ {self.tenant_name}'
         if alias != self.tenant_name:
