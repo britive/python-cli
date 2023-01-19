@@ -179,7 +179,7 @@ class CredentialManager:
         headers = {
             'Content-Type': 'application/json'
         }
-        return requests.post(url, headers=headers, json=auth_params)
+        return self.session.post(url, headers=headers, json=auth_params)
 
     def load(self, full=False):
         # we should NEVER get herte but adding here just in case
