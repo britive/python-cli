@@ -2,6 +2,22 @@
 
 All changes to the package starting with v0.3.1 will be logged here.
 
+## v0.10.1 [2023-01-19]
+#### What's New
+* None
+
+#### Enhancements
+* None
+
+#### Bug Fixes
+* Fix interactive login issue for local development when using `BRITIVE_NO_VERIFY_SSL`
+
+#### Dependencies
+* None
+
+#### Other
+* None
+
 ## v0.10.0 [2023-01-18]
 #### What's New
 * Support Bitbucket as a federation provider
