@@ -2,6 +2,22 @@
 
 All changes to the package starting with v0.3.1 will be logged here.
 
+## v0.10.2 [2023-02-06]
+#### What's New
+* None
+
+#### Enhancements
+* None
+
+#### Bug Fixes
+* Fix issue with `checkout` and related commands that use the `PROFILE` positional argument when the one or more of the `PROFILE` components (application, environment, profile) have a `/` in the name. Caller must now properly escape any `/` with a `\`  (e.g. `AWS/Dev\/Test/Admin`).
+
+#### Dependencies
+* None
+
+#### Other
+* None
+
 ## v0.10.1 [2023-01-19]
 #### What's New
 * None

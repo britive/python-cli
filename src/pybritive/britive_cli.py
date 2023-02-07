@@ -2,6 +2,7 @@ import io
 from britive.britive import Britive
 from .helpers.config import ConfigManager
 from .helpers.credentials import FileCredentialManager, EncryptedFileCredentialManager
+from .helpers.split import profile_split
 import json
 import click
 import csv
@@ -143,7 +144,7 @@ class BritiveCli:
             click.echo(json.dumps(data, indent=2, default=str))
         elif self.output_format == 'list':
             for row in data:
-                click.echo(self.list_separator.join(row.values()))
+                click.echo(self.list_separator.join([self.escape_profile_element(x) for x in row.values()]))
         elif self.output_format == 'csv':
             fields = list(data[0].keys())
             output = io.StringIO()
@@ -359,7 +360,7 @@ class BritiveCli:
 
     def _split_profile_into_parts(self, profile):
         profile_real = self.config.profile_aliases.get(profile, profile)
-        parts = profile_real.split('/')
+        parts = profile_split(profile_real)
         if len(parts) != 3:
             raise click.ClickException('Provided profile string does not have the required 3 parts.')
         parts_dict = {
@@ -551,8 +552,17 @@ class BritiveCli:
             self._set_available_profiles()
         profiles = []
         for p in self.available_profiles:
-            profiles.append(f"{p['app_name']}/{p['env_name']}/{p['profile_name']}")
+            profile = self.escape_profile_element(p['app_name'])
+            profile += '/'
+            profile += self.escape_profile_element(p['env_name'])
+            profile += '/'
+            profile += self.escape_profile_element(p['profile_name'])
+            profiles.append(profile)
         Cache().save_profiles(profiles)
+
+    @staticmethod
+    def escape_profile_element(element):
+        return element.replace('/', '\\/')
 
     @staticmethod
     def cache_clear():
