@@ -8,6 +8,7 @@ import toml
 from ..choices.output_format import output_format_choices
 from ..choices.backend import backend_choices
 from britive.britive import Britive
+from ..helpers.split import profile_split
 
 
 def extract_tenant(tenant_key):
@@ -256,7 +257,7 @@ class ConfigManager:
 
     def validate_profile_aliases(self, section, fields):
         for field, value in fields.items():
-            if len(value.split('/')) != 3:
+            if len(profile_split(value)) != 3:
                 error = f'Invalid {section} field {field} value {value} provided. Value must be 3 parts ' \
                         'separated by a /'
                 self.validation_error_messages.append(error)

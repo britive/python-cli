@@ -147,6 +147,18 @@ This can be overwritten by specifying environment variable `PYBRITIVE_HOME_DIR`.
 the end user wants to persist the `.britive` directory. Note that `.britive` will still be created so do not specify
 that as part of the path.
 
+
+## Escaping
+If the name of an application, environment, or profile contains a `/` then that character must be properly escaped with a `\`.
+
+Example:
+* Application: AWS
+* Environment: Dev/Test
+* Profile: Admin
+
+As we construct the checkout command it would generally be `AWS/Dev/Test/Admin` but since the environment has a `/`
+in it, we need to escape that to be `AWS/Dev\/Test/Admin` so the CLI can properly parse out the 3 required parts of the string .
+
 ## Shell Completion
 
 TODO: Provide more automated scripts here to automatically add the required configs to the profiles. For now the below works just fine though.
