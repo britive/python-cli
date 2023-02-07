@@ -65,6 +65,8 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#home-directory">Home Directory</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="#escaping">Escaping</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="#shell-completion">Shell Completion</a>
         <ul>
     <li class="toctree-l3"><a class="reference internal" href="#bash">Bash</a>
@@ -261,6 +263,14 @@ provided <code>pybritive</code> will use an internally generated passphrase uniq
 <p>This can be overwritten by specifying environment variable <code>PYBRITIVE_HOME_DIR</code>. This should be a path to where
 the end user wants to persist the <code>.britive</code> directory. Note that <code>.britive</code> will still be created so do not specify
 that as part of the path.</p>
+<h2 id="escaping">Escaping</h2>
+<p>If the name of an application, environment, or profile contains a <code>/</code> then that character must be properly escaped with a <code>\</code>.</p>
+<p>Example:
+* Application: AWS
+* Environment: Dev/Test
+* Profile: Admin</p>
+<p>As we construct the checkout command it would generally be <code>AWS/Dev/Test/Admin</code> but since the environment has a <code>/</code>
+in it, we need to escape that to be <code>AWS/Dev\/Test/Admin</code> so the CLI can properly parse out the 3 required parts of the string .</p>
 <h2 id="shell-completion">Shell Completion</h2>
 <p>TODO: Provide more automated scripts here to automatically add the required configs to the profiles. For now the below works just fine though.</p>
 <p>Behind the scenes the <code>pybritive</code> CLI tool uses the python <code>click</code> package. <code>click</code> offers shell completion for
@@ -1727,5 +1737,5 @@ Ensure the leading <code>/</code> is provided.</p>
 
 <!--
 MkDocs version : 1.3.1
-Build Date UTC : 2023-01-18 21:04:11.090379+00:00
+Build Date UTC : 2023-02-07 14:00:47.786382+00:00
 -->
