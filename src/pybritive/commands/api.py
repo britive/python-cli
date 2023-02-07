@@ -12,7 +12,7 @@ from ..options.britive_options import britive_options
 @build_britive
 @britive_options(names='query,output_format,tenant,token,passphrase,federation_provider')
 @click.argument('method')
-def sdk(ctx, query, output_format, tenant, token, passphrase, federation_provider, method):
+def api(ctx, query, output_format, tenant, token, passphrase, federation_provider, method):
     """Exposes the Britive Python SDK methods to the CLI.
 
     Documentation on each SDK method can be found inside the Python SDK itself and on Github
@@ -28,17 +28,19 @@ def sdk(ctx, query, output_format, tenant, token, passphrase, federation_provide
 
     Example of use:
 
-    * pybritive sdk users.list
+    * generic: pybritive api method --parameter1 value1 --parameter2 value2 [--parameterX valueX]
 
-    * pybritive sdk tags.create --name testtag --description "test tag"
+    * pybritive api users.list
 
-    * pybritive sdk users.list --query '[].email'
+    * pybritive api tags.create --name testtag --description "test tag"
 
-    * pybritive sdk profiles.create --application-id <id> --name testprofile
+    * pybritive api users.list --query '[].email'
+
+    * pybritive api profiles.create --application-id <id> --name testprofile
 
     """
     parameters = {ctx.args[i][2:]: ctx.args[i + 1] for i in range(0, len(ctx.args), 2)}
-    ctx.obj.britive.sdk(
+    ctx.obj.britive.api(
         method=method,
         parameters=parameters,
         query=query
