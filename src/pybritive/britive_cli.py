@@ -15,6 +15,7 @@ from pathlib import Path
 from datetime import datetime
 import os
 import sys
+import jmespath
 
 
 default_table_format = 'fancy_grid'
@@ -595,6 +596,16 @@ class BritiveCli:
 
     def clear_gcloud_auth_key_files(self):
         self.config.clear_gcloud_auth_key_files()
+
+    def sdk(self, method, parameters={}, query=None):
+        self.login()
+        func = self.b
+        for m in method.split('.'):
+            func = getattr(func, m)
+        response = func(**parameters)
+        self.print(jmespath.search(query, response) if query else response)
+
+
 
 
 

@@ -17,3 +17,4 @@ mkdocs-click==0.8.0
 twine~=4.0.1
 python-dateutil~=2.8.2
 boto3
+jmespath

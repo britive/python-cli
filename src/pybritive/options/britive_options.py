@@ -22,6 +22,7 @@ from ..options.aws_credentials_file import option as aws_credentials_file
 from ..options.federation_provider import option as federation_provider
 from ..options.gcloud_key_file import option as gcloud_key_file
 from ..options.verbose import option as verbose
+from ..options.query import option as query
 
 options_map = {
     'tenant': tenant,
@@ -47,7 +48,8 @@ options_map = {
     'aws_credentials_file': aws_credentials_file,
     'federation_provider': federation_provider,
     'gcloud_key_file': gcloud_key_file,
-    'verbose': verbose
+    'verbose': verbose,
+    'query': query
 }
 
 

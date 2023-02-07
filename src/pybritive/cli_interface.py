@@ -11,6 +11,7 @@ from .commands.secret import secret as group_secret
 from .commands.cache import cache as group_cache
 from .commands.request import request as group_request
 from .commands.clear import clear as group_clear
+from .commands.sdk import sdk as command_sdk
 import sys
 import os
 
@@ -48,6 +49,7 @@ cli.add_command(group_secret)
 cli.add_command(group_cache)
 cli.add_command(group_request)
 cli.add_command(group_clear)
+cli.add_command(command_sdk)
 
 
 if __name__ == "__main__":
