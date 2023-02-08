@@ -67,6 +67,8 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#escaping">Escaping</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="#api-command-use-the-britive-python-sdk-via-the-cli">api Command - Use the Britive Python SDK via the CLI</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="#shell-completion">Shell Completion</a>
         <ul>
     <li class="toctree-l3"><a class="reference internal" href="#bash">Bash</a>
@@ -87,6 +89,8 @@
         <ul>
     <li class="toctree-l3"><a class="reference internal" href="#pybritive">pybritive</a>
         <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#pybritive-api">api</a>
+    </li>
     <li class="toctree-l4"><a class="reference internal" href="#pybritive-cache">cache</a>
     </li>
     <li class="toctree-l4"><a class="reference internal" href="#pybritive-checkin">checkin</a>
@@ -271,6 +275,34 @@ that as part of the path.</p>
 * Profile: Admin</p>
 <p>As we construct the checkout command it would generally be <code>AWS/Dev/Test/Admin</code> but since the environment has a <code>/</code>
 in it, we need to escape that to be <code>AWS/Dev\/Test/Admin</code> so the CLI can properly parse out the 3 required parts of the string .</p>
+<h2 id="api-command-use-the-britive-python-sdk-via-the-cli"><code>api</code> Command - Use the Britive Python SDK via the CLI</h2>
+<p>As of v0.11.0 a new command called <code>api</code> has been introduced. This command exposes the full capability of the Britive Python SDK
+to users of the <code>pybritive</code> CLI.</p>
+<p>Documentation on each SDK method can be found inside the Python SDK itself and on Github
+(https://github.com/britive/python-sdk). The Python package <code>britive</code> is a dependency of the CLI
+already so the SDK is available without installing any extra packages.</p>
+<p>It is left up to the caller to provide the proper <code>method</code> and <code>parameters</code> based on the documentation
+of the API call being performed. Examples will follow which explain how to do this.</p>
+<p>The authenticated identity must have the appropriate permissions to perform the actions being requested.
+General end users of Britive will not have these permissions. This call (and the larger SDK) is generally
+meant for administrative functionality.</p>
+<p>Example of use: (<code>pybritive api method --parameter1 value1 --parameter2 value2 [--parameterX valueX]</code>)</p>
+<ul>
+<li><code>pybritive api users.list</code> | will list all users in the britive tenant</li>
+<li><code>pybritive api tags.create --name testtag --description "test tag"</code> | will create a tag</li>
+<li><code>pybritive api users.list --query '[].email'</code> | will list all users and output just the email address of each user via jmespath query</li>
+<li><code>pybritive api profiles.create --application-id &lt;id&gt; --name testprofile</code> | will create a profile</li>
+<li><code>pybritive api secrets_manager.secrets.create --name test --vault-id &lt;id&gt; --value '{"Note": {"secret1": "abc"}}'</code> | creates a secret</li>
+<li>
+<p><code>pybritive api secrets_manager.secrets.create --name test-file --vault-id &lt;id&gt; --file fileb://test.json --static-secret-template-id &lt;id&gt; --value None</code> | creates a file secret</p>
+</li>
+<li>
+<p>The <code>method</code> is the same pattern as what would be used when referencing an instance of the <code>Britive</code> class.</p>
+</li>
+<li>The <code>parameters</code> are dynamic based on the method being invoked. Review the documentation for the method in question to understand
+which parameters are expected and which are optional. Parameters with <code>_</code> in the name should be translated to <code>-</code> when referencing them
+via the CLI.</li>
+</ul>
 <h2 id="shell-completion">Shell Completion</h2>
 <p>TODO: Provide more automated scripts here to automatically add the required configs to the profiles. For now the below works just fine though.</p>
 <p>Behind the scenes the <code>pybritive</code> CLI tool uses the python <code>click</code> package. <code>click</code> offers shell completion for
@@ -411,6 +443,7 @@ region=us-east-1
 </table>
 <p><strong>Subcommands</strong></p>
 <ul>
+<li><em><a href="#pybritive-api">api</a></em>: Exposes the Britive Python SDK methods to the CLI.</li>
 <li><em><a href="#pybritive-cache">cache</a></em>: Manage local cache settings.</li>
 <li><em><a href="#pybritive-checkin">checkin</a></em>: Checkin a profile.</li>
 <li><em><a href="#pybritive-checkout">checkout</a></em>: Checkout a profile.</li>
@@ -423,6 +456,92 @@ region=us-east-1
 <li><em><a href="#pybritive-secret">secret</a></em>: View or download a secret.</li>
 <li><em><a href="#pybritive-user">user</a></em>: Print details about the authenticated identity.</li>
 </ul>
+<h4 id="pybritive-api">pybritive api</h4>
+<p>Exposes the Britive Python SDK methods to the CLI.</p>
+<p>Documentation on each SDK method can be found inside the Python SDK itself and on Github
+(https://github.com/britive/python-sdk). The Python package <code>britive</code> is a dependency of the CLI
+already so the SDK is available without installing any extra packages.</p>
+<p>It is left up to the caller to provide the proper <code>method</code> and <code>parameters</code> based on the documentation
+of the API call being performed.</p>
+<p>The authenticated identity must have the appropriate permissions to perform the actions being requested.
+General end users of Britive will not have these permissions. This call (and the larger SDK) is generally
+meant for administrative functionality.</p>
+<p>Example of use:</p>
+<ul>
+<li>
+<p>generic: pybritive api method --parameter1 value1 --parameter2 value2 [--parameterX valueX]</p>
+</li>
+<li>
+<p>pybritive api users.list</p>
+</li>
+<li>
+<p>pybritive api tags.create --name testtag --description "test tag"</p>
+</li>
+<li>
+<p>pybritive api users.list --query '[].email'</p>
+</li>
+<li>
+<p>pybritive api profiles.create --application-id <id> --name testprofile</p>
+</li>
+</ul>
+<p><strong>Usage:</strong></p>
+<pre><code>pybritive api [OPTIONS] METHOD
+</code></pre>
+<p><strong>Options:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--query</code></td>
+<td>text</td>
+<td>JMESPath query to apply to the response.</td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>--format</code>, <code>-f</code></td>
+<td>choice (<code>json</code> &#x7C; <code>yaml</code> &#x7C; <code>csv</code> &#x7C; <code>table</code> &#x7C; <code>list</code> &#x7C; <code>table-plain</code> &#x7C; <code>table-simple</code> &#x7C; <code>table-github</code> &#x7C; <code>table-grid</code> &#x7C; <code>table-simple_grid</code> &#x7C; <code>table-rounded_grid</code> &#x7C; <code>table-double_grid</code> &#x7C; <code>table-fancy_grid</code> &#x7C; <code>table-outline</code> &#x7C; <code>table-simple_outline</code> &#x7C; <code>table-rounded_outline</code> &#x7C; <code>table-double_outline</code> &#x7C; <code>table-fancy_outline</code> &#x7C; <code>table-pipe</code> &#x7C; <code>table-orgtbl</code> &#x7C; <code>table-jira</code> &#x7C; <code>table-presto</code> &#x7C; <code>table-pretty</code> &#x7C; <code>table-psql</code> &#x7C; <code>table-rst</code> &#x7C; <code>table-mediawiki</code> &#x7C; <code>table-moinmoin</code> &#x7C; <code>table-youtrack</code> &#x7C; <code>table-html</code> &#x7C; <code>table-unsafehtml</code> &#x7C; <code>table-latex</code> &#x7C; <code>table-latex_raw</code> &#x7C; <code>table-latex_booktabs</code> &#x7C; <code>table-latex_longtable</code> &#x7C; <code>table-textile</code> &#x7C; <code>table-tsv</code>)</td>
+<td>Display output format. Valid values are (json, yaml, csv, table[-format]). If <code>table</code> is used an optional table format can be specified as <code>table-format</code>. Valid table formats can be found here: https://github.com/astanin/python-tabulate#table_format. Example: <code>table-pretty</code>.</td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>-t</code>, <code>--tenant</code></td>
+<td>text</td>
+<td>Name of tenant.</td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>-T</code>, <code>--token</code></td>
+<td>text</td>
+<td>API token.</td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>--passphrase</code>, <code>-p</code></td>
+<td>text</td>
+<td>The passphrase to use for encrypting credentials.</td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>--federation-provider</code>, <code>-P</code></td>
+<td>text</td>
+<td>Use a federation provider available in the Britive Python SDK for auto token creation. Valid values are <code>aws[-profile]</code>, <code>github[-audience], and</code>bitbucket<code>. Optionally for the AWS provider a duration in seconds can be provided via</code>aws[-profile]_durationseconds` after which point the auto-generatedcredentials will expire.</td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>--help</code></td>
+<td>boolean</td>
+<td>Show this message and exit.</td>
+<td><code>False</code></td>
+</tr>
+</tbody>
+</table>
 <h4 id="pybritive-cache">pybritive cache</h4>
 <p>Manage local cache settings.</p>
 <p><strong>Usage:</strong></p>
@@ -1737,5 +1856,5 @@ Ensure the leading <code>/</code> is provided.</p>
 
 <!--
 MkDocs version : 1.3.1
-Build Date UTC : 2023-02-07 14:00:47.786382+00:00
+Build Date UTC : 2023-02-08 13:32:49.027004+00:00
 -->
