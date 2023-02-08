@@ -1,4 +1,5 @@
 import io
+import pathlib
 from britive.britive import Britive
 from .helpers.config import ConfigManager
 from .helpers.credentials import FileCredentialManager, EncryptedFileCredentialManager
@@ -15,6 +16,7 @@ from pathlib import Path
 from datetime import datetime
 import os
 import sys
+import jmespath
 
 
 default_table_format = 'fancy_grid'
@@ -142,9 +144,17 @@ class BritiveCli:
 
         if self.output_format == 'json':
             click.echo(json.dumps(data, indent=2, default=str))
-        elif self.output_format == 'list':
+        elif self.output_format == 'list-profiles':
             for row in data:
                 click.echo(self.list_separator.join([self.escape_profile_element(x) for x in row.values()]))
+        elif self.output_format == 'list':
+            for row in data:
+                if isinstance(row, dict):
+                    click.echo(self.list_separator.join([json.dumps(x, default=str) for x in row.values()]))
+                elif isinstance(row, list):
+                    click.echo(self.list_separator.join([json.dumps(x, default=str) for x in row]))
+                else:
+                    click.echo(row)
         elif self.output_format == 'csv':
             fields = list(data[0].keys())
             output = io.StringIO()
@@ -202,7 +212,17 @@ class BritiveCli:
                     row.pop('Description')
                     row.pop('Type')
                 data.append(row)
+
+        # set special list output if needed
+        if self.output_format == 'list':
+            self.output_format = 'list-profiles'
+
         self.print(data)
+
+        # and set it back
+        if self.output_format == 'list-profiles':
+            self.output_format = 'list'
+
 
     def list_applications(self):
         self.login()
@@ -595,6 +615,61 @@ class BritiveCli:
 
     def clear_gcloud_auth_key_files(self):
         self.config.clear_gcloud_auth_key_files()
+
+    def api(self, method, parameters={}, query=None):
+        self.login()
+
+        # clean up parameters - need to load json as dict if json string is provided and handle file inputs
+        computed_parameters = {}
+        open_file_keys = []
+        for key, value in parameters.items():
+            computed_key = key.replace('-', '_')
+            computed_value = value
+
+            if value.lower() == 'none':
+                computed_value = None
+
+            if value.startswith('file://'):
+                filepath = value.replace('file://', '')
+                path = pathlib.Path(filepath)
+                with open(str(path), 'r') as f:
+                    computed_value = f.read().strip()
+
+            if value.startswith('fileb://'):
+                filepath = value.replace('fileb://', '')
+                path = pathlib.Path(filepath)
+                computed_value = open(str(path), 'rb')
+                open_file_keys.append(computed_key)
+
+            try:
+                computed_parameters[computed_key] = json.loads(computed_value)
+            except json.JSONDecodeError:
+                computed_parameters[computed_key] = computed_value
+            except Exception:  # not sure what else we would do so just default to the value provided
+                computed_parameters[computed_key] = computed_value
+
+        # determine the sdk method we need to execute, starting at the base Britive class
+        func = self.b
+        try:
+            for m in method.split('.'):
+                func = getattr(func, m)
+        except Exception as e:
+            raise click.ClickException(f'invalid method {method} provided.')
+
+        # execute the method with the computed parameters
+        response = func(**computed_parameters)
+
+        # close any files we opened due to fileb:// prefix
+        for key in open_file_keys:
+            try:
+                computed_parameters[key].close()
+            except Exception:
+                pass
+
+        # output the response, optionally filtering based on provided jmespath query/search
+        self.print(jmespath.search(query, response) if query else response)
+
+
 
 
 
