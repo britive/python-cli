@@ -43,7 +43,7 @@ Environment variables that should be set for testing include the following.
 Create `./testing-variables.txt` and load what you need so you can easily re-create the needed variables. This file is in `.gitignore`. 
 
 Package the code locally with `pip install -e .` so pytest can run against the python package.
-Then `pytest tests/ -v` to perform the testing. 
+Then `pytest tests/ -vvv` to perform the testing. 
 
 The identity used for testing will require access to at least one profile to test `checkout` and `checkin`. 
 Additionally, the identity will need access to 2 secrets
