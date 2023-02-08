@@ -2,6 +2,24 @@
 
 All changes to the package starting with v0.3.1 will be logged here.
 
+## v0.11.1 [2023-02-08]
+#### What's New
+* None
+
+#### Enhancements
+* None
+
+#### Bug Fixes
+* None
+* 
+#### Dependencies
+* `cryptography~=39.0.1` to resolve dependabot alert #1 and #3
+* `certifi>=2022.12.7` to resolve dependabot alert #2
+* `britive~=2.15.0` to bring in new API calls
+
+#### Other
+* None
+
 ## v0.11.0 [2023-02-07]
 #### What's New
 * The `api` command is now available which exposes all the methods available in the Britive Python SDK.
