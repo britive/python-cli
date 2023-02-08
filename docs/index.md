@@ -159,6 +159,37 @@ Example:
 As we construct the checkout command it would generally be `AWS/Dev/Test/Admin` but since the environment has a `/`
 in it, we need to escape that to be `AWS/Dev\/Test/Admin` so the CLI can properly parse out the 3 required parts of the string .
 
+## `api` Command - Use the Britive Python SDK via the CLI
+
+As of v0.11.0 a new command called `api` has been introduced. This command exposes the full capability of the Britive Python SDK
+to users of the `pybritive` CLI.
+
+Documentation on each SDK method can be found inside the Python SDK itself and on Github
+(https://github.com/britive/python-sdk). The Python package `britive` is a dependency of the CLI
+already so the SDK is available without installing any extra packages.
+
+It is left up to the caller to provide the proper `method` and `parameters` based on the documentation
+of the API call being performed. Examples will follow which explain how to do this.
+
+The authenticated identity must have the appropriate permissions to perform the actions being requested.
+General end users of Britive will not have these permissions. This call (and the larger SDK) is generally
+meant for administrative functionality.
+
+Example of use: (`pybritive api method --parameter1 value1 --parameter2 value2 [--parameterX valueX]`)
+
+* `pybritive api users.list` | will list all users in the britive tenant
+* `pybritive api tags.create --name testtag --description "test tag"` | will create a tag
+* `pybritive api users.list --query '[].email'` | will list all users and output just the email address of each user via jmespath query
+* `pybritive api profiles.create --application-id <id> --name testprofile` | will create a profile
+* `pybritive api secrets_manager.secrets.create --name test --vault-id <id> --value '{"Note": {"secret1": "abc"}}'` | creates a secret
+* `pybritive api secrets_manager.secrets.create --name test-file --vault-id <id> --file fileb://test.json --static-secret-template-id <id> --value None` | creates a file secret
+
+
+* The `method` is the same pattern as what would be used when referencing an instance of the `Britive` class.
+* The `parameters` are dynamic based on the method being invoked. Review the documentation for the method in question to understand
+which parameters are expected and which are optional. Parameters with `_` in the name should be translated to `-` when referencing them
+via the CLI.
+
 ## Shell Completion
 
 TODO: Provide more automated scripts here to automatically add the required configs to the profiles. For now the below works just fine though.

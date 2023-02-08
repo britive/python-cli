@@ -2,6 +2,22 @@
 
 All changes to the package starting with v0.3.1 will be logged here.
 
+## v0.11.0 [2023-02-07]
+#### What's New
+* The `api` command is now available which exposes all the methods available in the Britive Python SDK.
+
+#### Enhancements
+* None
+
+#### Bug Fixes
+* None
+* 
+#### Dependencies
+* None
+
+#### Other
+* Updated documentation with examples of how to use the new `api` command.
+
 ## v0.10.2 [2023-02-06]
 #### What's New
 * None
