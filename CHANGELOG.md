@@ -2,6 +2,22 @@
 
 All changes to the package starting with v0.3.1 will be logged here.
 
+## v1.0.0 [2023-02-09]
+#### What's New
+* Moving out of beta and into general availability. No other changes except for documentation updates reflecting the move out of beta.
+
+#### Enhancements
+* None
+
+#### Bug Fixes
+* None
+* 
+#### Dependencies
+* None
+
+#### Other
+* None
+
 ## v0.11.1 [2023-02-08]
 #### What's New
 * None
