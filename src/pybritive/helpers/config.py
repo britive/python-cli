@@ -189,6 +189,7 @@ class ConfigManager:
             npm_config = toml.load(f)
         tenant = npm_config.get('tenantURL', '').replace('https://', '').replace('.britive-app.com', '').lower()
         output_format = npm_config.get('output_format', '').lower()
+        aws_section = npm_config.get('AWS', None)
 
         # reset the config as we are building a new one
         self.config = {
@@ -203,6 +204,12 @@ class ConfigManager:
         if output_format != '':
             self.cli.print(f'Found default output format {output_format}.')
             self.config['global']['output_format'] = output_format
+
+        if aws_section:
+            checkout_mode = aws_section.get('checkoutMode')
+            if checkout_mode:
+                self.cli.print(f'Found aws default checkout mode of {checkout_mode}.')
+                self.config['aws'] = {'default_checkout_mode': checkout_mode.lower()}
 
         self.save()
         self.load(force=True)
