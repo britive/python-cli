@@ -300,7 +300,7 @@ class BritiveCli:
         if app_type in ['AWS', 'AWS Standalone']:
             return printer.AwsCloudCredentialPrinter(
                 console=console,
-                mode=mode,
+                mode=mode or self.config.aws_default_checkout_mode(),
                 profile=profile,
                 credentials=credentials,
                 silent=silent,
@@ -434,7 +434,7 @@ class BritiveCli:
             credentials = response['credentials']
 
         # this handles the --force-renew flag
-        # lets check to see if the we should checkin this profile first and check it out again
+        # lets check to see if we should checkin this profile first and check it out again
         if self._should_check_force_renew(app_type, force_renew, console):
             expiration = datetime.fromisoformat(credentials['expirationTime'].replace('Z', ''))
             now = datetime.utcnow()
@@ -446,7 +446,7 @@ class BritiveCli:
                 credential_process_creds_found = False  # need to write new creds to cache
                 credentials = response['credentials']
 
-        if alias:  # do this down here so we know that the profile is valid and a checkout was successful
+        if alias:  # do this down here, so we know that the profile is valid and a checkout was successful
             self.config.save_profile_alias(alias=alias, profile=profile)
 
         if mode == 'awscredentialprocess' and not credential_process_creds_found:
