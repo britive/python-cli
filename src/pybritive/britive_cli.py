@@ -343,10 +343,22 @@ class BritiveCli:
         self.login()
         parts = self._split_profile_into_parts(profile)
 
-        self.b.my_access.checkin_by_name(
+        ids = self._convert_names_to_ids(
             profile_name=parts['profile'],
             environment_name=parts['env'],
             application_name=parts['app']
+        )
+
+        transaction_id = None
+        for profile in self.b.my_access.list_checked_out_profiles():
+            if profile['environmentId'] == ids['environment_id'] and profile['papId'] == ids['profile_id']:
+                transaction_id = profile['transactionId']
+                break
+        if not transaction_id:
+            raise ValueError(f'no checked out profile found for the given profile')
+
+        self.b.my_access.checkin(
+            transaction_id=transaction_id
         )
 
     def _checkout(self, profile_name, env_name, app_name, programmatic, blocktime, maxpolltime, justification):
@@ -608,10 +620,15 @@ class BritiveCli:
         self.login()
         parts = self._split_profile_into_parts(profile)
 
-        self.b.my_access.request_approval_by_name(
+        ids = self._convert_names_to_ids(
             profile_name=parts['profile'],
             environment_name=parts['env'],
-            application_name=parts['app'],
+            application_name=parts['app']
+        )
+
+        self.b.my_access.request_approval(
+            profile_id=ids['profile_id'],
+            environment_id=ids['environment_id'],
             block_until_disposition=False,
             justification=justification
         )
@@ -620,10 +637,15 @@ class BritiveCli:
         self.login()
         parts = self._split_profile_into_parts(profile)
 
-        self.b.my_access.withdraw_approval_request_by_name(
+        ids = self._convert_names_to_ids(
             profile_name=parts['profile'],
             environment_name=parts['env'],
             application_name=parts['app']
+        )
+
+        self.b.my_access.withdraw_approval_request(
+            profile_id=ids['profile_id'],
+            environment_id=ids['environment_id']
         )
 
     def clear_gcloud_auth_key_files(self):
