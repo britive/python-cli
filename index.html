@@ -53,6 +53,8 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#credential-selection-logic">Credential Selection Logic</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="#profile-parameter-construction-checkout-and-checkin">PROFILE Parameter Construction (checkout and checkin)</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="#workload-federation-providers">Workload Federation Providers</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#credential-stores">Credential Stores</a>
@@ -208,6 +210,35 @@ Britive tenant. The below list is the order of operations for determining the to
 <li>Value retrieved from environment variable <code>BRITIVE_API_TOKEN</code></li>
 <li>If none of the above are available an interactive login will be performed and temporary credentials will be stored locally for future use with the CLI</li>
 </ol>
+<h2 id="profile-parameter-construction-checkout-and-checkin"><code>PROFILE</code> Parameter Construction (<code>checkout</code> and <code>checkin</code>)</h2>
+<p>The general construction of a <code>PROFILE</code> parameter for <code>checkout</code> and <code>checkin</code> (in addition to profile aliases)
+is in the format <code>Application Name/Environment Name/Profile Name</code>.</p>
+<p>Behind the scenes <code>pybritive</code> will always use this format. However, there are specific application types where
+<code>Application Name == Environment Name</code>. For these application types, it is acceptable to provide a 2 part <code>PROFILE</code>
+parameter in the format <code>Application Name/Profile Name</code>. <code>pybritive</code> will convert this to the required 3 part
+format before interacting with backend services.</p>
+<p>Additionally, <code>ls profiles -f list</code> and <code>cache profiles</code> will return the 2 part format where applicable. It is still acceptable
+to provide the 3 part format in all cases so any existing profile aliases or other configurations will not be impacted.</p>
+<p>Below is the list of application types in which a 2 part format is acceptable.</p>
+<ul>
+<li>GCP</li>
+<li>Azure</li>
+<li>Oracle</li>
+<li>Google Workspace</li>
+</ul>
+<p>The list can be generated (assuming the caller has the required permissions) on demand with the following command.</p>
+<pre><code class="language-bash">pybritive api applications.catalog \
+    --query '[*].{&quot;application type&quot;: name,&quot;2 part format allowed&quot;:requiresHierarchicalModel}' \
+    --format table
+</code></pre>
+<p>Additionally, the <code>Environment Name</code> can be any one of three values. AWS example values are provided.</p>
+<ul>
+<li><code>environmentId</code> - 123456789012</li>
+<li><code>environmentName</code> - 123456789012 (Sigma Labs)</li>
+<li><code>alternateEnvironmentName</code> - Sigma Labs</li>
+</ul>
+<p>Any of the above values in the <code>Environment Name</code> position will be accepted.</p>
+<p>When running <code>ls profiles -f list</code> and <code>cache profiles</code>, the <code>environmentName</code> field will be shown.</p>
 <h2 id="workload-federation-providers">Workload Federation Providers</h2>
 <p><em>NOTE</em>: Before any of the below will work there is required setup and configuration within your Britive tenant 
 so trust can be established between the identity provider and Britive.</p>
@@ -734,8 +765,8 @@ that should be checked out. Format is <code>application name/environment name/pr
 <tr>
 <td><code>--mode</code>, <code>-m</code></td>
 <td>choice (<code>text</code> &#x7C; <code>json</code> &#x7C; <code>env</code> &#x7C; <code>integrate</code> &#x7C; <code>env-nix</code> &#x7C; <code>env-wincmd</code> &#x7C; <code>env-winps</code> &#x7C; <code>awscredentialprocess</code> &#x7C; <code>azlogin</code> &#x7C; <code>azps</code> &#x7C; <code>browser</code> &#x7C; <code>gcloudauth</code>)</td>
-<td>The way in which the checked out credentials are presented. <code>integrate</code> will place the credentials into the cloud providers local credential file (AWS only). Value <code>env</code> can optionally include terminal specific options for setting environment variables (example: env-nix for Linux/Mac, env-wincmd for Windows Command Prompt, env-winps for Windows PowerShell).<code>gcloudauth</code> will save the generated key file/credentials to the pybritive config directory  and generate a gcloud auth command which can be directly evaluated.</td>
-<td><code>json</code></td>
+<td>The way in which the checked out credentials are presented. <code>integrate</code> will place the credentials into the cloud providers local credential file (AWS only). Value <code>env</code> can optionally include terminal specific options for setting environment variables (example: env-nix for Linux/Mac, env-wincmd for Windows Command Prompt, env-winps for Windows PowerShell).<code>gcloudauth</code> will save the generated key file/credentials to the pybritive config directory and generate a gcloud auth command which can be directly evaluated. Will default to <code>json</code> if not provided.</td>
+<td>None</td>
 </tr>
 <tr>
 <td><code>--maxpolltime</code>, <code>-p</code></td>
@@ -1852,5 +1883,5 @@ Ensure the leading <code>/</code> is provided.</p>
 
 <!--
 MkDocs version : 1.3.1
-Build Date UTC : 2023-02-09 18:13:52.906707+00:00
+Build Date UTC : 2023-02-16 18:12:54.664560+00:00
 -->
