@@ -71,6 +71,44 @@ Britive tenant. The below list is the order of operations for determining the to
 3. Value retrieved from environment variable `BRITIVE_API_TOKEN`
 4. If none of the above are available an interactive login will be performed and temporary credentials will be stored locally for future use with the CLI
 
+## `PROFILE` Parameter Construction (`checkout` and `checkin`)
+
+The general construction of a `PROFILE` parameter for `checkout` and `checkin` (in addition to profile aliases)
+is in the format `Application Name/Environment Name/Profile Name`.
+
+Behind the scenes `pybritive` will always use this format. However, there are specific application types where
+`Application Name == Environment Name`. For these application types, it is acceptable to provide a 2 part `PROFILE`
+parameter in the format `Application Name/Profile Name`. `pybritive` will convert this to the required 3 part
+format before interacting with backend services.
+
+Additionally, `ls profiles -f list` and `cache profiles` will return the 2 part format where applicable. It is still acceptable
+to provide the 3 part format in all cases so any existing profile aliases or other configurations will not be impacted.
+
+Below is the list of application types in which a 2 part format is acceptable.
+
+* GCP
+* Azure
+* Oracle
+* Google Workspace
+
+The list can be generated (assuming the caller has the required permissions) on demand with the following command.
+
+~~~bash
+pybritive api applications.catalog \
+    --query '[*].{"application type": name,"2 part format allowed":requiresHierarchicalModel}' \
+    --format table
+~~~
+
+Additionally, the `Environment Name` can be any one of three values. AWS example values are provided.
+
+* `environmentId` - 123456789012
+* `environmentName` - 123456789012 (Sigma Labs)
+* `alternateEnvironmentName` - Sigma Labs
+
+Any of the above values in the `Environment Name` position will be accepted.
+
+When running `ls profiles -f list` and `cache profiles`, the `environmentName` field will be shown.
+
 
 ## Workload Federation Providers
 

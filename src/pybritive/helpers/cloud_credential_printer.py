@@ -22,6 +22,7 @@ class CloudCredentialPrinter:
         self.app_type = app_type
         self.profile = profile
         self.console = console
+        mode = mode or 'json'  # set a default if nothing is provided via flag --mode/-m
         helper = mode.split('-')
         env_prefix = helper[1] if 1 < len(helper) else None
         self.mode = helper[0]

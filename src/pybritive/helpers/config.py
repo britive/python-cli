@@ -7,6 +7,7 @@ import json
 import toml
 from ..choices.output_format import output_format_choices
 from ..choices.backend import backend_choices
+from ..choices.mode import mode_choices
 from britive.britive import Britive
 from ..helpers.split import profile_split
 
@@ -37,7 +38,8 @@ def coalesce(*arg):
 
 non_tenant_sections = [
     'global',
-    'profile-aliases'
+    'profile-aliases',
+    'aws'
 ]
 
 global_fields = [
@@ -50,6 +52,10 @@ global_fields = [
 tenant_fields = [
     'name',
     'output_format'
+]
+
+aws_fields = [
+    'default_checkout_mode'
 ]
 
 
@@ -183,6 +189,7 @@ class ConfigManager:
             npm_config = toml.load(f)
         tenant = npm_config.get('tenantURL', '').replace('https://', '').replace('.britive-app.com', '').lower()
         output_format = npm_config.get('output_format', '').lower()
+        aws_section = npm_config.get('AWS', None)
 
         # reset the config as we are building a new one
         self.config = {
@@ -198,6 +205,12 @@ class ConfigManager:
             self.cli.print(f'Found default output format {output_format}.')
             self.config['global']['output_format'] = output_format
 
+        if aws_section:
+            checkout_mode = aws_section.get('checkoutMode')
+            if checkout_mode:
+                self.cli.print(f'Found aws default checkout mode of {checkout_mode}.')
+                self.config['aws'] = {'default_checkout_mode': checkout_mode.lower()}
+
         self.save()
         self.load(force=True)
 
@@ -206,6 +219,10 @@ class ConfigManager:
     def backend(self):
         self.load()
         return self.config.get('global', {}).get('credential_backend', 'encrypted-file')
+
+    def aws_default_checkout_mode(self):
+        self.load()
+        return self.config.get('aws', {}).get('default_checkout_mode', None)
 
     def update(self, section, field, value):
         self.load()
@@ -226,6 +243,8 @@ class ConfigManager:
                 self.validate_global(section, fields)
             if section == 'profile-aliases':
                 self.validate_profile_aliases(section, fields)
+            if section == 'aws':
+                self.validate_aws(section, fields)
             if section.startswith('tenant-'):
                 self.validate_tenant(section, fields)
 
@@ -260,6 +279,14 @@ class ConfigManager:
             if len(profile_split(value)) != 3:
                 error = f'Invalid {section} field {field} value {value} provided. Value must be 3 parts ' \
                         'separated by a /'
+                self.validation_error_messages.append(error)
+
+    def validate_aws(self, section, fields):
+        for field, value in fields.items():
+            if field not in aws_fields:
+                self.validation_error_messages.append(f'Invalid {section} field {field} provided.')
+            if field == 'default_checkout_mode' and value not in mode_choices.choices:
+                error = f'Invalid {section} field {field} value {value} provided. Invalid value choice.'
                 self.validation_error_messages.append(error)
 
     def validate_tenant(self, section, fields):
