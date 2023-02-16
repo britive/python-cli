@@ -2,6 +2,23 @@
 
 All changes to the package starting with v0.3.1 will be logged here.
 
+## v1.1.0 [2023-02-16]
+#### What's New
+* Allowing 2 part `PROFILE` parameters (see documentation for details)
+* Build support for multiple environment name formats (name, id, alternate environment name) for the `PROFILE` parameter
+
+#### Enhancements
+* None
+
+#### Bug Fixes
+* add a default checkout mode for AWS - bug fix as the effort is to match parity with legacy CLI tool
+
+#### Dependencies
+* None
+
+#### Other
+* None
+
 ## v1.0.0 [2023-02-09]
 #### What's New
 * Moving out of beta and into general availability. No other changes except for documentation updates reflecting the move out of beta.
@@ -11,7 +28,7 @@ All changes to the package starting with v0.3.1 will be logged here.
 
 #### Bug Fixes
 * None
-* 
+
 #### Dependencies
 * None
 

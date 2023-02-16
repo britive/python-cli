@@ -10,7 +10,7 @@ from ..completers.profile import profile_completer
                        'gcloud_key_file,verbose,tenant,token,passphrase,federation_provider')
 @click.argument('profile', shell_complete=profile_completer)
 def checkout(ctx, alias, blocktime, console, justification, mode, maxpolltime, silent, force_renew,
-             aws_credentials_file, gcloud_key_file,verbose, tenant, token, passphrase, federation_provider, profile):
+             aws_credentials_file, gcloud_key_file, verbose, tenant, token, passphrase, federation_provider, profile):
     """Checkout a profile.
 
     This command takes 1 required argument `PROFILE`. This should be a string representation of the profile

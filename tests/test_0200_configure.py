@@ -170,3 +170,8 @@ def test_configure_update_tenant_correct_data(runner, cli):
     common_asserts(result, substring=['name=pybritivetest1.dev'])
     # set it back
     runner.invoke(cli, f'configure update tenant-{tenant} name {tenant}'.split(' '))
+
+
+def test_configure_update_aws_data(runner, cli):
+    result = runner.invoke(cli, f'configure update aws default_checkout_mode integrate'.split(' '))
+    common_asserts(result, substring=['aws', 'default_checkout_mode=integrate'])

@@ -211,6 +211,8 @@ class BritiveCli:
                     self.list_separator = '/'
                     row.pop('Description')
                     row.pop('Type')
+                    if profile['2_part_profile_format_allowed']:
+                        row.pop('Environment')
                 data.append(row)
 
         # set special list output if needed
@@ -222,7 +224,6 @@ class BritiveCli:
         # and set it back
         if self.output_format == 'list-profiles':
             self.output_format = 'list'
-
 
     def list_applications(self):
         self.login()
@@ -276,12 +277,14 @@ class BritiveCli:
                             'app_description': app['appDescription'],
                             'env_name': env['environmentName'],
                             'env_id': env['environmentId'],
+                            'env_short_name':  env['alternateEnvironmentName'],
                             'env_description': env['environmentDescription'],
                             'profile_name': profile['profileName'],
                             'profile_id': profile['profileId'],
                             'profile_allows_console': profile['consoleAccess'],
                             'profile_allows_programmatic': profile['programmaticAccess'],
-                            'profile_description': profile['profileDescription']
+                            'profile_description': profile['profileDescription'],
+                            '2_part_profile_format_allowed': app['requiresHierarchicalModel']
                         }
                         data.append(row)
             self.available_profiles = data
@@ -300,7 +303,7 @@ class BritiveCli:
         if app_type in ['AWS', 'AWS Standalone']:
             return printer.AwsCloudCredentialPrinter(
                 console=console,
-                mode=mode,
+                mode=mode or self.config.aws_default_checkout_mode(),  # handle the aws default_checkout_mode here
                 profile=profile,
                 credentials=credentials,
                 silent=silent,
@@ -350,10 +353,15 @@ class BritiveCli:
         try:
             self.login()
 
-            return self.b.my_access.checkout_by_name(
+            ids = self._convert_names_to_ids(
                 profile_name=profile_name,
                 environment_name=env_name,
-                application_name=app_name,
+                application_name=app_name
+            )
+
+            return self.b.my_access.checkout(
+                profile_id=ids['profile_id'],
+                environment_id=ids['environment_id'],
                 programmatic=programmatic,
                 include_credentials=True,
                 wait_time=blocktime,
@@ -381,8 +389,10 @@ class BritiveCli:
     def _split_profile_into_parts(self, profile):
         profile_real = self.config.profile_aliases.get(profile, profile)
         parts = profile_split(profile_real)
+        if len(parts) == 2:  # handle shortcut for profiles where the app and environment name are the same
+            parts = [parts[0], parts[0], parts[1]]
         if len(parts) != 3:
-            raise click.ClickException('Provided profile string does not have the required 3 parts.')
+            raise click.ClickException('Provided profile string does not have the required parts.')
         parts_dict = {
             'app': parts[0],
             'env': parts[1],
@@ -434,7 +444,7 @@ class BritiveCli:
             credentials = response['credentials']
 
         # this handles the --force-renew flag
-        # lets check to see if the we should checkin this profile first and check it out again
+        # lets check to see if we should checkin this profile first and check it out again
         if self._should_check_force_renew(app_type, force_renew, console):
             expiration = datetime.fromisoformat(credentials['expirationTime'].replace('Z', ''))
             now = datetime.utcnow()
@@ -446,7 +456,7 @@ class BritiveCli:
                 credential_process_creds_found = False  # need to write new creds to cache
                 credentials = response['credentials']
 
-        if alias:  # do this down here so we know that the profile is valid and a checkout was successful
+        if alias:  # do this down here, so we know that the profile is valid and a checkout was successful
             self.config.save_profile_alias(alias=alias, profile=profile)
 
         if mode == 'awscredentialprocess' and not credential_process_creds_found:
@@ -574,8 +584,11 @@ class BritiveCli:
         for p in self.available_profiles:
             profile = self.escape_profile_element(p['app_name'])
             profile += '/'
-            profile += self.escape_profile_element(p['env_name'])
-            profile += '/'
+
+            if not p['2_part_profile_format_allowed']:
+                profile += self.escape_profile_element(p['env_name'])
+                profile += '/'
+
             profile += self.escape_profile_element(p['profile_name'])
             profiles.append(profile)
         Cache().save_profiles(profiles)
@@ -669,9 +682,63 @@ class BritiveCli:
         # output the response, optionally filtering based on provided jmespath query/search
         self.print(jmespath.search(query, response) if query else response)
 
+    # yes - this method exits in b.my_access as _get_profile_and_environment_ids_given_names
+    # but we are doing additional business logic here to enhance the cli experience so there is
+    # a need to duplicate some of this logic (although we are doing additional work here so the logic is
+    # not 100% duplicated)
+    def _convert_names_to_ids(self, profile_name: str, environment_name: str, application_name: str) -> dict:
+        # set the available profiles if this is not already done
+        self._set_available_profiles()
 
+        # do some sanitization just in case
+        profile_name = profile_name.lower().strip()
+        environment_name = environment_name.lower().strip()
+        application_name = application_name.lower().strip()
 
+        found_profiles = {}
 
+        # collect relevant profile/environment combinations to which the identity is entitled
+        for profile in self.available_profiles:
+            if profile['app_name'].lower() != application_name:  # kick out all the unmatched applications
+                continue
+            if profile['profile_name'].lower() != profile_name:  # kick out the unmatched profiles
+                continue
+
+            # if we get here we know we are on a record that is the right app and right profile
+
+            found_profile_id = profile['profile_id']
+
+            if found_profile_id not in found_profiles.keys():
+                found_profiles[found_profile_id] = []
+
+            # load up multiple options
+            env_options = [
+                profile['env_name'].lower(),
+                profile['env_id'].lower(),
+                profile['env_short_name'].lower()
+            ]
+
+            if environment_name in env_options:
+                found_profiles[found_profile_id].append(profile['env_id'])
+
+        # let's first check to ensure we have only 1 profile
+        if len(found_profiles.keys()) == 0:
+            raise click.ClickException('no profile found with the provided application, environment, and profile names')
+        if len(found_profiles.keys()) > 1:
+            raise click.ClickException('multiple matching profiles found - cannot determine which profile to use')
+
+        # and now we can check to ensure we have only 1 environment
+        found_profile_id = list(found_profiles.keys())[0]
+        possible_environments = found_profiles[found_profile_id]
+        if len(possible_environments) == 0:
+            raise click.ClickException('no profile found with the provided application, environment, and profile names')
+        if len(possible_environments) > 1:
+            raise click.ClickException('multiple matching profiles found - cannot determine which profile to use')
+
+        return {
+            'profile_id': found_profile_id,
+            'environment_id': possible_environments[0]
+        }
 
 
 
