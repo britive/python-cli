@@ -2,9 +2,10 @@
 
 All changes to the package starting with v0.3.1 will be logged here.
 
-## v1.0.1 [2023-02-15]
+## v1.1.0 [2023-02-16]
 #### What's New
-* None
+* Allowing 2 part `PROFILE` parameters (see documentation for details)
+* Build support for multiple environment name formats (name, id, alternate environment name) for the `PROFILE` parameter
 
 #### Enhancements
 * None
