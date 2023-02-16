@@ -2,6 +2,22 @@
 
 All changes to the package starting with v0.3.1 will be logged here.
 
+## v1.1.1 [2023-02-16]
+#### What's New
+* None
+
+#### Enhancements
+* None
+
+#### Bug Fixes
+* fix issue with `checkin`, `request submit`, `request withdrawl` due to `PROFILE` parameter changes
+
+#### Dependencies
+* None
+
+#### Other
+* None
+
 ## v1.1.0 [2023-02-16]
 #### What's New
 * Allowing 2 part `PROFILE` parameters (see documentation for details)
