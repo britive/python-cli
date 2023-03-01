@@ -30,6 +30,21 @@ pip install $(curl -s https://api.github.com/repos/britive/python-cli/releases/l
 The end user is free to install the CLI into a virtual environment or in the global scope, so it is available
 everywhere.
 
+If the `pybritive` executable is not found when attempting to invoke the program, you may need to add the location
+of the `pybritive` executable to your path. This location can differ by OS and whether you are using a virtualenv or
+not. The easiest way to see where executables get installed via `pip install ...` is to run the following command.
+
+~~~
+echo `python3 -m site --user-base`/bin
+~~~
+
+You will need to add this location to your path. The following command will do that but it is recommended to add
+this command into your `.bashrc, .zshrc, etc.` file, so it will always get executed on new terminal windows.
+
+~~~
+export PATH=\"`python3 -m site --user-base`/bin:\$PATH\"
+~~~
+
 ## Tenant Configuration
 
 Before `pybritive` can connect to a Britive tenant, it needs to know some details about that tenant.
