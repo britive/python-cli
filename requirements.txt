@@ -1,4 +1,4 @@
-britive~=2.15.0
+britive>=2.16.0
 certifi>=2022.12.7
 charset-normalizer==2.1.0
 click==8.1.3
@@ -18,3 +18,4 @@ twine~=4.0.1
 python-dateutil~=2.8.2
 boto3
 jmespath
+pyjwt

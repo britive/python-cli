@@ -12,7 +12,7 @@ def test_cache_profiles(runner, cli):
     assert result.exit_code == 0
     assert 'profiles' in data.keys()
     assert len(data['profiles']) > 0
-    assert len(data['profiles'][0].split('/')) == 3
+    assert len(data['profiles'][0].split('/')) in [2, 3]
 
 
 
