@@ -3,7 +3,6 @@ import base64
 import hashlib
 import time
 import webbrowser
-import math
 import requests
 from requests.adapters import HTTPAdapter, Retry
 from pathlib import Path
