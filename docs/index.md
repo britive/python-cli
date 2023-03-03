@@ -144,6 +144,12 @@ At feature launch the following types of identity providers are supported for wo
 * Github Actions
 * AWS
 * Bitbucket
+* Azure System Assigned Managed Identities
+* Azure User Assigned Managed Identities
+
+For more information on Azure Managed Identities reference the below link.
+
+https://learn.microsoft.com/en-us/azure/active-directory/managed-identities-azure-resources/overview
 
 It is possible to source an identity token from a different OIDC provider and explicitly set it via the `--token\-T` flag.
 However, if you are using one of the above providers, a shortcut is provided to abstract away the complexity of sourcing these tokens.
@@ -169,6 +175,18 @@ pybritive checkout "profile" --federation-provider aws_expirationseconds  # use 
 
 # bitbucket (note that no additional options are available for bitbucket)
 pybritive checkout "profile" --federation-provider bitbucket
+
+# azure system assigned managed identities
+pybritive checkout "profile" --federation-provider azuresmi # use system assigned managed identities with the default OIDC audience
+pybritive checkout "profile" --federation-provider azuresmi-audience # use system assigned managed identities with a custom OIDC audience
+pybritive checkout "profile" --federation-provider azuresmi-audience_expirationseconds # use system assigned managed identities with a custom OIDC audience and set the Britive expiration (in seconds) of the generated token
+pybritive checkout "profile" --federation-provider azuresmi_expirationseconds # use system assigned managed identities with the default OIDC audience and set the Britive expiration (in seconds) of the generated token
+
+# azure user assigned managed identities (note that a client id is a required field)
+pybritive checkout "profile" --federation-provider azuresmi-clientid # use user assigned managed identities with the default OIDC audience
+pybritive checkout "profile" --federation-provider azuresmi-clientid|audience # use user assigned managed identities with a custom OIDC audience
+pybritive checkout "profile" --federation-provider azuresmi-clientid|audience_expirationseconds # use user assigned managed identities with a custom OIDC audience and set the Britive expiration (in seconds) of the generated token
+pybritive checkout "profile" --federation-provider azuresmi-clientid_expirationseconds # use user assigned managed identities with the default OIDC audience and set the Britive expiration (in seconds) of the generated token
 ~~~
 
 In general the field format for `--federation-provider` is `provider-[something provider specific]_[duration in seconds]`.

@@ -3,6 +3,7 @@ import base64
 import hashlib
 import time
 import webbrowser
+import math
 import requests
 from requests.adapters import HTTPAdapter, Retry
 from pathlib import Path
@@ -13,6 +14,7 @@ import os
 from .encryption import StringEncryption, InvalidPassphraseException
 from britive.britive import Britive
 from dateutil import parser
+import jwt
 
 
 interactive_login_fields_to_pop = [
@@ -144,7 +146,7 @@ class CredentialManager:
         provider = provider.lower()
         token = str(token)
 
-        expiration_time = (time.time_ns() // 1000000) + federation_provider_default_expiration_seconds
+        expiration_time = (int(time.time()) + federation_provider_default_expiration_seconds) * 1000
 
         try:
             if provider == 'aws':
@@ -152,10 +154,17 @@ class CredentialManager:
                 token_expires = json.loads(token)['iam_request_headers']['x-britive-expires']
                 expiration_time = int(parser.parse(token_expires).timestamp() * 1000)
             if provider == 'oidc':
-                ignore1, token, ignore2 = token.split('.')
-                token = base64.b64decode(token.encode('utf-8'))
-                token = json.loads(token)
-                expiration_time = int(token['exp'] * 1000)
+                expiration_time = jwt.decode(
+                    token,
+                    # validation of the token will occur on the Britive backend
+                    # so not verifying everything here is okay since we are just
+                    # trying to extract the token expiration time so we can store
+                    # it in the ~/.britive/pybritive.credentials[.encrypted] file
+                    options={
+                        'verify_signature': False,
+                        'verify_aud': False
+                    }
+                )['exp'] * 1000
         except Exception as e:
             self.cli.print(f'Cannot obtain token expiration time for {self.federation_provider}. Defaulting to '
                            f'{federation_provider_default_expiration_seconds} seconds.')

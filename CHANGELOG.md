@@ -2,6 +2,24 @@
 
 All changes to the package starting with v0.3.1 will be logged here.
 
+## v1.2.0 [2023-03-03]
+#### What's New
+* Support for Azure Managed Identities as federation providers.
+
+#### Enhancements
+* Fall back to reduced functionality (no shell completion) when the python environment is using `click<8.0.0`.
+
+#### Bug Fixes
+* If a justification for checkout/secrets viewing is provided, ensure it is <=255 characters.
+* Fix issue with extraction of OIDC token expiration time. Moved to `jwt` library to perform the token decode.
+
+#### Dependencies
+* Switching `britive` dependency from a compatible version requirement to a `>=` requirement to capture minor updates.
+* `britive>=2.16.0` from britive~=2.15.1
+
+#### Other
+* Modify the error handling and reporting process to not raise `click.ClickException` exceptions in the `safe_cli` method. Instead, raise the underlying exception so a better error message is provided.
+
 ## v1.1.1 [2023-02-16]
 #### What's New
 * None
