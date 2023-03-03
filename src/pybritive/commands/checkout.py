@@ -1,14 +1,14 @@
 import click
 from ..helpers.build_britive import build_britive
 from ..options.britive_options import britive_options
-from ..completers.profile import profile_completer
+from ..helpers.profile_argument_dectorator import click_smart_profile_argument
 
 
 @click.command()
 @build_britive
 @britive_options(names='alias,blocktime,console,justification,mode,maxpolltime,silent,force_renew,aws_credentials_file,'
                        'gcloud_key_file,verbose,tenant,token,passphrase,federation_provider')
-@click.argument('profile', shell_complete=profile_completer)
+@click_smart_profile_argument
 def checkout(ctx, alias, blocktime, console, justification, mode, maxpolltime, silent, force_renew,
              aws_credentials_file, gcloud_key_file, verbose, tenant, token, passphrase, federation_provider, profile):
     """Checkout a profile.

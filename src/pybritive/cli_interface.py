@@ -24,9 +24,9 @@ def safe_cli():
         cli()
     except Exception as e:
         if debug:
-            raise click.ClickException(str(e))
+            raise e
         else:
-            raise click.ClickException(str(e)) from None
+            raise e from None
 
 
 # this is the "main" app - it really does nothing but print the overview/help section

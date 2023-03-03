@@ -420,6 +420,8 @@ class BritiveCli:
         response = None
         self.verbose_checkout = verbose
 
+        self._validate_justification(justification)
+
         if mode == 'awscredentialprocess':
             self.silent = True  # the aws credential process CANNOT output anything other than the expected JSON
             # we need to check the credential process cache for the credentials first
@@ -524,7 +526,8 @@ class BritiveCli:
             backend=backend
         )
 
-    def viewsecret(self, path, blocktime, justification,maxpolltime):
+    def viewsecret(self, path, blocktime, justification, maxpolltime):
+        self._validate_justification(justification)
         self.login()
 
         try:
@@ -554,7 +557,8 @@ class BritiveCli:
         # and finally print the secret data
         self.print(value)
 
-    def downloadsecret(self, path, blocktime, justification,maxpolltime, file):
+    def downloadsecret(self, path, blocktime, justification, maxpolltime, file):
+        self._validate_justification(justification)
         self.login()
 
         try:
@@ -617,6 +621,7 @@ class BritiveCli:
         self.config.update(section=section, field=field, value=value)
 
     def request_submit(self, profile, justification):
+        self._validate_justification(justification)
         self.login()
         parts = self._split_profile_into_parts(profile)
 
@@ -761,6 +766,11 @@ class BritiveCli:
             'profile_id': found_profile_id,
             'environment_id': possible_environments[0]
         }
+
+    @staticmethod
+    def _validate_justification(justification: str):
+        if justification and len(justification) > 255:
+            raise ValueError('justification cannot be longer than 255 characters.')
 
 
 
