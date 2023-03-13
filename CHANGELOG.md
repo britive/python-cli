@@ -2,6 +2,22 @@
 
 All changes to the package starting with v0.3.1 will be logged here.
 
+## v1.2.1 [2023-03-14]
+#### What's New
+* None
+
+#### Enhancements
+* None
+
+#### Bug Fixes
+* `api` command shell completion fixed - dynamic sourcing of `method` values and options from the Britive Python SDK.
+
+#### Dependencies
+* `britive>=2.17.0`
+
+#### Other
+* None
+
 ## v1.2.0 [2023-03-03]
 #### What's New
 * Support for Azure Managed Identities as federation providers.
