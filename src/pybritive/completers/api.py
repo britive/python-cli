@@ -3,7 +3,7 @@ import json
 
 
 def api_completer(ctx, param, incomplete):
-    # create an instance of the Britive class, so we can't inspect it
+    # create an instance of the Britive class, so we can inspect it
     # this doesn't need to actually connect to any tenant, and we couldn't even if we
     # wanted to since when performing shell completion we have no tenant/token
     # context in order to properly establish a connection.
