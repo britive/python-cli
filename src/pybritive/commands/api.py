@@ -1,6 +1,14 @@
 import click
+from click import Command
 from ..helpers.build_britive import build_britive
 from ..options.britive_options import britive_options
+from ..completers.api_command import command_api_patch_shell_complete
+from ..helpers.api_method_argument_dectorator import click_smart_api_method_argument
+
+
+# this holds all the click version logic to gracefully degrade functionality
+# depending on the click version
+command_api_patch_shell_complete(Command)
 
 
 @click.command(
@@ -11,7 +19,7 @@ from ..options.britive_options import britive_options
 )
 @build_britive
 @britive_options(names='query,output_format,tenant,token,passphrase,federation_provider')
-@click.argument('method')
+@click_smart_api_method_argument  # need to gracefully handle older version of click
 def api(ctx, query, output_format, tenant, token, passphrase, federation_provider, method):
     """Exposes the Britive Python SDK methods to the CLI.
 
