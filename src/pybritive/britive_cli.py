@@ -104,11 +104,26 @@ class BritiveCli:
         self.credential_manager.delete()
 
     def logout(self):
+        # if dealing with a token there is no concept of logout
         if self.token:
             raise click.ClickException('Logout not available when using an API token.')
-        self.login()
-        self.b.delete(f'https://{Britive.parse_tenant(self.tenant_name)}/api/auth')
-        self._cleanup_credentials()
+
+        self.tenant_name = self.config.get_tenant()['name']
+        self.tenant_alias = self.config.alias
+        self.set_credential_manager()
+
+        # let's see if we have credentials for this tenant already
+        # if we do we need to invalidate them at the tenant and clean them up on the client side
+        # if we don't have valid credentials for the tenant then there is no need to logout
+        if self.credential_manager.has_valid_credentials():
+
+            self.b = Britive(
+                tenant=self.tenant_name,
+                token=self.credential_manager.get_token(),
+                query_features=False
+            )
+            self.b.delete(f'https://{Britive.parse_tenant(self.tenant_name)}/api/auth')
+            self._cleanup_credentials()
 
     def debug(self, data: object, ignore_silent: bool = False):
         if debug_enabled:
@@ -183,11 +198,11 @@ class BritiveCli:
         output = f'{username} @ {self.tenant_name}'
         if alias != self.tenant_name:
             output += f' (alias: {alias})'
-        self.print(output)
+        self.print(output, ignore_silent=True)
 
     def list_secrets(self):
         self.login()
-        self.print(self.b.my_secrets.list())
+        self.print(self.b.my_secrets.list(), ignore_silent=True)
 
     def list_profiles(self, checked_out: bool = False):
         self.login()
@@ -219,7 +234,7 @@ class BritiveCli:
         if self.output_format == 'list':
             self.output_format = 'list-profiles'
 
-        self.print(data)
+        self.print(data, ignore_silent=True)
 
         # and set it back
         if self.output_format == 'list-profiles':
@@ -242,7 +257,7 @@ class BritiveCli:
 
             }
             data.append(row)
-        self.print(data)
+        self.print(data, ignore_silent=True)
 
     def list_environments(self):
         self.login()
@@ -262,7 +277,7 @@ class BritiveCli:
                 'Type': env['app_type']
             }
             data.append(row)
-        self.print(data)
+        self.print(data, ignore_silent=True)
 
     def _set_available_profiles(self):
         if not self.available_profiles:
@@ -555,7 +570,7 @@ class BritiveCli:
             pass
 
         # and finally print the secret data
-        self.print(value)
+        self.print(value, ignore_silent=True)
 
     def downloadsecret(self, path, blocktime, justification, maxpolltime, file):
         self._validate_justification(justification)
@@ -578,7 +593,7 @@ class BritiveCli:
 
         if file == '-':
             try:
-                self.print(content.decode('utf-8'))
+                self.print(content.decode('utf-8'), ignore_silent=True)
             except UnicodeDecodeError as e:
                 raise click.ClickException(
                     'Secret file contents cannot be decoded to utf-8. '
@@ -707,7 +722,7 @@ class BritiveCli:
                 pass
 
         # output the response, optionally filtering based on provided jmespath query/search
-        self.print(jmespath.search(query, response) if query else response)
+        self.print(jmespath.search(query, response) if query else response, ignore_silent=True)
 
     # yes - this method exits in b.my_access as _get_profile_and_environment_ids_given_names
     # but we are doing additional business logic here to enhance the cli experience so there is

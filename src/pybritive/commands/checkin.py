@@ -6,7 +6,7 @@ from ..helpers.profile_argument_dectorator import click_smart_profile_argument
 
 @click.command()
 @build_britive
-@britive_options(names='tenant,token,passphrase,federation_provider')
+@britive_options(names='tenant,token,silent,passphrase,federation_provider')
 @click_smart_profile_argument
 def checkin(ctx, tenant, token, passphrase, federation_provider, profile):
     """Checkin a profile.
