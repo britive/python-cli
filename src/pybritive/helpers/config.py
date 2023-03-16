@@ -276,8 +276,8 @@ class ConfigManager:
 
     def validate_profile_aliases(self, section, fields):
         for field, value in fields.items():
-            if len(profile_split(value)) != 3:
-                error = f'Invalid {section} field {field} value {value} provided. Value must be 3 parts ' \
+            if len(profile_split(value)) not in [2, 3]:
+                error = f'Invalid {section} field {field} value {value} provided. Value must be 2 or 3 parts ' \
                         'separated by a /'
                 self.validation_error_messages.append(error)
 

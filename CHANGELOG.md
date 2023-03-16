@@ -2,6 +2,33 @@
 
 All changes to the package starting with v0.3.1 will be logged here.
 
+## v1.2.2 [2023-03-17]
+#### What's New
+* None
+
+#### Enhancements
+* None
+
+#### Bug Fixes
+* Fix bug with `logout` command when no active credentials were available
+* Expand `--silent/-s` flag to the following commands
+  * `api`
+  * `cache profiles`
+  * `checkin`
+  * `login`
+  * `logout`
+  * `ls [profiles|environments|applications|secrets]`
+  * `request [submit|withdraw]`
+  * `secret view`
+  * `user`
+* Fix bug when saving profile alias when the `PROFILE` is only 2 parts instead of 3
+
+#### Dependencies
+* None
+
+#### Other
+* None
+
 ## v1.2.1 [2023-03-14]
 #### What's New
 * None
