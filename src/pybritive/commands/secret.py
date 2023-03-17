@@ -11,9 +11,9 @@ def secret():
 
 @secret.command()
 @build_britive
-@britive_options(names='blocktime,justification,maxpolltime,format,tenant,token,passphrase,federation_provider')
+@britive_options(names='blocktime,justification,maxpolltime,format,tenant,token,silent,passphrase,federation_provider')
 @click.argument('path')
-def view(ctx, blocktime, justification, maxpolltime, output_format, tenant, token, passphrase,
+def view(ctx, blocktime, justification, maxpolltime, output_format, tenant, token, silent, passphrase,
          federation_provider, path):
     """Display the secret value of the provided secret.
 

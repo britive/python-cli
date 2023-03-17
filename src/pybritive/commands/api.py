@@ -18,9 +18,9 @@ command_api_patch_shell_complete(Command)
     )
 )
 @build_britive
-@britive_options(names='query,output_format,tenant,token,passphrase,federation_provider')
+@britive_options(names='query,output_format,tenant,token,silent,passphrase,federation_provider')
 @click_smart_api_method_argument  # need to gracefully handle older version of click
-def api(ctx, query, output_format, tenant, token, passphrase, federation_provider, method):
+def api(ctx, query, output_format, tenant, token, silent, passphrase, federation_provider, method):
     """Exposes the Britive Python SDK methods to the CLI.
 
     Documentation on each SDK method can be found inside the Python SDK itself and on Github

@@ -88,7 +88,9 @@ class CredentialManager:
             webbrowser.get()
             webbrowser.open(url)
         except webbrowser.Error:
-            self.cli.print('No web browser found. Please manually navigate to the link below and authenticate.')
+            self.cli.print(
+                'No web browser found. Please manually navigate to the link below and authenticate.'
+            )
             self.cli.print(url)
 
         time.sleep(3)
@@ -190,15 +192,15 @@ class CredentialManager:
         return self.session.post(url, headers=headers, json=auth_params)
 
     def load(self, full=False):
-        # we should NEVER get herte but adding here just in case
+        # we should NEVER get here but adding here just in case
         raise click.ClickException('Must use a subclass of CredentialManager')
 
     def save(self, credentials: dict):
-        # we should NEVER get herte but adding here just in case
+        # we should NEVER get here but adding here just in case
         raise click.ClickException('Must use a subclass of CredentialManager')
 
     def delete(self):
-        # we should NEVER get herte but adding here just in case
+        # we should NEVER get here but adding here just in case
         raise click.ClickException('Must use a subclass of CredentialManager')
 
     # this helper exists since subclasses may need to override the method due to how the
