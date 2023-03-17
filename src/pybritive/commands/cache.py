@@ -11,8 +11,8 @@ def cache():
 
 @cache.command()
 @build_britive
-@britive_options(names='tenant,token,passphrase,federation_provider')
-def profiles(ctx, tenant, token, passphrase, federation_provider):
+@britive_options(names='tenant,token,silent,passphrase,federation_provider')
+def profiles(ctx, tenant, token, silent, passphrase, federation_provider):
     """Cache profiles locally to facilitate auto-completion of profile names on checkin/checkout."""
     ctx.obj.britive.cache_profiles()
 
