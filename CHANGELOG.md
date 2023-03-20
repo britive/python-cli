@@ -4,7 +4,7 @@ All changes to the package starting with v0.3.1 will be logged here.
 
 ## v1.3.0 [2023-03-XX]
 #### What's New
-* `pybritive ssh aws-proxy` command
+* `pybritive ssh aws ssm-proxy` command
 
 #### Enhancements
 * None
