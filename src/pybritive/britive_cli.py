@@ -1,5 +1,7 @@
 import io
 import pathlib
+import uuid
+
 from britive.britive import Britive
 from .helpers.config import ConfigManager
 from .helpers.credentials import FileCredentialManager, EncryptedFileCredentialManager
@@ -787,11 +789,119 @@ class BritiveCli:
         if justification and len(justification) > 255:
             raise ValueError('justification cannot be longer than 255 characters.')
 
+    def ssh_aws_ssm_proxy(self, username, hostname, push_public_key, port_number, key_source):
+        self.silent = True
+        helper = hostname.split('.')
+        instance_id = helper[0]
+        aws_profile = None  # will drop to using standard aws boto3/cli profile provider chain
+        aws_region = None  # will drop to using standard aws boto3/cli region provider chain
+        if len(helper) > 1:
+            aws_profile = helper[1]
+        if len(helper) > 2:
+            aws_region = helper[2]
 
+        if push_public_key:
+            self._ssh_aws_generate_key(
+                instance_id=instance_id,
+                aws_profile=aws_profile,
+                aws_region=aws_region,
+                username=username,
+                hostname=hostname,
+                key_source=key_source
+            )
 
+        commands = [
+            'aws',
+            'ssm',
+            'start-session',
+            f'--parameters portNumber={port_number}',
+            '--document-name AWS-StartSSHSession',
+            f'--target {instance_id}'
+        ]
 
+        if aws_profile:
+            commands.append(f'--profile {aws_profile}')
+        if aws_region:
+            commands.append(f'--region {aws_region}')
 
+        self.print(' '.join(commands), ignore_silent=True)
 
+    @staticmethod
+    def _ssh_aws_generate_key(instance_id, aws_profile, aws_region, username, hostname, key_source):
+        # doing imports here as these packages are not a requirement to use pybritive
+        import boto3
+        from cryptography.hazmat.primitives.asymmetric import rsa
+        from cryptography.hazmat.primitives import serialization
+        import glob
+        import time
+        import subprocess
+
+        # we know we will be pushing the key to the instance so establish the
+        # boto3 clients which are required to perform those actions
+        session = boto3.Session(profile_name=aws_profile, region_name=aws_region)
+        eic = session.client('ec2-instance-connect')
+        ec2 = session.client('ec2')
+
+        # now let's create the ephemeral private and public key pair
+        private_key = rsa.generate_private_key(
+            public_exponent=65537,
+            key_size=2048
+        )
+
+        encrypted_pem_private_key = private_key.private_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PrivateFormat.TraditionalOpenSSL,
+            encryption_algorithm=serialization.NoEncryption()
+        )
+
+        pem_public_key = private_key.public_key().public_bytes(
+            encoding=serialization.Encoding.OpenSSH,
+            format=serialization.PublicFormat.OpenSSH
+        )
+
+        # let's do the right thing and clean up old ephemeral keys
+        # even though they are in the /tmp directory
+        pem_file = ''
+        if key_source == 'ssh-agent':
+            now = int(time.time())
+            pem_file = f'/tmp/pybritive-ssh-{uuid.uuid4().hex}-{now + 60}.pem'
+
+            # cleanup any old ssh keys that were randomly generated
+            for key in glob.glob('/tmp/pybritive-ssh-random-*'):
+                file, extension = key.split('.')
+                expiration = int(file.split('-')[3])
+                if expiration < now:
+                    Path(key).unlink(missing_ok=True)
+        elif key_source == 'static':
+            # clean up the specific key if it exists so we can create a new one
+            pem_file = f'/tmp/pybritive-ssh.{hostname}.{username}.pem'
+            Path(pem_file).unlink(missing_ok=True)
+        else:
+            raise ValueError(f'invalid --key-source value {key_source}')
+
+        # we only need to persist the private key locally
+        # as the public key is just pushed to the ec2 instance
+        # as a string in the ec2 instance connect api call (no file
+        # reference)
+        with open(pem_file, 'w') as f:
+            f.write(encrypted_pem_private_key.decode())
+        os.chmod(pem_file, 0o400)
+
+        # now push the key
+        az = ec2.describe_instances(
+            InstanceIds=[instance_id]
+        )['Reservations'][0]['Instances'][0]['Placement']['AvailabilityZone']
+
+        eic.send_ssh_public_key(
+            InstanceId=instance_id,
+            InstanceOSUser=username,
+            SSHPublicKey=pem_public_key.decode(),
+            AvailabilityZone=az
+        )
+
+        # and if we are using ssh-agent we need to add the private key via ssh-add
+        if key_source == 'ssh-agent':
+            subprocess.run(['ssh-add', pem_file, '-t', '60', '-q'])
 
 
 

@@ -23,6 +23,11 @@ from ..options.federation_provider import option as federation_provider
 from ..options.gcloud_key_file import option as gcloud_key_file
 from ..options.verbose import option as verbose
 from ..options.query import option as query
+from ..options.ssh_hostname import option as ssh_hostname
+from ..options.ssh_username import option as ssh_username
+from ..options.ssh_push_public_key import option as ssh_push_public_key
+from ..options.ssh_port import option as ssh_port
+from ..options.ssh_key_source import option as ssh_key_source
 
 options_map = {
     'tenant': tenant,
@@ -49,7 +54,12 @@ options_map = {
     'federation_provider': federation_provider,
     'gcloud_key_file': gcloud_key_file,
     'verbose': verbose,
-    'query': query
+    'query': query,
+    'ssh_hostname': ssh_hostname,
+    'ssh_username': ssh_username,
+    'ssh_push_public_key': ssh_push_public_key,
+    'ssh_port': ssh_port,
+    'ssh_key_source': ssh_key_source
 }
 
 
