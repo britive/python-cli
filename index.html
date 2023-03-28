@@ -71,6 +71,10 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#api-command-use-the-britive-python-sdk-via-the-cli">api Command - Use the Britive Python SDK via the CLI</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="#ssh-command">ssh Command</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#aws-command">aws Command</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="#shell-completion">Shell Completion</a>
         <ul>
     <li class="toctree-l3"><a class="reference internal" href="#bash">Bash</a>
@@ -93,6 +97,8 @@
         <ul>
     <li class="toctree-l4"><a class="reference internal" href="#pybritive-api">api</a>
     </li>
+    <li class="toctree-l4"><a class="reference internal" href="#pybritive-aws">aws</a>
+    </li>
     <li class="toctree-l4"><a class="reference internal" href="#pybritive-cache">cache</a>
     </li>
     <li class="toctree-l4"><a class="reference internal" href="#pybritive-checkin">checkin</a>
@@ -112,6 +118,8 @@
     <li class="toctree-l4"><a class="reference internal" href="#pybritive-request">request</a>
     </li>
     <li class="toctree-l4"><a class="reference internal" href="#pybritive-secret">secret</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#pybritive-ssh">ssh</a>
     </li>
     <li class="toctree-l4"><a class="reference internal" href="#pybritive-user">user</a>
     </li>
@@ -175,6 +183,15 @@ pip install $(curl -s https://api.github.com/repos/britive/python-cli/releases/l
 </code></pre>
 <p>The end user is free to install the CLI into a virtual environment or in the global scope, so it is available
 everywhere.</p>
+<p>If the <code>pybritive</code> executable is not found when attempting to invoke the program, you may need to add the location
+of the <code>pybritive</code> executable to your path. This location can differ by OS and whether you are using a virtualenv or
+not. The easiest way to see where executables get installed via <code>pip install ...</code> is to run the following command.</p>
+<pre><code>echo `python3 -m site --user-base`/bin
+</code></pre>
+<p>You will need to add this location to your path. The following command will do that but it is recommended to add
+this command into your <code>.bashrc, .zshrc, etc.</code> file, so it will always get executed on new terminal windows.</p>
+<pre><code>export PATH=\&quot;`python3 -m site --user-base`/bin:\$PATH\&quot;
+</code></pre>
 <h2 id="tenant-configuration">Tenant Configuration</h2>
 <p>Before <code>pybritive</code> can connect to a Britive tenant, it needs to know some details about that tenant.
 This is where <code>pybritive configure</code> will help us.</p>
@@ -255,7 +272,11 @@ to interact with Britive. These tokens are mapped to service identities within y
 <li>Github Actions</li>
 <li>AWS</li>
 <li>Bitbucket</li>
+<li>Azure System Assigned Managed Identities</li>
+<li>Azure User Assigned Managed Identities</li>
 </ul>
+<p>For more information on Azure Managed Identities reference the below link.</p>
+<p>https://learn.microsoft.com/en-us/azure/active-directory/managed-identities-azure-resources/overview</p>
 <p>It is possible to source an identity token from a different OIDC provider and explicitly set it via the <code>--token\-T</code> flag.
 However, if you are using one of the above providers, a shortcut is provided to abstract away the complexity of sourcing these tokens.
 Over time this list will grow. Reach out to your customer success manager if you have an identity provider you would like added to
@@ -277,6 +298,18 @@ pybritive checkout &quot;profile&quot; --federation-provider aws_expirationsecon
 
 # bitbucket (note that no additional options are available for bitbucket)
 pybritive checkout &quot;profile&quot; --federation-provider bitbucket
+
+# azure system assigned managed identities
+pybritive checkout &quot;profile&quot; --federation-provider azuresmi # use system assigned managed identities with the default OIDC audience
+pybritive checkout &quot;profile&quot; --federation-provider azuresmi-audience # use system assigned managed identities with a custom OIDC audience
+pybritive checkout &quot;profile&quot; --federation-provider azuresmi-audience_expirationseconds # use system assigned managed identities with a custom OIDC audience and set the Britive expiration (in seconds) of the generated token
+pybritive checkout &quot;profile&quot; --federation-provider azuresmi_expirationseconds # use system assigned managed identities with the default OIDC audience and set the Britive expiration (in seconds) of the generated token
+
+# azure user assigned managed identities (note that a client id is a required field)
+pybritive checkout &quot;profile&quot; --federation-provider azuresmi-clientid # use user assigned managed identities with the default OIDC audience
+pybritive checkout &quot;profile&quot; --federation-provider azuresmi-clientid|audience # use user assigned managed identities with a custom OIDC audience
+pybritive checkout &quot;profile&quot; --federation-provider azuresmi-clientid|audience_expirationseconds # use user assigned managed identities with a custom OIDC audience and set the Britive expiration (in seconds) of the generated token
+pybritive checkout &quot;profile&quot; --federation-provider azuresmi-clientid_expirationseconds # use user assigned managed identities with the default OIDC audience and set the Britive expiration (in seconds) of the generated token
 </code></pre>
 <p>In general the field format for <code>--federation-provider</code> is <code>provider-[something provider specific]_[duration in seconds]</code>.</p>
 <h2 id="credential-stores">Credential Stores</h2>
@@ -330,6 +363,61 @@ meant for administrative functionality.</p>
 which parameters are expected and which are optional. Parameters with <code>_</code> in the name should be translated to <code>-</code> when referencing them
 via the CLI.</li>
 </ul>
+<h2 id="ssh-command"><code>ssh</code> Command</h2>
+<p>The <code>ssh</code> command facilitates using the native SSH protocol to connect to private cloud servers.</p>
+<p>The goal is to allow all functionality offered by the SSH protocol like local port forwarding to access private resources and <code>scp</code> to copy files to the remote host.</p>
+<p>At launch only AWS EC2 is supported. The requirements for using SSH with EC2 instances are provided below.</p>
+<ul>
+<li>EC2 instance must have the Systems Manager agent installed and operational.</li>
+<li>EC2 instance must have the EC2 Instance Connect agent installed and operational (if using <code>--push-public-key</code>).</li>
+<li>The caller must have appropriate IAM permissions to start a Session Manager session (for all <code>--key-source</code>s) and push a public key via EC2 Instance Connect (if using <code>--push-public-key</code>).</li>
+<li>The caller's environment must have the AWS CLI installed along with the Session Manager plugin.</li>
+<li>The caller's python environment must have the <code>boto3</code> package installed. As <code>boto3</code> is not required for the use of <code>pybritive</code> it is not automatically installed (if using <code>--push-public-key</code>).</li>
+<li>The caller must use OpenSSH (and the SSH config file). Other SSH implementations are not currently supported.</li>
+</ul>
+<p>There are 3 ways that <code>pybritive</code> can help proxy an SSH session to a private EC2 instance.</p>
+<ul>
+<li>Using just Session Manager SSH forwarding to establish the network path over which the SSH protocol will operate. It is left to the caller then to handle SSH authentication using whichever mechanism has already been established.</li>
+</ul>
+<pre><code class="language-bash">Host bastion.dev
+     HostName i-xxxxxxxxxxxxxxxxx.profile[.region]
+
+Match host i-*,mi-*
+    User ssm-user
+    ProxyCommand eval $(pybritive ssh aws ssm-proxy --hostname %h --username %r --port-number %p)
+</code></pre>
+<ul>
+<li>Using Session Manager SSH forwarding along with pushing a randomly generated SSH key pair public key via EC2 Instance Connect and identifying the private key via static path in the <code>IdentityFile</code> parameter.</li>
+</ul>
+<pre><code class="language-bash">Host bastion.dev
+     HostName i-xxxxxxxxxxxxxxxxx.profile[.region]
+
+Match host i-*,mi-*
+    User ssm-user
+    IdentityFile ~/.britive/ssh/%h.%r.pem
+    ProxyCommand eval $(pybritive ssh aws ssm-proxy --hostname %h --username %r --port-number %p --push-pulbic-key --key-source static)
+</code></pre>
+<ul>
+<li>Using Session Manager SSH forwarding along with pushing a randomly generated SSH key pair public key via EC2 Instance Connect and adding the private key to the <code>ssh-agent</code> via <code>ssh-add</code> so it is available without having to specify the <code>IdentityFile</code> parameter.</li>
+</ul>
+<pre><code class="language-bash">Host bastion.dev
+     HostName i-xxxxxxxxxxxxxxxxx.profile[.region]
+
+Match host i-*,mi-*
+    User ssm-user
+    ProxyCommand eval $(pybritive ssh aws ssm-proxy --hostname %h --username %r --port-number %p --push-pulbic-key --key-source ssh-agent)
+</code></pre>
+<p>The <code>HostName</code> parameter must be in the appropriate format. That format is</p>
+<pre><code>[instance-id][.aws-profile-name[.aws-region]]
+</code></pre>
+<p>Both <code>aws-profile-name</code> and <code>aws-region</code> are optional. If <code>aws-profile-name</code> is omitted then credentials for Session Manager and EC2 Instance Connect will be sourced from the standard AWS credential provider chain.
+If <code>aws-region</code> is omitted then credentials for Session Manager and EC2 Instance Connect will be sourced from the standard AWS region provider chain.</p>
+<p>The command <code>ssh aws config</code> can be invoked to generate the above <code>Match</code> directives.</p>
+<h2 id="aws-command"><code>aws</code> Command</h2>
+<p>The <code>aws</code> command group will hold actions related specifically to AWS. </p>
+<p>The first supported sub-command is <code>console</code> which will sign an AWS console URL using programmatic access keys 
+(long-lived IAM User keys or temporary AWS AssumeRole credentials). This will allow you to check out programmatic access 
+for a Britive AWS profile (or any other system which issues AWS access keys) and use the resulting keys to get into the AWS console.</p>
 <h2 id="shell-completion">Shell Completion</h2>
 <p>TODO: Provide more automated scripts here to automatically add the required configs to the profiles. For now the below works just fine though.</p>
 <p>Behind the scenes the <code>pybritive</code> CLI tool uses the python <code>click</code> package. <code>click</code> offers shell completion for
@@ -471,6 +559,7 @@ region=us-east-1
 <p><strong>Subcommands</strong></p>
 <ul>
 <li><em><a href="#pybritive-api">api</a></em>: Exposes the Britive Python SDK methods to the CLI.</li>
+<li><em><a href="#pybritive-aws">aws</a></em>: Groups together AWS specific sub-commands. Naming conventions will change to support standard AWS names.</li>
 <li><em><a href="#pybritive-cache">cache</a></em>: Manage local cache settings.</li>
 <li><em><a href="#pybritive-checkin">checkin</a></em>: Checkin a profile.</li>
 <li><em><a href="#pybritive-checkout">checkout</a></em>: Checkout a profile.</li>
@@ -481,6 +570,7 @@ region=us-east-1
 <li><em><a href="#pybritive-ls">ls</a></em>: List resources available for currently authenticated identity.</li>
 <li><em><a href="#pybritive-request">request</a></em>: Provides functionality related to requesting approval to checkout a profile.</li>
 <li><em><a href="#pybritive-secret">secret</a></em>: View or download a secret.</li>
+<li><em><a href="#pybritive-ssh">ssh</a></em>: Facilitates connecting to private cloud servers using the standard ssh protocol.</li>
 <li><em><a href="#pybritive-user">user</a></em>: Print details about the authenticated identity.</li>
 </ul>
 <h4 id="pybritive-api">pybritive api</h4>
@@ -550,6 +640,12 @@ meant for administrative functionality.</p>
 <td>None</td>
 </tr>
 <tr>
+<td><code>--silent</code>, <code>-s</code></td>
+<td>boolean</td>
+<td>Enable silent mode.</td>
+<td><code>False</code></td>
+</tr>
+<tr>
 <td><code>--passphrase</code>, <code>-p</code></td>
 <td>text</td>
 <td>The passphrase to use for encrypting credentials.</td>
@@ -559,6 +655,76 @@ meant for administrative functionality.</p>
 <td><code>--federation-provider</code>, <code>-P</code></td>
 <td>text</td>
 <td>Use a federation provider available in the Britive Python SDK for auto token creation. Valid values are <code>aws[-profile]</code>, <code>github[-audience], and</code>bitbucket<code>. Optionally for the AWS provider a duration in seconds can be provided via</code>aws[-profile]_durationseconds` after which point the auto-generatedcredentials will expire.</td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>--help</code></td>
+<td>boolean</td>
+<td>Show this message and exit.</td>
+<td><code>False</code></td>
+</tr>
+</tbody>
+</table>
+<h4 id="pybritive-aws">pybritive aws</h4>
+<p>Groups together AWS specific sub-commands. Naming conventions will change to support standard AWS names.</p>
+<p><strong>Usage:</strong></p>
+<pre><code>pybritive aws [OPTIONS] COMMAND [ARGS]...
+</code></pre>
+<p><strong>Options:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--help</code></td>
+<td>boolean</td>
+<td>Show this message and exit.</td>
+<td><code>False</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Subcommands</strong></p>
+<ul>
+<li><em><a href="#pybritive-aws-console">console</a></em>: Signs an AWS console federation URL with AWS access keys and opens the AWS console in a browser.</li>
+</ul>
+<h5 id="pybritive-aws-console">pybritive aws console</h5>
+<p>Signs an AWS console federation URL with AWS access keys and opens the AWS console in a browser.</p>
+<p><strong>Usage:</strong></p>
+<pre><code>pybritive aws console [OPTIONS]
+</code></pre>
+<p><strong>Options:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--profile</code>, <code>-p</code></td>
+<td>text</td>
+<td>AWS CLI profile from which credentials will be sourced. Defaults to None which indicates that the default credential provider chain should be used.</td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>--duration</code>, <code>-d</code></td>
+<td>integer</td>
+<td>Number of seconds the console session should last. Minimum of 900 and maximum of 43200 (the default).</td>
+<td><code>43200</code></td>
+</tr>
+<tr>
+<td><code>--browser</code></td>
+<td>choice (<code>defaultmozilla</code> &#x7C; <code>firefox</code> &#x7C; <code>windows-default</code> &#x7C; <code>macosx</code> &#x7C; <code>safari</code> &#x7C; <code>chrome</code> &#x7C; <code>chromium</code>)</td>
+<td>The browser to use when opening a URL from the PyBritive CLI. Defaults to None which indicates the standard webbrowser selection process should be used.</td>
 <td>None</td>
 </tr>
 <tr>
@@ -651,6 +817,12 @@ meant for administrative functionality.</p>
 <td>None</td>
 </tr>
 <tr>
+<td><code>--silent</code>, <code>-s</code></td>
+<td>boolean</td>
+<td>Enable silent mode.</td>
+<td><code>False</code></td>
+</tr>
+<tr>
 <td><code>--passphrase</code>, <code>-p</code></td>
 <td>text</td>
 <td>The passphrase to use for encrypting credentials.</td>
@@ -699,6 +871,12 @@ that should be checked in. Format is <code>application name/environment name/pro
 <td>text</td>
 <td>API token.</td>
 <td>None</td>
+</tr>
+<tr>
+<td><code>--silent</code>, <code>-s</code></td>
+<td>boolean</td>
+<td>Enable silent mode.</td>
+<td><code>False</code></td>
 </tr>
 <tr>
 <td><code>--passphrase</code>, <code>-p</code></td>
@@ -764,7 +942,7 @@ that should be checked out. Format is <code>application name/environment name/pr
 </tr>
 <tr>
 <td><code>--mode</code>, <code>-m</code></td>
-<td>choice (<code>text</code> &#x7C; <code>json</code> &#x7C; <code>env</code> &#x7C; <code>integrate</code> &#x7C; <code>env-nix</code> &#x7C; <code>env-wincmd</code> &#x7C; <code>env-winps</code> &#x7C; <code>awscredentialprocess</code> &#x7C; <code>azlogin</code> &#x7C; <code>azps</code> &#x7C; <code>browser</code> &#x7C; <code>gcloudauth</code>)</td>
+<td>choice (<code>text</code> &#x7C; <code>json</code> &#x7C; <code>env</code> &#x7C; <code>integrate</code> &#x7C; <code>env-nix</code> &#x7C; <code>env-wincmd</code> &#x7C; <code>env-winps</code> &#x7C; <code>awscredentialprocess</code> &#x7C; <code>azlogin</code> &#x7C; <code>azps</code> &#x7C; <code>browser</code> &#x7C; <code>gcloudauth</code> &#x7C; <code>console</code> &#x7C; <code>browser-mozilla</code> &#x7C; <code>browser-firefox</code> &#x7C; <code>browser-windows-default</code> &#x7C; <code>browser-macosx</code> &#x7C; <code>browser-safari</code> &#x7C; <code>browser-chrome</code> &#x7C; <code>browser-chromium</code>)</td>
 <td>The way in which the checked out credentials are presented. <code>integrate</code> will place the credentials into the cloud providers local credential file (AWS only). Value <code>env</code> can optionally include terminal specific options for setting environment variables (example: env-nix for Linux/Mac, env-wincmd for Windows Command Prompt, env-winps for Windows PowerShell).<code>gcloudauth</code> will save the generated key file/credentials to the pybritive config directory and generate a gcloud auth command which can be directly evaluated. Will default to <code>json</code> if not provided.</td>
 <td>None</td>
 </tr>
@@ -1150,6 +1328,12 @@ that should be checked out. Format is <code>application name/environment name/pr
 <td>None</td>
 </tr>
 <tr>
+<td><code>--silent</code>, <code>-s</code></td>
+<td>boolean</td>
+<td>Enable silent mode.</td>
+<td><code>False</code></td>
+</tr>
+<tr>
 <td><code>--passphrase</code>, <code>-p</code></td>
 <td>text</td>
 <td>The passphrase to use for encrypting credentials.</td>
@@ -1192,6 +1376,12 @@ that should be checked out. Format is <code>application name/environment name/pr
 <td>text</td>
 <td>Name of tenant.</td>
 <td>None</td>
+</tr>
+<tr>
+<td><code>--silent</code>, <code>-s</code></td>
+<td>boolean</td>
+<td>Enable silent mode.</td>
+<td><code>False</code></td>
 </tr>
 <tr>
 <td><code>--passphrase</code>, <code>-p</code></td>
@@ -1273,6 +1463,12 @@ that should be checked out. Format is <code>application name/environment name/pr
 <td>None</td>
 </tr>
 <tr>
+<td><code>--silent</code>, <code>-s</code></td>
+<td>boolean</td>
+<td>Enable silent mode.</td>
+<td><code>False</code></td>
+</tr>
+<tr>
 <td><code>--passphrase</code>, <code>-p</code></td>
 <td>text</td>
 <td>The passphrase to use for encrypting credentials.</td>
@@ -1325,6 +1521,12 @@ that should be checked out. Format is <code>application name/environment name/pr
 <td>text</td>
 <td>API token.</td>
 <td>None</td>
+</tr>
+<tr>
+<td><code>--silent</code>, <code>-s</code></td>
+<td>boolean</td>
+<td>Enable silent mode.</td>
+<td><code>False</code></td>
 </tr>
 <tr>
 <td><code>--passphrase</code>, <code>-p</code></td>
@@ -1387,6 +1589,12 @@ that should be checked out. Format is <code>application name/environment name/pr
 <td>None</td>
 </tr>
 <tr>
+<td><code>--silent</code>, <code>-s</code></td>
+<td>boolean</td>
+<td>Enable silent mode.</td>
+<td><code>False</code></td>
+</tr>
+<tr>
 <td><code>--passphrase</code>, <code>-p</code></td>
 <td>text</td>
 <td>The passphrase to use for encrypting credentials.</td>
@@ -1439,6 +1647,12 @@ that should be checked out. Format is <code>application name/environment name/pr
 <td>text</td>
 <td>API token.</td>
 <td>None</td>
+</tr>
+<tr>
+<td><code>--silent</code>, <code>-s</code></td>
+<td>boolean</td>
+<td>Enable silent mode.</td>
+<td><code>False</code></td>
 </tr>
 <tr>
 <td><code>--passphrase</code>, <code>-p</code></td>
@@ -1529,6 +1743,12 @@ that should be checked out. Format is <code>application name/environment name/pr
 <td>None</td>
 </tr>
 <tr>
+<td><code>--silent</code>, <code>-s</code></td>
+<td>boolean</td>
+<td>Enable silent mode.</td>
+<td><code>False</code></td>
+</tr>
+<tr>
 <td><code>--passphrase</code>, <code>-p</code></td>
 <td>text</td>
 <td>The passphrase to use for encrypting credentials.</td>
@@ -1578,6 +1798,12 @@ that should be checked out. Format is <code>application name/environment name/pr
 <td>text</td>
 <td>API token.</td>
 <td>None</td>
+</tr>
+<tr>
+<td><code>--silent</code>, <code>-s</code></td>
+<td>boolean</td>
+<td>Enable silent mode.</td>
+<td><code>False</code></td>
 </tr>
 <tr>
 <td><code>--passphrase</code>, <code>-p</code></td>
@@ -1769,6 +1995,12 @@ Ensure the leading <code>/</code> is provided.</p>
 <td>None</td>
 </tr>
 <tr>
+<td><code>--silent</code>, <code>-s</code></td>
+<td>boolean</td>
+<td>Enable silent mode.</td>
+<td><code>False</code></td>
+</tr>
+<tr>
 <td><code>--passphrase</code>, <code>-p</code></td>
 <td>text</td>
 <td>The passphrase to use for encrypting credentials.</td>
@@ -1779,6 +2011,154 @@ Ensure the leading <code>/</code> is provided.</p>
 <td>text</td>
 <td>Use a federation provider available in the Britive Python SDK for auto token creation. Valid values are <code>aws[-profile]</code>, <code>github[-audience], and</code>bitbucket<code>. Optionally for the AWS provider a duration in seconds can be provided via</code>aws[-profile]_durationseconds` after which point the auto-generatedcredentials will expire.</td>
 <td>None</td>
+</tr>
+<tr>
+<td><code>--help</code></td>
+<td>boolean</td>
+<td>Show this message and exit.</td>
+<td><code>False</code></td>
+</tr>
+</tbody>
+</table>
+<h4 id="pybritive-ssh">pybritive ssh</h4>
+<p>Facilitates connecting to private cloud servers using the standard ssh protocol.</p>
+<p><strong>Usage:</strong></p>
+<pre><code>pybritive ssh [OPTIONS] COMMAND [ARGS]...
+</code></pre>
+<p><strong>Options:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--help</code></td>
+<td>boolean</td>
+<td>Show this message and exit.</td>
+<td><code>False</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Subcommands</strong></p>
+<ul>
+<li><em><a href="#pybritive-ssh-aws">aws</a></em>: Facilitates connecting, via SSH, to private AWS EC2 instances via Session Manager and EC2 Instance Connect.</li>
+</ul>
+<h5 id="pybritive-ssh-aws">pybritive ssh aws</h5>
+<p>Facilitates connecting, via SSH, to private AWS EC2 instances via Session Manager and EC2 Instance Connect.</p>
+<p>This command generally should be called from within an SSH config as opposed to being directly invoked.</p>
+<p><strong>Usage:</strong></p>
+<pre><code>pybritive ssh aws [OPTIONS] COMMAND [ARGS]...
+</code></pre>
+<p><strong>Options:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--help</code></td>
+<td>boolean</td>
+<td>Show this message and exit.</td>
+<td><code>False</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Subcommands</strong></p>
+<ul>
+<li><em><a href="#pybritive-ssh-aws-config">config</a></em>: Prints the required Match directive to add to an OpenSSH config file (normally located at ~/.ssh/config.)</li>
+<li><em><a href="#pybritive-ssh-aws-ssm-proxy">ssm-proxy</a></em>: Outputs AWS CLI command to be consumed by ProxyCommand to establish an OpenSSH proxy tunnel.</li>
+</ul>
+<h6 id="pybritive-ssh-aws-config">pybritive ssh aws config</h6>
+<p>Prints the required Match directive to add to an OpenSSH config file (normally located at ~/.ssh/config.)</p>
+<p><strong>Usage:</strong></p>
+<pre><code>pybritive ssh aws config [OPTIONS]
+</code></pre>
+<p><strong>Options:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--push-public-key</code>, <code>-P</code></td>
+<td>boolean</td>
+<td>Whether to push a public key to the EC2 instance via EC2 Instance Connect</td>
+<td><code>False</code></td>
+</tr>
+<tr>
+<td><code>--key-source</code>, <code>-k</code></td>
+<td>choice (<code>ssh-agent</code> &#x7C; <code>static</code>)</td>
+<td>The source of the SSH key used to authenticate to the remove server.</td>
+<td><code>ssh-agent</code></td>
+</tr>
+<tr>
+<td><code>--help</code></td>
+<td>boolean</td>
+<td>Show this message and exit.</td>
+<td><code>False</code></td>
+</tr>
+</tbody>
+</table>
+<h6 id="pybritive-ssh-aws-ssm-proxy">pybritive ssh aws ssm-proxy</h6>
+<p>Outputs AWS CLI command to be consumed by ProxyCommand to establish an OpenSSH proxy tunnel.</p>
+<p><strong>Usage:</strong></p>
+<pre><code>pybritive ssh aws ssm-proxy [OPTIONS]
+</code></pre>
+<p><strong>Options:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--username</code>, <code>-u</code></td>
+<td>text</td>
+<td>The EC2 OS username for whom the ephemeral SSH public key will be pushed.</td>
+<td>_required</td>
+</tr>
+<tr>
+<td><code>--hostname</code>, <code>-h</code></td>
+<td>text</td>
+<td>The SSH hostname from the SSH config file to which the ephemeral SSH public key will be pushed.</td>
+<td>_required</td>
+</tr>
+<tr>
+<td><code>--push-public-key</code>, <code>-P</code></td>
+<td>boolean</td>
+<td>Whether to push a public key to the EC2 instance via EC2 Instance Connect</td>
+<td><code>False</code></td>
+</tr>
+<tr>
+<td><code>--port-number</code>, <code>-p</code></td>
+<td>text</td>
+<td>The SSH port number from the SSH config file for the given host.</td>
+<td>_required</td>
+</tr>
+<tr>
+<td><code>--key-source</code>, <code>-k</code></td>
+<td>choice (<code>ssh-agent</code> &#x7C; <code>static</code>)</td>
+<td>The source of the SSH key used to authenticate to the remove server.</td>
+<td><code>ssh-agent</code></td>
 </tr>
 <tr>
 <td><code>--help</code></td>
@@ -1817,6 +2197,12 @@ Ensure the leading <code>/</code> is provided.</p>
 <td>None</td>
 </tr>
 <tr>
+<td><code>--silent</code>, <code>-s</code></td>
+<td>boolean</td>
+<td>Enable silent mode.</td>
+<td><code>False</code></td>
+</tr>
+<tr>
 <td><code>--passphrase</code>, <code>-p</code></td>
 <td>text</td>
 <td>The passphrase to use for encrypting credentials.</td>
@@ -1844,7 +2230,7 @@ Ensure the leading <code>/</code> is provided.</p>
 
   <div role="contentinfo">
     <!-- Copyright etc -->
-      <p>2022 Britive, Inc.</p>
+      <p>2023 Britive, Inc.</p>
   </div>
 
   Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
@@ -1883,5 +2269,5 @@ Ensure the leading <code>/</code> is provided.</p>
 
 <!--
 MkDocs version : 1.3.1
-Build Date UTC : 2023-02-16 18:12:54.664560+00:00
+Build Date UTC : 2023-03-28 17:28:02.479926+00:00
 -->
