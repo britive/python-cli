@@ -258,6 +258,76 @@ Example of use: (`pybritive api method --parameter1 value1 --parameter2 value2 [
 which parameters are expected and which are optional. Parameters with `_` in the name should be translated to `-` when referencing them
 via the CLI.
 
+## `ssh` Command
+
+The `ssh` command facilitates using the native SSH protocol to connect to private cloud servers.
+
+The goal is to allow all functionality offered by the SSH protocol like local port forwarding to access private resources and `scp` to copy files to the remote host.
+
+At launch only AWS EC2 is supported. The requirements for using SSH with EC2 instances are provided below.
+
+* EC2 instance must have the Systems Manager agent installed and operational.
+* EC2 instance must have the EC2 Instance Connect agent installed and operational (if using `--push-public-key`).
+* The caller must have appropriate IAM permissions to start a Session Manager session (for all `--key-source`s) and push a public key via EC2 Instance Connect (if using `--push-public-key`).
+* The caller's environment must have the AWS CLI installed along with the Session Manager plugin.
+* The caller's python environment must have the `boto3` package installed. As `boto3` is not required for the use of `pybritive` it is not automatically installed (if using `--push-public-key`).
+* The caller must use OpenSSH (and the SSH config file). Other SSH implementations are not currently supported.
+
+There are 3 ways that `pybritive` can help proxy an SSH session to a private EC2 instance.
+
+* Using just Session Manager SSH forwarding to establish the network path over which the SSH protocol will operate. It is left to the caller then to handle SSH authentication using whichever mechanism has already been established.
+
+~~~bash
+Host bastion.dev
+	 HostName i-xxxxxxxxxxxxxxxxx.profile[.region]
+	 
+Match host i-*,mi-*
+    User ssm-user
+    ProxyCommand eval $(pybritive ssh aws ssm-proxy --hostname %h --username %r --port-number %p)
+~~~
+
+* Using Session Manager SSH forwarding along with pushing a randomly generated SSH key pair public key via EC2 Instance Connect and identifying the private key via static path in the `IdentityFile` parameter.
+
+~~~bash
+Host bastion.dev
+	 HostName i-xxxxxxxxxxxxxxxxx.profile[.region]
+	 
+Match host i-*,mi-*
+    User ssm-user
+    IdentityFile ~/.britive/ssh/%h.%r.pem
+    ProxyCommand eval $(pybritive ssh aws ssm-proxy --hostname %h --username %r --port-number %p --push-pulbic-key --key-source static)
+~~~
+
+* Using Session Manager SSH forwarding along with pushing a randomly generated SSH key pair public key via EC2 Instance Connect and adding the private key to the `ssh-agent` via `ssh-add` so it is available without having to specify the `IdentityFile` parameter.
+
+~~~bash
+Host bastion.dev
+	 HostName i-xxxxxxxxxxxxxxxxx.profile[.region]
+	 
+Match host i-*,mi-*
+    User ssm-user
+    ProxyCommand eval $(pybritive ssh aws ssm-proxy --hostname %h --username %r --port-number %p --push-pulbic-key --key-source ssh-agent)
+~~~
+
+The `HostName` parameter must be in the appropriate format. That format is
+
+~~~
+[instance-id][.aws-profile-name[.aws-region]]
+~~~
+
+Both `aws-profile-name` and `aws-region` are optional. If `aws-profile-name` is omitted then credentials for Session Manager and EC2 Instance Connect will be sourced from the standard AWS credential provider chain.
+If `aws-region` is omitted then credentials for Session Manager and EC2 Instance Connect will be sourced from the standard AWS region provider chain.
+
+The command `ssh aws config` can be invoked to generate the above `Match` directives.
+
+## `aws` Command
+
+The `aws` command group will hold actions related specifically to AWS. 
+
+The first supported sub-command is `console` which will sign an AWS console URL using programmatic access keys 
+(long-lived IAM User keys or temporary AWS AssumeRole credentials). This will allow you to check out programmatic access 
+for a Britive AWS profile (or any other system which issues AWS access keys) and use the resulting keys to get into the AWS console.
+
 ## Shell Completion
 
 TODO: Provide more automated scripts here to automatically add the required configs to the profiles. For now the below works just fine though.

@@ -1,5 +1,6 @@
 import io
 import pathlib
+import uuid
 from britive.britive import Britive
 from .helpers.config import ConfigManager
 from .helpers.credentials import FileCredentialManager, EncryptedFileCredentialManager
@@ -435,6 +436,11 @@ class BritiveCli:
         response = None
         self.verbose_checkout = verbose
 
+        # these 2 modes implicitly say that console access should be checked out without having to provide
+        # the --console flag
+        if mode in ['browser', 'console']:
+            console = True
+
         self._validate_justification(justification)
 
         if mode == 'awscredentialprocess':
@@ -787,11 +793,214 @@ class BritiveCli:
         if justification and len(justification) > 255:
             raise ValueError('justification cannot be longer than 255 characters.')
 
+    def ssh_aws_ssm_proxy(self, username, hostname, push_public_key, port_number, key_source):
+        self.silent = True
+        helper = hostname.split('.')
+        instance_id = helper[0]
+        aws_profile = None  # will drop to using standard aws boto3/cli profile provider chain
+        aws_region = None  # will drop to using standard aws boto3/cli region provider chain
+        if len(helper) > 1:
+            aws_profile = helper[1]
+        if len(helper) > 2:
+            aws_region = helper[2]
 
+        if push_public_key:
+            self._ssh_aws_generate_key(
+                instance_id=instance_id,
+                aws_profile=aws_profile,
+                aws_region=aws_region,
+                username=username,
+                hostname=hostname,
+                key_source=key_source
+            )
 
+        commands = [
+            'aws',
+            'ssm',
+            'start-session',
+            f'--parameters portNumber={port_number}',
+            '--document-name AWS-StartSSHSession',
+            f'--target {instance_id}'
+        ]
 
+        if aws_profile:
+            commands.append(f'--profile {aws_profile}')
+        if aws_region:
+            commands.append(f'--region {aws_region}')
 
+        self.print(' '.join(commands), ignore_silent=True)
 
+    def _ssh_aws_generate_key(self, instance_id, aws_profile, aws_region, username, hostname, key_source):
+        # doing imports here as these packages are not a requirement to use pybritive in general
 
+        # cryptography is already a hard requirement so we know it will eixst
+        from cryptography.hazmat.primitives.asymmetric import rsa
+        from cryptography.hazmat.primitives import serialization
+
+        # these 3 ship with python3.x
+        import glob
+        import time
+        import subprocess
+
+        # this is the one that may not be available so be careful
+        try:
+            import boto3
+        except ImportError:
+            message = 'boto3 package is required. Please ensure the package is installed.'
+            raise click.ClickException(message)
+
+        # we know we will be pushing the key to the instance so establish the
+        # boto3 clients which are required to perform those actions
+        session = boto3.Session(profile_name=aws_profile, region_name=aws_region)
+        eic = session.client('ec2-instance-connect')
+        ec2 = session.client('ec2')
+
+        # now let's create the ephemeral private and public key pair
+        private_key = rsa.generate_private_key(
+            public_exponent=65537,
+            key_size=2048
+        )
+
+        pem_private_key = private_key.private_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PrivateFormat.TraditionalOpenSSL,
+            encryption_algorithm=serialization.NoEncryption()
+        )
+
+        pem_public_key = private_key.public_key().public_bytes(
+            encoding=serialization.Encoding.OpenSSH,
+            format=serialization.PublicFormat.OpenSSH
+        )
+
+        # let's do the right thing and clean up old ephemeral keys
+        ssh_dir = Path(self.config.path).parent.absolute() / 'ssh'
+        ssh_dir.mkdir(exist_ok=True, parents=True)  # create the directory if it doesn't exist already
+        pem_file = None
+        if key_source == 'ssh-agent':
+            # cleanup any old ssh keys that were randomly generated
+            now = int(time.time())
+            for key in glob.glob(f'{str(ssh_dir)}/random-*'):
+                file = key.split('/')[-1].split('.')[0]
+                expiration = int(file.split('-')[2])
+                if expiration < now:
+                    Path(key).unlink(missing_ok=True)
+
+            pem_file = ssh_dir / f'random-{uuid.uuid4().hex}-{now + 60}.pem'
+        elif key_source == 'static':
+            # clean up the specific key if it exists, so we can create a new one
+            pem_file = ssh_dir / f'{hostname}.{username}.pem'
+            pem_file.unlink(missing_ok=True)
+        else:
+            raise ValueError(f'invalid --key-source value {key_source}')
+
+        # we only need to persist the private key locally
+        # as the public key is just pushed to the ec2 instance
+        # as a string in the ec2 instance connect api call (no file
+        # reference)
+        with open(str(pem_file), 'w') as f:
+            f.write(pem_private_key.decode())
+        os.chmod(pem_file, 0o400)
+
+        # now push the key
+        az = ec2.describe_instances(
+            InstanceIds=[instance_id]
+        )['Reservations'][0]['Instances'][0]['Placement']['AvailabilityZone']
+
+        eic.send_ssh_public_key(
+            InstanceId=instance_id,
+            InstanceOSUser=username,
+            SSHPublicKey=pem_public_key.decode(),
+            AvailabilityZone=az
+        )
+
+        # and if we are using ssh-agent we need to add the private key via ssh-add
+        if key_source == 'ssh-agent':
+            subprocess.run(['ssh-add', str(pem_file), '-t', '60', '-q'])
+
+    def ssh_aws_openssh_config(self, push_public_key, key_source):
+        lines = ['Match host i-*,mi-*']
+        if push_public_key:
+            commands = [
+                '\tProxyCommand eval $(pybritive ssh aws ssm-proxy --hostname %h',
+                '--username %r --port-number %p --push-public-key',
+                f'--key-source {key_source})'
+            ]
+            lines.append(' '.join(commands))
+
+            if key_source == 'static':
+                ssh_dir = Path(self.config.path).parent.absolute() / 'ssh'
+                lines.append(f'\tIdentityFile {str(ssh_dir)}/%h.%r.pem')
+        else:
+            line = '\tProxyCommand eval $(pybritive ssh aws ssm-proxy --hostname %h --username %r --port-number %p)'
+            lines.append(line)
+
+        self.print('Add the below Match directive to your SSH config file, after all Host directives.')
+        self.print('This file is generally located at ~/.ssh/config.')
+        self.print('Additional SSH config parameters can be added as required.')
+        self.print('The below directive is the minimum required configuration.')
+        self.print('')
+        self.print('')
+        self.print('\n'.join(lines))
+
+    @staticmethod
+    def aws_console(profile, duration, browser):
+        # doing imports here as these packages are not a requirement to use pybritive in general
+
+        # requests is a hard requirement for pybritive (via britive sdk)
+        # and webbrowser ships with python3.x
+        import requests
+        import webbrowser
+
+        # this is the one that may not be available so be careful
+        try:
+            import boto3
+        except ImportError:
+            message = 'boto3 package is required. Please ensure the package is installed.'
+            raise click.ClickException(message)
+
+        creds = boto3.Session(profile_name=profile).get_credentials()
+        session_id = creds.access_key
+        session_key = creds.secret_key
+        session_token = creds.token
+        json_creds = json.dumps({
+            'sessionId': session_id,
+            'sessionKey': session_key,
+            'sessionToken': session_token
+        })
+
+        # Make request to AWS federation endpoint to get sign-in token. Construct the parameter string with
+        # the sign-in action request and the JSON document with temporary credentials as parameters.
+
+        params = {
+            'Action': 'getSigninToken',
+            'SessionDuration': duration,
+            'Session': json_creds
+        }
+
+        url = 'https://signin.aws.amazon.com/federation'
+
+        response = requests.get(url, params=params)
+
+        signin_token = None
+        try:
+            signin_token = json.loads(response.text)
+        except json.decoder.JSONDecodeError:
+            click.ClickException('Credentials have expired or another issue occurred. '
+                                 'Please re-authenticate and try again.')
+
+        params = {
+            'Action': 'login',
+            'Issuer': 'pybritive',
+            'Destination': 'https://console.aws.amazon.com/',
+            'SigninToken': signin_token['SigninToken']
+        }
+
+        # using requests.prepare() here to  help construct the url (with url encoding, etc.)
+        # vs. doing it "manually" - we do not want to actually make a request to the url in python
+        # but use the url to pop open a browser
+        console_url = requests.Request('GET', url, params=params).prepare().url
+
+        browser = webbrowser.get(using=browser)
+        browser.open(console_url)
 
 
