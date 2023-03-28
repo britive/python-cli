@@ -3,7 +3,7 @@ import uuid
 import click
 import platform
 import configparser
-import os
+import webbrowser
 from pathlib import Path
 
 
@@ -13,6 +13,13 @@ env_options = {
     'winps': '$Env:',
     'wincmd': 'set '
 }
+
+
+def safe_list_get(l, idx, default):
+    try:
+        return l[idx]
+    except IndexError:
+        return default
 
 
 class CloudCredentialPrinter:
@@ -56,13 +63,13 @@ class CloudCredentialPrinter:
             self.print_gcloudauth()
 
     def print_console(self):
-        if self.mode == 'browser':
-            click.launch(self.credentials['url'])
+        url = self.credentials.get('url', self.credentials)
+
+        if self.mode.startswith('browser'):
+            browser_type = safe_list_get(self.mode.split('-', maxsplit=1), 1, None)
+            webbrowser.get(browser_type).open(url)
         else:
-            if 'url' in self.credentials.keys():
-                self.cli.print(self.credentials['url'], ignore_silent=True)
-            else:
-                self.cli.print(self.credentials, ignore_silent=True)
+            self.cli.print(url, ignore_silent=True)
 
     def print_text(self):
         self._not_implemented()

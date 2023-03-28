@@ -2,6 +2,32 @@
 
 All changes to the package starting with v0.3.1 will be logged here.
 
+## v1.3.0 [2023-03-28]
+#### What's New
+* `pybritive ssh aws ssm-proxy` command
+* `pybritive aws console` command
+
+#### Enhancements
+* Additional `--mode/-m` values
+  * `console`: checkout console access (without having to specify --console/-c`) and print the URL
+  * `browser-mozilla`: checkout console access and open a mozilla browser with the checked out URL
+  * `browser-firefox`: checkout console access and open a firefox browser with the checked out URL
+  * `browser-windows-default`: checkout console access and open a windows default browser with the checked out URL
+  * `browser-macosx`: checkout console access and open a macosx browser with the checked out URL
+  * `browser-safari`: checkout console access and open a safari browser with the checked out URL
+  * `browser-chrome`: checkout console access and open a chrome browser with the checked out URL
+  * `browser-chromium`: checkout console access and open a chromium browser with the checked out URL
+* For the `checkout` command the option `--mode/-m` with values of `browser` and `console` now implicitly indicate that the console version of the profile should be checked out (without having to specify `--console/-c`)
+
+#### Bug Fixes
+* None
+
+#### Dependencies
+* `britive>=2.18.0`
+
+#### Other
+* Addition of Community Projects to the README.
+
 ## v1.2.2 [2023-03-17]
 #### What's New
 * None
