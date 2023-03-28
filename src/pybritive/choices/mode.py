@@ -14,8 +14,16 @@ mode_choices = click.Choice(
         'awscredentialprocess',     # aws credential process output with additional caching to make the credential process more performant
         'azlogin',                  # azure az login command with all fields populated (suitable for eval)
         'azps',                     # azure powershell script
-        'browser',                  # when console access is checked out open the browser to the URL provided
-        'gcloudauth'                # gcloud auth activate-service-account with all fields populated (suitable for eval)
+        'browser',                  # checkout console access (without having to specify --console/-c) and open the default browser to the URL provided in the checkout
+        'gcloudauth',               # gcloud auth activate-service-account with all fields populated (suitable for eval)
+        'console',                  # checkout console access (without having to specify --console/-c) and print the URL
+        'browser-mozilla',
+        'browser-firefox',
+        'browser-windows-default',
+        'browser-macosx',
+        'browser-safari',
+        'browser-chrome',
+        'browser-chromium'
     ],
     case_sensitive=False
 )

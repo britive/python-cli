@@ -1,7 +1,6 @@
 import io
 import pathlib
 import uuid
-
 from britive.britive import Britive
 from .helpers.config import ConfigManager
 from .helpers.credentials import FileCredentialManager, EncryptedFileCredentialManager
@@ -437,6 +436,11 @@ class BritiveCli:
         response = None
         self.verbose_checkout = verbose
 
+        # these 2 modes implicitly say that console access should be checked out without having to provide
+        # the --console flag
+        if mode in ['browser', 'console']:
+            console = True
+
         self._validate_justification(justification)
 
         if mode == 'awscredentialprocess':
@@ -826,15 +830,24 @@ class BritiveCli:
 
         self.print(' '.join(commands), ignore_silent=True)
 
-    @staticmethod
-    def _ssh_aws_generate_key(instance_id, aws_profile, aws_region, username, hostname, key_source):
-        # doing imports here as these packages are not a requirement to use pybritive
-        import boto3
+    def _ssh_aws_generate_key(self, instance_id, aws_profile, aws_region, username, hostname, key_source):
+        # doing imports here as these packages are not a requirement to use pybritive in general
+
+        # cryptography is already a hard requirement so we know it will eixst
         from cryptography.hazmat.primitives.asymmetric import rsa
         from cryptography.hazmat.primitives import serialization
+
+        # these 3 ship with python3.x
         import glob
         import time
         import subprocess
+
+        # this is the one that may not be available so be careful
+        try:
+            import boto3
+        except ImportError:
+            message = 'boto3 package is required. Please ensure the package is installed.'
+            raise click.ClickException(message)
 
         # we know we will be pushing the key to the instance so establish the
         # boto3 clients which are required to perform those actions
@@ -848,7 +861,7 @@ class BritiveCli:
             key_size=2048
         )
 
-        encrypted_pem_private_key = private_key.private_bytes(
+        pem_private_key = private_key.private_bytes(
             encoding=serialization.Encoding.PEM,
             format=serialization.PrivateFormat.TraditionalOpenSSL,
             encryption_algorithm=serialization.NoEncryption()
@@ -860,22 +873,23 @@ class BritiveCli:
         )
 
         # let's do the right thing and clean up old ephemeral keys
-        # even though they are in the /tmp directory
-        pem_file = ''
+        ssh_dir = Path(self.config.path).parent.absolute() / 'ssh'
+        ssh_dir.mkdir(exist_ok=True, parents=True)  # create the directory if it doesn't exist already
+        pem_file = None
         if key_source == 'ssh-agent':
-            now = int(time.time())
-            pem_file = f'/tmp/pybritive-ssh-{uuid.uuid4().hex}-{now + 60}.pem'
-
             # cleanup any old ssh keys that were randomly generated
-            for key in glob.glob('/tmp/pybritive-ssh-random-*'):
-                file, extension = key.split('.')
-                expiration = int(file.split('-')[3])
+            now = int(time.time())
+            for key in glob.glob(f'{str(ssh_dir)}/random-*'):
+                file = key.split('/')[-1].split('.')[0]
+                expiration = int(file.split('-')[2])
                 if expiration < now:
                     Path(key).unlink(missing_ok=True)
+
+            pem_file = ssh_dir / f'random-{uuid.uuid4().hex}-{now + 60}.pem'
         elif key_source == 'static':
-            # clean up the specific key if it exists so we can create a new one
-            pem_file = f'/tmp/pybritive-ssh.{hostname}.{username}.pem'
-            Path(pem_file).unlink(missing_ok=True)
+            # clean up the specific key if it exists, so we can create a new one
+            pem_file = ssh_dir / f'{hostname}.{username}.pem'
+            pem_file.unlink(missing_ok=True)
         else:
             raise ValueError(f'invalid --key-source value {key_source}')
 
@@ -883,8 +897,8 @@ class BritiveCli:
         # as the public key is just pushed to the ec2 instance
         # as a string in the ec2 instance connect api call (no file
         # reference)
-        with open(pem_file, 'w') as f:
-            f.write(encrypted_pem_private_key.decode())
+        with open(str(pem_file), 'w') as f:
+            f.write(pem_private_key.decode())
         os.chmod(pem_file, 0o400)
 
         # now push the key
@@ -901,7 +915,92 @@ class BritiveCli:
 
         # and if we are using ssh-agent we need to add the private key via ssh-add
         if key_source == 'ssh-agent':
-            subprocess.run(['ssh-add', pem_file, '-t', '60', '-q'])
+            subprocess.run(['ssh-add', str(pem_file), '-t', '60', '-q'])
 
+    def ssh_aws_openssh_config(self, push_public_key, key_source):
+        lines = ['Match host i-*,mi-*']
+        if push_public_key:
+            commands = [
+                '\tProxyCommand eval $(pybritive ssh aws ssm-proxy --hostname %h',
+                '--username %r --port-number %p --push-public-key',
+                f'--key-source {key_source})'
+            ]
+            lines.append(' '.join(commands))
+
+            if key_source == 'static':
+                ssh_dir = Path(self.config.path).parent.absolute() / 'ssh'
+                lines.append(f'\tIdentityFile {str(ssh_dir)}/%h.%r.pem')
+        else:
+            line = '\tProxyCommand eval $(pybritive ssh aws ssm-proxy --hostname %h --username %r --port-number %p)'
+            lines.append(line)
+
+        self.print('Add the below Match directive to your SSH config file, after all Host directives.')
+        self.print('This file is generally located at ~/.ssh/config.')
+        self.print('Additional SSH config parameters can be added as required.')
+        self.print('The below directive is the minimum required configuration.')
+        self.print('')
+        self.print('')
+        self.print('\n'.join(lines))
+
+    @staticmethod
+    def aws_console(profile, duration, browser):
+        # doing imports here as these packages are not a requirement to use pybritive in general
+
+        # requests is a hard requirement for pybritive (via britive sdk)
+        # and webbrowser ships with python3.x
+        import requests
+        import webbrowser
+
+        # this is the one that may not be available so be careful
+        try:
+            import boto3
+        except ImportError:
+            message = 'boto3 package is required. Please ensure the package is installed.'
+            raise click.ClickException(message)
+
+        creds = boto3.Session(profile_name=profile).get_credentials()
+        session_id = creds.access_key
+        session_key = creds.secret_key
+        session_token = creds.token
+        json_creds = json.dumps({
+            'sessionId': session_id,
+            'sessionKey': session_key,
+            'sessionToken': session_token
+        })
+
+        # Make request to AWS federation endpoint to get sign-in token. Construct the parameter string with
+        # the sign-in action request and the JSON document with temporary credentials as parameters.
+
+        params = {
+            'Action': 'getSigninToken',
+            'SessionDuration': duration,
+            'Session': json_creds
+        }
+
+        url = 'https://signin.aws.amazon.com/federation'
+
+        response = requests.get(url, params=params)
+
+        signin_token = None
+        try:
+            signin_token = json.loads(response.text)
+        except json.decoder.JSONDecodeError:
+            click.ClickException('Credentials have expired or another issue occurred. '
+                                 'Please re-authenticate and try again.')
+
+        params = {
+            'Action': 'login',
+            'Issuer': 'pybritive',
+            'Destination': 'https://console.aws.amazon.com/',
+            'SigninToken': signin_token['SigninToken']
+        }
+
+        # using requests.prepare() here to  help construct the url (with url encoding, etc.)
+        # vs. doing it "manually" - we do not want to actually make a request to the url in python
+        # but use the url to pop open a browser
+        console_url = requests.Request('GET', url, params=params).prepare().url
+
+        browser = webbrowser.get(using=browser)
+        browser.open(console_url)
 
 

@@ -13,6 +13,7 @@ from .commands.request import request as group_request
 from .commands.clear import clear as group_clear
 from .commands.api import api as command_api
 from .commands.ssh import ssh as group_ssh
+from .commands.aws import aws as group_aws
 import sys
 import os
 
@@ -52,6 +53,7 @@ cli.add_command(group_request)
 cli.add_command(group_clear)
 cli.add_command(command_api)
 cli.add_command(group_ssh)
+cli.add_command(group_aws)
 
 
 if __name__ == "__main__":

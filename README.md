@@ -29,3 +29,9 @@ everywhere.
 https://britive.github.io/python-cli/
 
 
+## Community Projects
+
+Note: Britive, Inc. does not provide support for community projects. Community projects are also not considered when ensuring backwards compatibility for releases. The list below is provided as-is and use of these projects is subject to the licensing/restrictions of each individual project.
+
+* `vim-britive`: https://github.com/pbnj/vim-britive
+

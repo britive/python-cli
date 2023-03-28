@@ -20,9 +20,22 @@ def aws():
 
 @aws.command()
 @build_britive
+@britive_options(names='ssh_push_public_key,ssh_key_source')
+def config(ctx, push_public_key, key_source):
+    """Prints the required Match directive to add to an OpenSSH config file (normally located at ~/.ssh/config.)"""
+
+    ctx.obj.britive.ssh_aws_openssh_config(
+        push_public_key=push_public_key,
+        key_source=key_source
+    )
+
+
+@aws.command()
+@build_britive
 @britive_options(names='ssh_username,ssh_hostname,ssh_push_public_key,ssh_port,ssh_key_source')
 def ssm_proxy(ctx, username, hostname, push_public_key, port_number, key_source):
-    """Outputs AWS CLI command to be consumed by ProxyCommand to establish an SSH proxy tunnel."""
+    """Outputs AWS CLI command to be consumed by ProxyCommand to establish an OpenSSH proxy tunnel."""
+
     ctx.obj.britive.ssh_aws_ssm_proxy(
         username=username,
         hostname=hostname,
