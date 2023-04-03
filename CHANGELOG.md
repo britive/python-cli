@@ -2,6 +2,22 @@
 
 All changes to the package starting with v0.3.1 will be logged here.
 
+## v1.3.1 [2023-04-XX]
+#### What's New
+* None
+
+#### Enhancements
+* None
+
+#### Bug Fixes
+* Resolved issue with profile alias names which included uppercase and special characters
+
+#### Dependencies
+* None
+
+#### Other
+* None
+
 ## v1.3.0 [2023-03-28]
 #### What's New
 * `pybritive ssh aws ssm-proxy` command

@@ -415,7 +415,7 @@ class BritiveCli:
         return app in ['AWS', 'AWS Standalone'] and force_renew and not console
 
     def _split_profile_into_parts(self, profile):
-        profile_real = self.config.profile_aliases.get(profile, profile)
+        profile_real = self.config.profile_aliases.get(profile.lower(), profile)
         parts = profile_split(profile_real)
         if len(parts) == 2:  # handle shortcut for profiles where the app and environment name are the same
             parts = [parts[0], parts[0], parts[1]]
