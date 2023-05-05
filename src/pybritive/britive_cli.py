@@ -205,6 +205,26 @@ class BritiveCli:
         self.login()
         self.print(self.b.my_secrets.list(), ignore_silent=True)
 
+    def list_approvals(self):
+        self.login()
+        approvals = []
+        for approval in self.b.my_access.list_approvals():
+            approval.pop('resource', None)
+            approval.pop('consumer', None)
+            approval.pop('timeToApprove', None)
+            approval.pop('validFor', None)
+            approval.pop('action', None)
+            approval.pop('approvers', None)
+            approval.pop('expirationTimeApproval', None)
+            approval.pop('updatedAt', None)
+            approval.pop('actionBy', None)
+            approval.pop('validForInDays', None)
+            approvals.append(approval)
+
+        approvals = sorted(approvals, key=lambda x: x['createdAt'])
+        approvals.reverse()
+        self.print(approvals, ignore_silent=True)
+
     def list_profiles(self, checked_out: bool = False):
         self.login()
         self._set_available_profiles()
@@ -1003,4 +1023,10 @@ class BritiveCli:
         browser = webbrowser.get(using=browser)
         browser.open(console_url)
 
+    def request_disposition(self, request_id, decision):
+        self.login()
 
+        if decision == 'approve':
+            self.b.my_access.approve_request(request_id=request_id)
+        if decision == 'reject':
+            self.b.my_access.reject_request(request_id=request_id)

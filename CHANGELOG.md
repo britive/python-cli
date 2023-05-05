@@ -2,18 +2,21 @@
 
 All changes to the package starting with v0.3.1 will be logged here.
 
-## v1.3.1 [2023-04-XX]
+## v1.4.0 [2023-04-XX]
 #### What's New
-* None
+* Command `request approve`
+* Command `request reject`
+* Command `ls approvals`
 
 #### Enhancements
 * None
 
 #### Bug Fixes
-* Resolved issue with profile alias names which included uppercase and special characters
+* Resolved issue with profile alias names which included uppercase and special characters.
+* Resolved an issue with `checkout --mode browser-*` that was not actually launching the browser.
 
 #### Dependencies
-* None
+* `britive>=2.19.0`
 
 #### Other
 * None
