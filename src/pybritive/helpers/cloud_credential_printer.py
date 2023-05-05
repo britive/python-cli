@@ -31,43 +31,41 @@ class CloudCredentialPrinter:
         self.console = console
         mode = mode or 'json'  # set a default if nothing is provided via flag --mode/-m
         helper = mode.split('-')
-        env_prefix = helper[1] if 1 < len(helper) else None
         self.mode = helper[0]
+        self.mode_modifier = safe_list_get(mode.split('-', maxsplit=1), 1, None)
         self.credentials = credentials
-        self.on_windows = True if platform.system().lower() == 'windows' else False
-        if env_prefix:
-            self.env_command = env_options[env_prefix]
-        else:
-            self.env_command = env_options['wincmd'] if self.on_windows else env_options['nix']
+        if self.mode == 'env':
+            if self.mode_modifier:
+                self.env_command = env_options[self.mode_modifier]
+            else:
+                self.on_windows = True if platform.system().lower() == 'windows' else False
+                self.env_command = env_options['wincmd'] if self.on_windows else env_options['nix']
 
     def print(self):
         if self.console:
             self.print_console()
             return
-        mode_prefix = self.mode.split('-')[0]
-        if mode_prefix == 'text':
+        if self.mode == 'text':
             self.print_text()
-        if mode_prefix == 'json':
+        if self.mode == 'json':
             self.print_json()
-        if mode_prefix == 'env':
+        if self.mode == 'env':
             self.print_env()
-        if mode_prefix == 'integrate':
+        if self.mode == 'integrate':
             self.print_integrate()
-        if mode_prefix == 'azlogin':
+        if self.mode == 'azlogin':
             self.print_azlogin()
-        if mode_prefix == 'awscredentialprocess':
+        if self.mode == 'awscredentialprocess':
             self.print_awscredentialprocess()
-        if mode_prefix == 'azps':
+        if self.mode == 'azps':
             self.print_azps()
-        if mode_prefix == 'gcloudauth':
+        if self.mode == 'gcloudauth':
             self.print_gcloudauth()
 
     def print_console(self):
         url = self.credentials.get('url', self.credentials)
-
-        if self.mode.startswith('browser'):
-            browser_type = safe_list_get(self.mode.split('-', maxsplit=1), 1, None)
-            webbrowser.get(browser_type).open(url)
+        if self.mode == 'browser':
+            webbrowser.get(self.mode_modifier).open(url)
         else:
             self.cli.print(url, ignore_silent=True)
 
