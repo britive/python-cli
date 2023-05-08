@@ -1,8 +1,9 @@
 # Change Log
 
-All changes to the package starting with v0.3.1 will be logged here.
+* All changes to the package starting with v0.3.1 will be logged here.
+* As of v1.4.0 release candidates will be published in an effort to get new features out faster while still allowing time for full QA testing before moving the release candidate to a full release.
 
-## v1.4.0 [2023-04-XX]
+## v1.4.0rc1 [2023-05-09]
 #### What's New
 * Command `request approve`
 * Command `request reject`
