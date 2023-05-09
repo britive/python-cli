@@ -205,6 +205,26 @@ class BritiveCli:
         self.login()
         self.print(self.b.my_secrets.list(), ignore_silent=True)
 
+    def list_approvals(self):
+        self.login()
+        approvals = []
+        for approval in self.b.my_access.list_approvals():
+            approval.pop('resource', None)
+            approval.pop('consumer', None)
+            approval.pop('timeToApprove', None)
+            approval.pop('validFor', None)
+            approval.pop('action', None)
+            approval.pop('approvers', None)
+            approval.pop('expirationTimeApproval', None)
+            approval.pop('updatedAt', None)
+            approval.pop('actionBy', None)
+            approval.pop('validForInDays', None)
+            approvals.append(approval)
+
+        approvals = sorted(approvals, key=lambda x: x['createdAt'])
+        approvals.reverse()
+        self.print(approvals, ignore_silent=True)
+
     def list_profiles(self, checked_out: bool = False):
         self.login()
         self._set_available_profiles()
@@ -415,7 +435,7 @@ class BritiveCli:
         return app in ['AWS', 'AWS Standalone'] and force_renew and not console
 
     def _split_profile_into_parts(self, profile):
-        profile_real = self.config.profile_aliases.get(profile, profile)
+        profile_real = self.config.profile_aliases.get(profile.lower(), profile)
         parts = profile_split(profile_real)
         if len(parts) == 2:  # handle shortcut for profiles where the app and environment name are the same
             parts = [parts[0], parts[0], parts[1]]
@@ -438,7 +458,7 @@ class BritiveCli:
 
         # these 2 modes implicitly say that console access should be checked out without having to provide
         # the --console flag
-        if mode in ['browser', 'console']:
+        if mode == 'console' or mode.startswith('browser'):
             console = True
 
         self._validate_justification(justification)
@@ -1003,4 +1023,10 @@ class BritiveCli:
         browser = webbrowser.get(using=browser)
         browser.open(console_url)
 
+    def request_disposition(self, request_id, decision):
+        self.login()
 
+        if decision == 'approve':
+            self.b.my_access.approve_request(request_id=request_id)
+        if decision == 'reject':
+            self.b.my_access.reject_request(request_id=request_id)
