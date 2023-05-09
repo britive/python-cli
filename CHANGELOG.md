@@ -1,6 +1,26 @@
 # Change Log
 
-All changes to the package starting with v0.3.1 will be logged here.
+* All changes to the package starting with v0.3.1 will be logged here.
+* As of v1.4.0 release candidates will be published in an effort to get new features out faster while still allowing time for full QA testing before moving the release candidate to a full release.
+
+## v1.4.0rc1 [2023-05-09]
+#### What's New
+* Command `request approve`
+* Command `request reject`
+* Command `ls approvals`
+
+#### Enhancements
+* None
+
+#### Bug Fixes
+* Resolved issue with profile alias names which included uppercase and special characters.
+* Resolved an issue with `checkout --mode browser-*` that was not actually launching the browser.
+
+#### Dependencies
+* `britive>=2.19.0`
+
+#### Other
+* None
 
 ## v1.3.0 [2023-03-28]
 #### What's New

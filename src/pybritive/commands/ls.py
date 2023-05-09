@@ -41,4 +41,9 @@ def secrets(ctx, output_format, tenant, token, silent, passphrase, federation_pr
     ctx.obj.britive.list_secrets()
 
 
-
+@ls.command()
+@build_britive
+@britive_options(names='format,tenant,token,silent,passphrase,federation_provider')
+def approvals(ctx, output_format, tenant, token, silent, passphrase, federation_provider):
+    """List approvals for the currently authenticated identity."""
+    ctx.obj.britive.list_approvals()

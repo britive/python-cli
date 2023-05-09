@@ -47,3 +47,34 @@ def withdraw(ctx, tenant, token, silent, passphrase, federation_provider, profil
     ctx.obj.britive.request_withdraw(
         profile=profile
     )
+
+
+@request.command()
+@build_britive
+@britive_options(names='tenant,token,silent,passphrase,federation_provider')
+@click.argument('request-id')
+def approve(ctx, tenant, token, silent, passphrase, federation_provider, request_id):
+    """Approve a request to checkout a profile.
+
+    This command takes 1 required argument `request-id`. Find the `request-id` via `ls approvals`.
+    """
+
+    ctx.obj.britive.request_disposition(
+        request_id=request_id,
+        decision='approve'
+    )
+
+@request.command()
+@build_britive
+@britive_options(names='tenant,token,silent,passphrase,federation_provider')
+@click.argument('request-id')
+def reject(ctx, tenant, token, silent, passphrase, federation_provider, request_id):
+    """Reject a request to checkout a profile.
+
+    This command takes 1 required argument `request-id`. Find the `request-id` via `ls approvals`.
+    """
+
+    ctx.obj.britive.request_disposition(
+        request_id=request_id,
+        decision='reject'
+    )
