@@ -458,7 +458,7 @@ class BritiveCli:
 
         # these 2 modes implicitly say that console access should be checked out without having to provide
         # the --console flag
-        if mode == 'console' or mode.startswith('browser'):
+        if mode and (mode == 'console' or mode.startswith('browser')):
             console = True
 
         self._validate_justification(justification)
