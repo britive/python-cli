@@ -1424,6 +1424,7 @@ that should be checked out. Format is <code>application name/environment name/pr
 <p><strong>Subcommands</strong></p>
 <ul>
 <li><em><a href="#pybritive-ls-applications">applications</a></em>: List applications for the currently authenticated identity.</li>
+<li><em><a href="#pybritive-ls-approvals">approvals</a></em>: List approvals for the currently authenticated identity.</li>
 <li><em><a href="#pybritive-ls-environments">environments</a></em>: List environments for the currently authenticated identity.</li>
 <li><em><a href="#pybritive-ls-profiles">profiles</a></em>: List profiles for the currently authenticated identity.</li>
 <li><em><a href="#pybritive-ls-secrets">secrets</a></em>: List secrets for the currently authenticated identity.</li>
@@ -1432,6 +1433,66 @@ that should be checked out. Format is <code>application name/environment name/pr
 <p>List applications for the currently authenticated identity.</p>
 <p><strong>Usage:</strong></p>
 <pre><code>pybritive ls applications [OPTIONS]
+</code></pre>
+<p><strong>Options:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--format</code>, <code>-f</code></td>
+<td>choice (<code>json</code> &#x7C; <code>yaml</code> &#x7C; <code>csv</code> &#x7C; <code>table</code> &#x7C; <code>list</code> &#x7C; <code>table-plain</code> &#x7C; <code>table-simple</code> &#x7C; <code>table-github</code> &#x7C; <code>table-grid</code> &#x7C; <code>table-simple_grid</code> &#x7C; <code>table-rounded_grid</code> &#x7C; <code>table-double_grid</code> &#x7C; <code>table-fancy_grid</code> &#x7C; <code>table-outline</code> &#x7C; <code>table-simple_outline</code> &#x7C; <code>table-rounded_outline</code> &#x7C; <code>table-double_outline</code> &#x7C; <code>table-fancy_outline</code> &#x7C; <code>table-pipe</code> &#x7C; <code>table-orgtbl</code> &#x7C; <code>table-jira</code> &#x7C; <code>table-presto</code> &#x7C; <code>table-pretty</code> &#x7C; <code>table-psql</code> &#x7C; <code>table-rst</code> &#x7C; <code>table-mediawiki</code> &#x7C; <code>table-moinmoin</code> &#x7C; <code>table-youtrack</code> &#x7C; <code>table-html</code> &#x7C; <code>table-unsafehtml</code> &#x7C; <code>table-latex</code> &#x7C; <code>table-latex_raw</code> &#x7C; <code>table-latex_booktabs</code> &#x7C; <code>table-latex_longtable</code> &#x7C; <code>table-textile</code> &#x7C; <code>table-tsv</code>)</td>
+<td>Display output format. Valid values are (json, yaml, csv, table[-format]). If <code>table</code> is used an optional table format can be specified as <code>table-format</code>. Valid table formats can be found here: https://github.com/astanin/python-tabulate#table_format. Example: <code>table-pretty</code>.</td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>-t</code>, <code>--tenant</code></td>
+<td>text</td>
+<td>Name of tenant.</td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>-T</code>, <code>--token</code></td>
+<td>text</td>
+<td>API token.</td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>--silent</code>, <code>-s</code></td>
+<td>boolean</td>
+<td>Enable silent mode.</td>
+<td><code>False</code></td>
+</tr>
+<tr>
+<td><code>--passphrase</code>, <code>-p</code></td>
+<td>text</td>
+<td>The passphrase to use for encrypting credentials.</td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>--federation-provider</code>, <code>-P</code></td>
+<td>text</td>
+<td>Use a federation provider available in the Britive Python SDK for auto token creation. Valid values are <code>aws[-profile]</code>, <code>github[-audience], and</code>bitbucket<code>. Optionally for the AWS provider a duration in seconds can be provided via</code>aws[-profile]_durationseconds` after which point the auto-generatedcredentials will expire.</td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>--help</code></td>
+<td>boolean</td>
+<td>Show this message and exit.</td>
+<td><code>False</code></td>
+</tr>
+</tbody>
+</table>
+<h5 id="pybritive-ls-approvals">pybritive ls approvals</h5>
+<p>List approvals for the currently authenticated identity.</p>
+<p><strong>Usage:</strong></p>
+<pre><code>pybritive ls approvals [OPTIONS]
 </code></pre>
 <p><strong>Options:</strong></p>
 <table>
@@ -1700,9 +1761,121 @@ that should be checked out. Format is <code>application name/environment name/pr
 </table>
 <p><strong>Subcommands</strong></p>
 <ul>
+<li><em><a href="#pybritive-request-approve">approve</a></em>: Approve a request to checkout a profile.</li>
+<li><em><a href="#pybritive-request-reject">reject</a></em>: Reject a request to checkout a profile.</li>
 <li><em><a href="#pybritive-request-submit">submit</a></em>: Submit a request to checkout a profile.</li>
 <li><em><a href="#pybritive-request-withdraw">withdraw</a></em>: Withdraw a request to checkout a profile.</li>
 </ul>
+<h5 id="pybritive-request-approve">pybritive request approve</h5>
+<p>Approve a request to checkout a profile.</p>
+<p>This command takes 1 required argument <code>request-id</code>. Find the <code>request-id</code> via <code>ls approvals</code>.</p>
+<p><strong>Usage:</strong></p>
+<pre><code>pybritive request approve [OPTIONS] REQUEST_ID
+</code></pre>
+<p><strong>Options:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>-t</code>, <code>--tenant</code></td>
+<td>text</td>
+<td>Name of tenant.</td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>-T</code>, <code>--token</code></td>
+<td>text</td>
+<td>API token.</td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>--silent</code>, <code>-s</code></td>
+<td>boolean</td>
+<td>Enable silent mode.</td>
+<td><code>False</code></td>
+</tr>
+<tr>
+<td><code>--passphrase</code>, <code>-p</code></td>
+<td>text</td>
+<td>The passphrase to use for encrypting credentials.</td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>--federation-provider</code>, <code>-P</code></td>
+<td>text</td>
+<td>Use a federation provider available in the Britive Python SDK for auto token creation. Valid values are <code>aws[-profile]</code>, <code>github[-audience], and</code>bitbucket<code>. Optionally for the AWS provider a duration in seconds can be provided via</code>aws[-profile]_durationseconds` after which point the auto-generatedcredentials will expire.</td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>--help</code></td>
+<td>boolean</td>
+<td>Show this message and exit.</td>
+<td><code>False</code></td>
+</tr>
+</tbody>
+</table>
+<h5 id="pybritive-request-reject">pybritive request reject</h5>
+<p>Reject a request to checkout a profile.</p>
+<p>This command takes 1 required argument <code>request-id</code>. Find the <code>request-id</code> via <code>ls approvals</code>.</p>
+<p><strong>Usage:</strong></p>
+<pre><code>pybritive request reject [OPTIONS] REQUEST_ID
+</code></pre>
+<p><strong>Options:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>-t</code>, <code>--tenant</code></td>
+<td>text</td>
+<td>Name of tenant.</td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>-T</code>, <code>--token</code></td>
+<td>text</td>
+<td>API token.</td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>--silent</code>, <code>-s</code></td>
+<td>boolean</td>
+<td>Enable silent mode.</td>
+<td><code>False</code></td>
+</tr>
+<tr>
+<td><code>--passphrase</code>, <code>-p</code></td>
+<td>text</td>
+<td>The passphrase to use for encrypting credentials.</td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>--federation-provider</code>, <code>-P</code></td>
+<td>text</td>
+<td>Use a federation provider available in the Britive Python SDK for auto token creation. Valid values are <code>aws[-profile]</code>, <code>github[-audience], and</code>bitbucket<code>. Optionally for the AWS provider a duration in seconds can be provided via</code>aws[-profile]_durationseconds` after which point the auto-generatedcredentials will expire.</td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>--help</code></td>
+<td>boolean</td>
+<td>Show this message and exit.</td>
+<td><code>False</code></td>
+</tr>
+</tbody>
+</table>
 <h5 id="pybritive-request-submit">pybritive request submit</h5>
 <p>Submit a request to checkout a profile.</p>
 <p>Only applicable for profiles which require approval. This command will NOT block/wait until the request is
@@ -2269,5 +2442,5 @@ Ensure the leading <code>/</code> is provided.</p>
 
 <!--
 MkDocs version : 1.3.1
-Build Date UTC : 2023-03-28 17:28:02.479926+00:00
+Build Date UTC : 2023-05-09 14:43:21.207356+00:00
 -->
