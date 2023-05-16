@@ -3,6 +3,24 @@
 * All changes to the package starting with v0.3.1 will be logged here.
 * As of v1.4.0 release candidates will be published in an effort to get new features out faster while still allowing time for full QA testing before moving the release candidate to a full release.
 
+## v1.4.0rc3 [2023-05-16]
+#### What's New
+* None
+
+#### Enhancements
+* When checking in an AWS profile remove any AWS `credential_process` cached credentials.
+* `cache clear cached-aws-credentials PROFILE`
+
+#### Bug Fixes
+* None
+
+#### Dependencies
+* None
+
+#### Other
+* None
+
+
 ## v1.4.0rc2 [2023-05-09]
 #### What's New
 * None

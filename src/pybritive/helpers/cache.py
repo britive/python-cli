@@ -1,6 +1,8 @@
 from pathlib import Path
 import json
 import os
+
+
 from .encryption import StringEncryption, InvalidPassphraseException
 
 
@@ -54,7 +56,7 @@ class Cache:
 
     def get_awscredentialprocess(self, profile_name: str):
         try:
-            ciphertext = self.cache['awscredentialprocess'].get(profile_name)
+            ciphertext = self.cache['awscredentialprocess'].get(profile_name.lower())
             if not ciphertext:
                 return None
             return json.loads(self.string_encryptor.decrypt(ciphertext))
@@ -63,5 +65,9 @@ class Cache:
 
     def save_awscredentialprocess(self, profile_name: str, credentials: dict):
         ciphertext = self.string_encryptor.encrypt(json.dumps(credentials, default=str))
-        self.cache['awscredentialprocess'][profile_name] = ciphertext
+        self.cache['awscredentialprocess'][profile_name.lower()] = ciphertext
+        self.write()
+
+    def clear_awscredentialprocess(self, profile_name: str):
+        self.cache['awscredentialprocess'].pop(profile_name.lower(), None)
         self.write()
