@@ -1041,12 +1041,37 @@ that should be checked out. Format is <code>application name/environment name/pr
 <p><strong>Subcommands</strong></p>
 <ul>
 <li><em><a href="#pybritive-clear-cache">cache</a></em>: Clears the local cache.</li>
+<li><em><a href="#pybritive-clear-cached-aws-credentials">cached-aws-credentials</a></em>: Clears cached AWS credentials used as part of the AWS CLI credential process.</li>
 <li><em><a href="#pybritive-clear-gcloud-auth-key-files">gcloud-auth-key-files</a></em>: Clears the local gcloud auth key files.</li>
 </ul>
 <h5 id="pybritive-clear-cache">pybritive clear cache</h5>
 <p>Clears the local cache.</p>
 <p><strong>Usage:</strong></p>
 <pre><code>pybritive clear cache [OPTIONS]
+</code></pre>
+<p><strong>Options:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--help</code></td>
+<td>boolean</td>
+<td>Show this message and exit.</td>
+<td><code>False</code></td>
+</tr>
+</tbody>
+</table>
+<h5 id="pybritive-clear-cached-aws-credentials">pybritive clear cached-aws-credentials</h5>
+<p>Clears cached AWS credentials used as part of the AWS CLI credential process.</p>
+<p><strong>Usage:</strong></p>
+<pre><code>pybritive clear cached-aws-credentials [OPTIONS] PROFILE
 </code></pre>
 <p><strong>Options:</strong></p>
 <table>
@@ -2442,5 +2467,5 @@ Ensure the leading <code>/</code> is provided.</p>
 
 <!--
 MkDocs version : 1.3.1
-Build Date UTC : 2023-05-09 14:43:21.207356+00:00
+Build Date UTC : 2023-05-16 13:10:18.171521+00:00
 -->
