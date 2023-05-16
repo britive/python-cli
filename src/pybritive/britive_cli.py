@@ -377,6 +377,7 @@ class BritiveCli:
 
     def checkin(self, profile):
         self.login()
+        self._set_available_profiles()
         parts = self._split_profile_into_parts(profile)
 
         ids = self._convert_names_to_ids(
@@ -386,9 +387,19 @@ class BritiveCli:
         )
 
         transaction_id = None
-        for profile in self.b.my_access.list_checked_out_profiles():
-            if profile['environmentId'] == ids['environment_id'] and profile['papId'] == ids['profile_id']:
-                transaction_id = profile['transactionId']
+        application_type = None
+        for checked_out_profile in self.b.my_access.list_checked_out_profiles():
+            same_env = checked_out_profile['environmentId'] == ids['environment_id']
+            same_profile = checked_out_profile['papId'] == ids['profile_id']
+            if all([same_env, same_profile]):
+                transaction_id = checked_out_profile['transactionId']
+
+                for available_profile in self.available_profiles:
+                    same_env_2 = checked_out_profile['environmentId'] == available_profile['env_id']
+                    same_profile_2 = checked_out_profile['papId'] == available_profile['profile_id']
+                    if all([same_env_2, same_profile_2]):
+                        application_type = available_profile['app_type'].lower()
+                        break
                 break
         if not transaction_id:
             raise ValueError(f'no checked out profile found for the given profile')
@@ -396,6 +407,9 @@ class BritiveCli:
         self.b.my_access.checkin(
             transaction_id=transaction_id
         )
+
+        if application_type in ('aws', 'aws standalone'):
+            self.clear_cached_aws_credentials(profile)
 
     def _checkout(self, profile_name, env_name, app_name, programmatic, blocktime, maxpolltime, justification):
         try:
@@ -1030,3 +1044,14 @@ class BritiveCli:
             self.b.my_access.approve_request(request_id=request_id)
         if decision == 'reject':
             self.b.my_access.reject_request(request_id=request_id)
+
+    def clear_cached_aws_credentials(self, profile):
+        # start with the profile name that was passed in from the command
+        Cache().clear_awscredentialprocess(profile_name=profile)
+
+        # then we can try to split it into parts and clear that version of the
+        # profile name as well - it will not hurt anything to try to clear
+        # both versions
+        parts = self._split_profile_into_parts(profile)
+        Cache().clear_awscredentialprocess(profile_name=f"{parts['app']}/{parts['env']}/{parts['profile']}")
+
