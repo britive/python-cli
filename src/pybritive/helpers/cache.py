@@ -2,7 +2,6 @@ from pathlib import Path
 import json
 import os
 
-import click
 
 from .encryption import StringEncryption, InvalidPassphraseException
 
