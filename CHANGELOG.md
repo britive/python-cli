@@ -15,7 +15,9 @@
 * Properly catch and error when Cognito tokens have been invalidated.
 
 #### Dependencies
-* None
+* Fix dependabot alert for `requests` - https://github.com/britive/python-cli/security/dependabot/4
+* Fix dependabot alert for `cryptography` - https://github.com/britive/python-cli/security/dependabot/5
+* `britive>=2.20.0`
 
 #### Other
 * None
