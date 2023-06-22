@@ -3,6 +3,21 @@
 * All changes to the package starting with v0.3.1 will be logged here.
 * As of v1.4.0 release candidates will be published in an effort to get new features out faster while still allowing time for full QA testing before moving the release candidate to a full release.
 
+## v1.4.0rc5 [2023-06-22]
+#### What's New
+* None
+
+#### Enhancements
+* None
+
+#### Bug Fixes
+* Fix bug with lowercase vs. uppercase when using tenant config attribute `sso_idp`.
+
+#### Dependencies
+* None
+
+#### Other
+* None
 
 ## v1.4.0rc4 [2023-06-22]
 #### What's New
