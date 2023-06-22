@@ -3,6 +3,26 @@
 * All changes to the package starting with v0.3.1 will be logged here.
 * As of v1.4.0 release candidates will be published in an effort to get new features out faster while still allowing time for full QA testing before moving the release candidate to a full release.
 
+
+## v1.4.0rc4 [2023-06-22]
+#### What's New
+* `pybritive ssh gcp identity-aware-proxy` command - supports OS Login and SSH Instance Metadata
+
+#### Enhancements
+* Support for `sso_idp` in the tenant configuration block of the config file. Set with `configure update tenant-<name> sso_idp <value>`. This will enable automatic re-direction to your identity provider, thus eliminating a manual step when authenticating to your tenant.
+
+#### Bug Fixes
+* Properly catch and error when Cognito tokens have been invalidated.
+
+#### Dependencies
+* Fix dependabot alert for `requests` - https://github.com/britive/python-cli/security/dependabot/4
+* Fix dependabot alert for `cryptography` - https://github.com/britive/python-cli/security/dependabot/5
+* `britive>=2.20.0`
+
+#### Other
+* None
+
+
 ## v1.4.0rc3 [2023-05-16]
 #### What's New
 * None
