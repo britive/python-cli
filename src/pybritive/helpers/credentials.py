@@ -81,6 +81,7 @@ class CredentialManager:
         self.cli.print(f'Performing interactive login against tenant {self.tenant}.')
         sso_idp = self.cli.config.get_tenant().get('sso_idp')
         if sso_idp:
+            sso_idp = sso_idp.replace('saml', 'SAML')  # ui is expecting it in caps
             url = f'{self.base_url}/sso?idp={sso_idp}&token={self.auth_token}'
         else:
             url = f'{self.base_url}/login?token={self.auth_token}'
