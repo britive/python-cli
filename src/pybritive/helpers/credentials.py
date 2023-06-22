@@ -79,7 +79,11 @@ class CredentialManager:
 
     def perform_interactive_login(self):
         self.cli.print(f'Performing interactive login against tenant {self.tenant}.')
-        url = f'{self.base_url}/login?token={self.auth_token}'
+        sso_idp = self.cli.config.get_tenant().get('sso_idp')
+        if sso_idp:
+            url = f'{self.base_url}/sso?idp={sso_idp}&token={self.auth_token}'
+        else:
+            url = f'{self.base_url}/login?token={self.auth_token}'
 
         # establish a requests session which will be used in retrieve_tokens()
         self._setup_requests_session()

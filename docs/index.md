@@ -264,7 +264,11 @@ The `ssh` command facilitates using the native SSH protocol to connect to privat
 
 The goal is to allow all functionality offered by the SSH protocol like local port forwarding to access private resources and `scp` to copy files to the remote host.
 
-At launch only AWS EC2 is supported. The requirements for using SSH with EC2 instances are provided below.
+AWS and GCP are supported.
+
+### AWS 
+
+The requirements for using SSH with EC2 instances are provided below.
 
 * EC2 instance must have the Systems Manager agent installed and operational.
 * EC2 instance must have the EC2 Instance Connect agent installed and operational (if using `--push-public-key`).
@@ -319,6 +323,84 @@ Both `aws-profile-name` and `aws-region` are optional. If `aws-profile-name` is 
 If `aws-region` is omitted then credentials for Session Manager and EC2 Instance Connect will be sourced from the standard AWS region provider chain.
 
 The command `ssh aws config` can be invoked to generate the above `Match` directives.
+
+### GCP
+
+The requirements for using SSH with GCP compute engine instances are provided below.
+
+* `gcloud` CLI must be installed in the environment and `gcloud auth login` already performed.
+* Instance must accept SSH key from either [OS Login](https://cloud.google.com/compute/docs/oslogin/set-up-oslogin) or [SSH Instance Metadata](https://cloud.google.com/compute/docs/connect/add-ssh-keys#metadata) (if using `--push-public-key`).
+* If using OS Login two-factor authentication cannot be enabled.
+* The caller must have appropriate permissions to use identity aware proxy (for all `--key-source`s) and push a public key via OS Login or SSH Instance Metadata (if using `--push-public-key`).
+* The caller's environment must have the `gcloud` cli installed and `gcloud auth login` already performed.
+* The caller must use OpenSSH (and the SSH config file). Other SSH implementations are not currently supported.
+
+There are 3 ways that `pybritive` can help proxy an SSH session to a private compute instance.
+
+* Using just Identity Aware Proxy (IAP) SSH forwarding to establish the network path over which the SSH protocol will operate. It is left to the caller then to handle SSH authentication using whichever mechanism has already been established.
+
+~~~bash
+Host bastion.dev
+	 HostName gcp.instance-name.project-id
+	 
+Match host gcp.*
+    User username
+    ProxyCommand eval $(pybritive ssh gcp identity-aware-proxy --hostname %h --username %r --port-number %p)
+~~~
+
+* Using IAP SSH forwarding along with pushing a randomly generated SSH key pair public key via OS Login or Instance Metadata and identifying the private key via static path in the `IdentityFile` parameter.
+
+Using OS Login...
+~~~bash
+Host bastion.dev
+	 HostName gcp.instance-name.project-id
+	 
+Match host gcp.*
+    User username
+    IdentityFile ~/.britive/ssh/%h.%r.pem
+    ProxyCommand eval $(pybritive ssh gcp identity-aware-proxy --hostname %h --username %r --port-number %p --push-pulbic-key os-login --key-source static)
+~~~
+
+Using Instance Metadata...
+~~~bash
+Host bastion.dev
+	 HostName gcp.instance-name.project-id
+	 
+Match host gcp.*
+    User username
+    IdentityFile ~/.britive/ssh/%h.%r.pem
+    ProxyCommand eval $(pybritive ssh gcp identity-aware-proxy --hostname %h --username %r --port-number %p --push-pulbic-key instance-metadata --key-source static)
+~~~
+
+* Using IAP SSH forwarding along with pushing a randomly generated SSH key pair public key via OS Login or Instance Metadata and adding the private key to the `ssh-agent` via `ssh-add` so it is available without having to specify the `IdentityFile` parameter.
+
+Using OS Login...
+~~~bash
+Host bastion.dev
+	 HostName gcp.instance-name.project-id
+	 
+Match host gcp.*
+    User username
+    ProxyCommand eval $(pybritive ssh gcp identity-aware-proxy --hostname %h --username %r --port-number %p --push-pulbic-key os-login --key-source ssh-agent)
+~~~
+
+Using Instance Metadata...
+~~~bash
+Host bastion.dev
+	 HostName gcp.instance-name.project-id
+	 
+Match host gcp.*
+    User username
+    ProxyCommand eval $(pybritive ssh gcp identity-aware-proxy --hostname %h --username %r --port-number %p --push-pulbic-key instance-metadata --key-source ssh-agent)
+~~~
+
+The `HostName` parameter must be in the appropriate format. That format is
+
+~~~
+gcp.<instance name>.<project id>
+~~~
+
+The command `ssh gcp config` can be invoked to generate the above `Match` directives.
 
 ## `aws` Command
 

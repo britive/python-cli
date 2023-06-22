@@ -51,7 +51,8 @@ global_fields = [
 
 tenant_fields = [
     'name',
-    'output_format'
+    'output_format',
+    'sso_idp'
 ]
 
 aws_fields = [

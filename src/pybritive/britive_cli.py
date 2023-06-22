@@ -15,6 +15,8 @@ from .helpers.cache import Cache
 from britive import exceptions
 from pathlib import Path
 from datetime import datetime
+from datetime import timezone
+from datetime import timedelta
 import os
 import sys
 import jmespath
@@ -839,13 +841,17 @@ class BritiveCli:
             aws_region = helper[2]
 
         if push_public_key:
-            self._ssh_aws_generate_key(
+            details = self._ssh_generate_key(
+                username=username,
+                hostname=hostname,
+                key_source=key_source
+            )
+            self._ssh_aws_push_key(
                 instance_id=instance_id,
                 aws_profile=aws_profile,
                 aws_region=aws_region,
                 username=username,
-                hostname=hostname,
-                key_source=key_source
+                key_pair=details['key_pair']
             )
 
         commands = [
@@ -864,32 +870,12 @@ class BritiveCli:
 
         self.print(' '.join(commands), ignore_silent=True)
 
-    def _ssh_aws_generate_key(self, instance_id, aws_profile, aws_region, username, hostname, key_source):
+    @staticmethod
+    def _ssh_generate_key_pair():
         # doing imports here as these packages are not a requirement to use pybritive in general
-
-        # cryptography is already a hard requirement so we know it will eixst
         from cryptography.hazmat.primitives.asymmetric import rsa
         from cryptography.hazmat.primitives import serialization
 
-        # these 3 ship with python3.x
-        import glob
-        import time
-        import subprocess
-
-        # this is the one that may not be available so be careful
-        try:
-            import boto3
-        except ImportError:
-            message = 'boto3 package is required. Please ensure the package is installed.'
-            raise click.ClickException(message)
-
-        # we know we will be pushing the key to the instance so establish the
-        # boto3 clients which are required to perform those actions
-        session = boto3.Session(profile_name=aws_profile, region_name=aws_region)
-        eic = session.client('ec2-instance-connect')
-        ec2 = session.client('ec2')
-
-        # now let's create the ephemeral private and public key pair
         private_key = rsa.generate_private_key(
             public_exponent=65537,
             key_size=2048
@@ -906,10 +892,24 @@ class BritiveCli:
             format=serialization.PublicFormat.OpenSSH
         )
 
+        return {
+            'private': pem_private_key,
+            'public': pem_public_key
+        }
+
+    def _ssh_generate_key(self, username, hostname, key_source):
+        # doing imports here as these packages are not a requirement to use pybritive in general
+
+        # these 3 ship with python3.x
+        import glob
+        import time
+        import subprocess
+
+        key_pair = self._ssh_generate_key_pair()
+
         # let's do the right thing and clean up old ephemeral keys
         ssh_dir = Path(self.config.path).parent.absolute() / 'ssh'
         ssh_dir.mkdir(exist_ok=True, parents=True)  # create the directory if it doesn't exist already
-        pem_file = None
         if key_source == 'ssh-agent':
             # cleanup any old ssh keys that were randomly generated
             now = int(time.time())
@@ -932,8 +932,31 @@ class BritiveCli:
         # as a string in the ec2 instance connect api call (no file
         # reference)
         with open(str(pem_file), 'w') as f:
-            f.write(pem_private_key.decode())
+            f.write(key_pair['private'].decode())
         os.chmod(pem_file, 0o400)
+
+        # and if we are using ssh-agent we need to add the private key via ssh-add
+        if key_source == 'ssh-agent':
+            subprocess.run(['ssh-add', str(pem_file), '-t', '60', '-q'])
+
+        return {
+            'private_key_filename': pem_file,
+            'key_pair': key_pair
+        }
+
+    @staticmethod
+    def _ssh_aws_push_key(aws_profile, aws_region, instance_id, username, key_pair):
+        try:
+            import boto3
+        except ImportError:
+            message = 'boto3 package is required. Please ensure the package is installed.'
+            raise click.ClickException(message)
+
+        # we know we will be pushing the key to the instance so establish the
+        # boto3 clients which are required to perform those actions
+        session = boto3.Session(profile_name=aws_profile, region_name=aws_region)
+        eic = session.client('ec2-instance-connect')
+        ec2 = session.client('ec2')
 
         # now push the key
         az = ec2.describe_instances(
@@ -943,13 +966,9 @@ class BritiveCli:
         eic.send_ssh_public_key(
             InstanceId=instance_id,
             InstanceOSUser=username,
-            SSHPublicKey=pem_public_key.decode(),
+            SSHPublicKey=key_pair['public'].decode(),
             AvailabilityZone=az
         )
-
-        # and if we are using ssh-agent we need to add the private key via ssh-add
-        if key_source == 'ssh-agent':
-            subprocess.run(['ssh-add', str(pem_file), '-t', '60', '-q'])
 
     def ssh_aws_openssh_config(self, push_public_key, key_source):
         lines = ['Match host i-*,mi-*']
@@ -1054,4 +1073,141 @@ class BritiveCli:
         # both versions
         parts = self._split_profile_into_parts(profile)
         Cache().clear_awscredentialprocess(profile_name=f"{parts['app']}/{parts['env']}/{parts['profile']}")
+
+    def ssh_gcp_identity_aware_proxy(self, username, hostname, push_public_key, port_number, key_source):
+        self.silent = True
+        helper = hostname.split('.')
+        instance_name = helper[1]
+        project = helper[2]
+
+        import subprocess
+        import shlex
+
+        command = f'gcloud compute instances list --format json --project {project}'
+        instances = json.loads(subprocess.check_output(shlex.split(command)).decode('utf-8'))
+
+        zone = None
+        metadata = None
+        for instance in instances:
+            if instance['name'] == instance_name:
+                zone = instance['zone'].split('/')[-1]
+                metadata = instance.get('metadata')
+
+        if not zone:
+            raise click.BadParameter(f'no zone found for instance {instance_name} in project {project}')
+
+        if push_public_key:
+            details = self._ssh_generate_key(
+                username=username,
+                hostname=hostname,
+                key_source=key_source
+            )
+
+            if push_public_key == 'os-login':  # this is pretty straightforward
+                public_key = details["key_pair"]["public"].decode('utf-8')
+                command = f'gcloud compute os-login ssh-keys add --key="{public_key}" ' \
+                          f'--project={project} --ttl=1m --no-user-output-enabled --quiet'
+                subprocess.check_output(shlex.split(command))
+            if push_public_key == 'instance-metadata':  # this is a bit more involved
+                now = datetime.now(timezone.utc).replace(microsecond=0)
+
+                if metadata:
+                    existing_keys_str = None
+                    for item in metadata.get('items', []):
+                        if item['key'] == 'ssh-keys':
+                            existing_keys_str = item['value']
+                            break
+                    future_keys = []
+                    if existing_keys_str:
+                        existing_keys = existing_keys_str.split('\n')
+
+                        for key in existing_keys:
+                            should_carry_forward = True
+
+                            if 'google-ssh' in key:  # non google-ssh keys should always carry forward
+                                key_details = json.loads(key.split('google-ssh')[1].strip())
+                                expires = key_details['expireOn']
+                                if now > datetime.fromisoformat(expires):
+                                    should_carry_forward = False
+                            if should_carry_forward:
+                                future_keys.append(key)
+
+                    command = 'gcloud auth list --filter=status:ACTIVE --format="value(account)" --quiet'
+                    active_gcloud_user = subprocess.check_output(shlex.split(command)).decode('utf-8').strip()
+
+                    # format is 2023-05-16T20:15:22+0000
+                    google_ssh_data = {
+                        'userName': active_gcloud_user,
+                        'expireOn': (now + timedelta(seconds=60)).strftime('%Y-%m-%dT%H:%M:%S+0000')
+                    }
+                    google_ssh_data = json.dumps(google_ssh_data, separators=(',', ':'))  # separators IMPORTANT
+                    public_key = details["key_pair"]["public"].decode('utf-8')
+                    new_key = f'{username}:{public_key} google-ssh {google_ssh_data}'
+                    future_keys.append(new_key)
+
+                    ssh_dir = Path(self.config.path).parent.absolute() / 'ssh'
+                    ssh_dir.mkdir(exist_ok=True, parents=True)  # create the directory if it doesn't exist already
+                    key_file = ssh_dir / uuid.uuid4().hex
+                    with open(str(key_file), 'w') as f:
+                        f.write('\n'.join(future_keys))
+
+                    commands = [
+                        'gcloud',
+                        'compute',
+                        'instances',
+                        'add-metadata',
+                        instance_name,
+                        '--project',
+                        project,
+                        '--metadata-from-file',
+                        f'ssh-keys={str(key_file)}',
+                        '--zone',
+                        zone,
+                        '--verbosity=error',
+                        '--no-user-output-enabled',
+                        '--quiet'
+                    ]
+                    subprocess.run(commands)
+                    key_file.unlink(missing_ok=True)
+
+        commands = [
+            'gcloud',
+            'compute',
+            'start-iap-tunnel',
+            instance_name,
+            port_number,
+            '--listen-on-stdin',
+            f'--project={project}',
+            f'--zone={zone}',
+            '--verbosity=error'
+        ]
+
+        self.print(' '.join(commands), ignore_silent=True)
+
+    def ssh_gcp_openssh_config(self, push_public_key, key_source):
+        lines = ['Match host gcp.*']
+        if push_public_key:
+            commands = [
+                '\tProxyCommand eval $(pybritive gcp identity-aware-proxy --hostname %h',
+                f'--username %r --port-number %p --push-public-key {push_public_key}',
+                f'--key-source {key_source})'
+            ]
+            lines.append(' '.join(commands))
+
+            if key_source == 'static':
+                ssh_dir = Path(self.config.path).parent.absolute() / 'ssh'
+                lines.append(f'\tIdentityFile {str(ssh_dir)}/%h.%r.pem')
+        else:
+            line = '\tProxyCommand eval $(pybritive ssh gcp identity-aware-proxy --hostname %h --username %r ' \
+                   '--port-number %p)'
+            lines.append(line)
+
+        self.print('Add the below Match directive to your SSH config file, after all Host directives.')
+        self.print('This file is generally located at ~/.ssh/config.')
+        self.print('Additional SSH config parameters can be added as required.')
+        self.print('The below directive is the minimum required configuration.')
+        self.print('')
+        self.print('')
+        self.print('\n'.join(lines))
+
 
