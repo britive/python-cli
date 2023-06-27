@@ -3,6 +3,22 @@
 * All changes to the package starting with v0.3.1 will be logged here.
 * As of v1.4.0 release candidates will be published in an effort to get new features out faster while still allowing time for full QA testing before moving the release candidate to a full release.
 
+## v1.4.0rc6 [2023-06-27]
+#### What's New
+* None
+
+#### Enhancements
+* None
+
+#### Bug Fixes
+* Better handling which submitting a request to checkout a profile but a prior request has already been approved.
+
+#### Dependencies
+* `britive>=2.20.1`
+
+#### Other
+* None
+
 ## v1.4.0rc5 [2023-06-22]
 #### What's New
 * None
