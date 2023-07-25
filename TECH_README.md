@@ -50,7 +50,6 @@ Additionally, the identity will need access to 2 secrets
 * one standard secret with path `/pybritive-test-standard` to test `view` - the value of the secret should be generic note with note of `test`
 * one file secret with path `/pybritive-test-file` to test `download` - the filename should be `pybritive-test-secret-file.txt` and contain contents of `test`
 
-
 ## Docs
 
 https://docs.readthedocs.io/en/stable/intro/getting-started-with-mkdocs.html
