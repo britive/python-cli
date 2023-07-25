@@ -1,7 +1,33 @@
 # Change Log
 
-* All changes to the package starting with v0.3.1 will be logged here.
 * As of v1.4.0 release candidates will be published in an effort to get new features out faster while still allowing time for full QA testing before moving the release candidate to a full release.
+
+## v1.4.0 [2023-07-25]
+#### What's New
+* `pybritive ssh gcp identity-aware-proxy` command - supports OS Login and SSH Instance Metadata
+* Command `request approve`
+* Command `request reject`
+* Command `ls approvals`
+
+#### Enhancements
+* Support for `sso_idp` in the tenant configuration block of the config file. Set with `configure update tenant-<name> sso_idp <value>`. This will enable automatic re-direction to your identity provider, thus eliminating a manual step when authenticating to your tenant.
+* When checking in an AWS profile remove any AWS `credential_process` cached credentials.
+* `clear cached-aws-credentials PROFILE`
+
+#### Bug Fixes
+* Better handling which submitting a request to checkout a profile but a prior request has already been approved.
+* Properly catch and error when Cognito tokens have been invalidated.
+* Resolved issue with profile alias names which included uppercase and special characters.
+* Resolved an issue with `checkout --mode browser-*` that was not actually launching the browser.
+
+#### Dependencies
+* Fix dependabot alert for `requests` - https://github.com/britive/python-cli/security/dependabot/4
+* Fix dependabot alert for `cryptography` - https://github.com/britive/python-cli/security/dependabot/5
+* `britive>=2.20.1`
+
+#### Other
+* None
+
 
 ## v1.4.0rc6 [2023-06-27]
 #### What's New
@@ -60,7 +86,7 @@
 
 #### Enhancements
 * When checking in an AWS profile remove any AWS `credential_process` cached credentials.
-* `cache clear cached-aws-credentials PROFILE`
+* `clear cached-aws-credentials PROFILE`
 
 #### Bug Fixes
 * None
