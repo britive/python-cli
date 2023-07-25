@@ -72,6 +72,12 @@
     <li class="toctree-l2"><a class="reference internal" href="#api-command-use-the-britive-python-sdk-via-the-cli">api Command - Use the Britive Python SDK via the CLI</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#ssh-command">ssh Command</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#aws">AWS</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#gcp">GCP</a>
+    </li>
+        </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#aws-command">aws Command</a>
     </li>
@@ -366,7 +372,9 @@ via the CLI.</li>
 <h2 id="ssh-command"><code>ssh</code> Command</h2>
 <p>The <code>ssh</code> command facilitates using the native SSH protocol to connect to private cloud servers.</p>
 <p>The goal is to allow all functionality offered by the SSH protocol like local port forwarding to access private resources and <code>scp</code> to copy files to the remote host.</p>
-<p>At launch only AWS EC2 is supported. The requirements for using SSH with EC2 instances are provided below.</p>
+<p>AWS and GCP are supported.</p>
+<h3 id="aws">AWS</h3>
+<p>The requirements for using SSH with EC2 instances are provided below.</p>
 <ul>
 <li>EC2 instance must have the Systems Manager agent installed and operational.</li>
 <li>EC2 instance must have the EC2 Instance Connect agent installed and operational (if using <code>--push-public-key</code>).</li>
@@ -413,6 +421,71 @@ Match host i-*,mi-*
 <p>Both <code>aws-profile-name</code> and <code>aws-region</code> are optional. If <code>aws-profile-name</code> is omitted then credentials for Session Manager and EC2 Instance Connect will be sourced from the standard AWS credential provider chain.
 If <code>aws-region</code> is omitted then credentials for Session Manager and EC2 Instance Connect will be sourced from the standard AWS region provider chain.</p>
 <p>The command <code>ssh aws config</code> can be invoked to generate the above <code>Match</code> directives.</p>
+<h3 id="gcp">GCP</h3>
+<p>The requirements for using SSH with GCP compute engine instances are provided below.</p>
+<ul>
+<li><code>gcloud</code> CLI must be installed in the environment and <code>gcloud auth login</code> already performed.</li>
+<li>Instance must accept SSH key from either <a href="https://cloud.google.com/compute/docs/oslogin/set-up-oslogin">OS Login</a> or <a href="https://cloud.google.com/compute/docs/connect/add-ssh-keys#metadata">SSH Instance Metadata</a> (if using <code>--push-public-key</code>).</li>
+<li>If using OS Login two-factor authentication cannot be enabled.</li>
+<li>The caller must have appropriate permissions to use identity aware proxy (for all <code>--key-source</code>s) and push a public key via OS Login or SSH Instance Metadata (if using <code>--push-public-key</code>).</li>
+<li>The caller's environment must have the <code>gcloud</code> cli installed and <code>gcloud auth login</code> already performed.</li>
+<li>The caller must use OpenSSH (and the SSH config file). Other SSH implementations are not currently supported.</li>
+</ul>
+<p>There are 3 ways that <code>pybritive</code> can help proxy an SSH session to a private compute instance.</p>
+<ul>
+<li>Using just Identity Aware Proxy (IAP) SSH forwarding to establish the network path over which the SSH protocol will operate. It is left to the caller then to handle SSH authentication using whichever mechanism has already been established.</li>
+</ul>
+<pre><code class="language-bash">Host bastion.dev
+     HostName gcp.instance-name.project-id
+
+Match host gcp.*
+    User username
+    ProxyCommand eval $(pybritive ssh gcp identity-aware-proxy --hostname %h --username %r --port-number %p)
+</code></pre>
+<ul>
+<li>Using IAP SSH forwarding along with pushing a randomly generated SSH key pair public key via OS Login or Instance Metadata and identifying the private key via static path in the <code>IdentityFile</code> parameter.</li>
+</ul>
+<p>Using OS Login...</p>
+<pre><code class="language-bash">Host bastion.dev
+     HostName gcp.instance-name.project-id
+
+Match host gcp.*
+    User username
+    IdentityFile ~/.britive/ssh/%h.%r.pem
+    ProxyCommand eval $(pybritive ssh gcp identity-aware-proxy --hostname %h --username %r --port-number %p --push-pulbic-key os-login --key-source static)
+</code></pre>
+<p>Using Instance Metadata...</p>
+<pre><code class="language-bash">Host bastion.dev
+     HostName gcp.instance-name.project-id
+
+Match host gcp.*
+    User username
+    IdentityFile ~/.britive/ssh/%h.%r.pem
+    ProxyCommand eval $(pybritive ssh gcp identity-aware-proxy --hostname %h --username %r --port-number %p --push-pulbic-key instance-metadata --key-source static)
+</code></pre>
+<ul>
+<li>Using IAP SSH forwarding along with pushing a randomly generated SSH key pair public key via OS Login or Instance Metadata and adding the private key to the <code>ssh-agent</code> via <code>ssh-add</code> so it is available without having to specify the <code>IdentityFile</code> parameter.</li>
+</ul>
+<p>Using OS Login...</p>
+<pre><code class="language-bash">Host bastion.dev
+     HostName gcp.instance-name.project-id
+
+Match host gcp.*
+    User username
+    ProxyCommand eval $(pybritive ssh gcp identity-aware-proxy --hostname %h --username %r --port-number %p --push-pulbic-key os-login --key-source ssh-agent)
+</code></pre>
+<p>Using Instance Metadata...</p>
+<pre><code class="language-bash">Host bastion.dev
+     HostName gcp.instance-name.project-id
+
+Match host gcp.*
+    User username
+    ProxyCommand eval $(pybritive ssh gcp identity-aware-proxy --hostname %h --username %r --port-number %p --push-pulbic-key instance-metadata --key-source ssh-agent)
+</code></pre>
+<p>The <code>HostName</code> parameter must be in the appropriate format. That format is</p>
+<pre><code>gcp.&lt;instance name&gt;.&lt;project id&gt;
+</code></pre>
+<p>The command <code>ssh gcp config</code> can be invoked to generate the above <code>Match</code> directives.</p>
 <h2 id="aws-command"><code>aws</code> Command</h2>
 <p>The <code>aws</code> command group will hold actions related specifically to AWS. </p>
 <p>The first supported sub-command is <code>console</code> which will sign an AWS console URL using programmatic access keys 
@@ -2245,6 +2318,7 @@ Ensure the leading <code>/</code> is provided.</p>
 <p><strong>Subcommands</strong></p>
 <ul>
 <li><em><a href="#pybritive-ssh-aws">aws</a></em>: Facilitates connecting, via SSH, to private AWS EC2 instances via Session Manager and EC2 Instance Connect.</li>
+<li><em><a href="#pybritive-ssh-gcp">gcp</a></em>: Facilitates connecting, via SSH, to private GCP Compute Instances via Identity Aware Proxy and OS Login/SSH Metadata.</li>
 </ul>
 <h5 id="pybritive-ssh-aws">pybritive ssh aws</h5>
 <p>Facilitates connecting, via SSH, to private AWS EC2 instances via Session Manager and EC2 Instance Connect.</p>
@@ -2294,9 +2368,9 @@ Ensure the leading <code>/</code> is provided.</p>
 <tbody>
 <tr>
 <td><code>--push-public-key</code>, <code>-P</code></td>
-<td>boolean</td>
-<td>Whether to push a public key to the EC2 instance via EC2 Instance Connect</td>
-<td><code>False</code></td>
+<td>choice (<code>ec2-instance-connect</code> &#x7C; <code>os-login</code> &#x7C; <code>instance-metadata</code> &#x7C; <code>default</code>)</td>
+<td>Whether to push an ephemeral public key to the remote server.</td>
+<td>None</td>
 </tr>
 <tr>
 <td><code>--key-source</code>, <code>-k</code></td>
@@ -2342,9 +2416,129 @@ Ensure the leading <code>/</code> is provided.</p>
 </tr>
 <tr>
 <td><code>--push-public-key</code>, <code>-P</code></td>
+<td>choice (<code>ec2-instance-connect</code> &#x7C; <code>os-login</code> &#x7C; <code>instance-metadata</code> &#x7C; <code>default</code>)</td>
+<td>Whether to push an ephemeral public key to the remote server.</td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>--port-number</code>, <code>-p</code></td>
+<td>text</td>
+<td>The SSH port number from the SSH config file for the given host.</td>
+<td>_required</td>
+</tr>
+<tr>
+<td><code>--key-source</code>, <code>-k</code></td>
+<td>choice (<code>ssh-agent</code> &#x7C; <code>static</code>)</td>
+<td>The source of the SSH key used to authenticate to the remove server.</td>
+<td><code>ssh-agent</code></td>
+</tr>
+<tr>
+<td><code>--help</code></td>
 <td>boolean</td>
-<td>Whether to push a public key to the EC2 instance via EC2 Instance Connect</td>
+<td>Show this message and exit.</td>
 <td><code>False</code></td>
+</tr>
+</tbody>
+</table>
+<h5 id="pybritive-ssh-gcp">pybritive ssh gcp</h5>
+<p>Facilitates connecting, via SSH, to private GCP Compute Instances via Identity Aware Proxy and OS Login/SSH Metadata.</p>
+<p>This command generally should be called from within an SSH config as opposed to being directly invoked.</p>
+<p><strong>Usage:</strong></p>
+<pre><code>pybritive ssh gcp [OPTIONS] COMMAND [ARGS]...
+</code></pre>
+<p><strong>Options:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--help</code></td>
+<td>boolean</td>
+<td>Show this message and exit.</td>
+<td><code>False</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Subcommands</strong></p>
+<ul>
+<li><em><a href="#pybritive-ssh-gcp-config">config</a></em>: Prints the required Match directive to add to an OpenSSH config file (normally located at ~/.ssh/config.)</li>
+<li><em><a href="#pybritive-ssh-gcp-identity-aware-proxy">identity-aware-proxy</a></em>: Outputs gcloud CLI command to be consumed by ProxyCommand to establish an OpenSSH proxy tunnel.</li>
+</ul>
+<h6 id="pybritive-ssh-gcp-config">pybritive ssh gcp config</h6>
+<p>Prints the required Match directive to add to an OpenSSH config file (normally located at ~/.ssh/config.)</p>
+<p><strong>Usage:</strong></p>
+<pre><code>pybritive ssh gcp config [OPTIONS]
+</code></pre>
+<p><strong>Options:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--push-public-key</code>, <code>-P</code></td>
+<td>choice (<code>ec2-instance-connect</code> &#x7C; <code>os-login</code> &#x7C; <code>instance-metadata</code> &#x7C; <code>default</code>)</td>
+<td>Whether to push an ephemeral public key to the remote server.</td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>--key-source</code>, <code>-k</code></td>
+<td>choice (<code>ssh-agent</code> &#x7C; <code>static</code>)</td>
+<td>The source of the SSH key used to authenticate to the remove server.</td>
+<td><code>ssh-agent</code></td>
+</tr>
+<tr>
+<td><code>--help</code></td>
+<td>boolean</td>
+<td>Show this message and exit.</td>
+<td><code>False</code></td>
+</tr>
+</tbody>
+</table>
+<h6 id="pybritive-ssh-gcp-identity-aware-proxy">pybritive ssh gcp identity-aware-proxy</h6>
+<p>Outputs gcloud CLI command to be consumed by ProxyCommand to establish an OpenSSH proxy tunnel.</p>
+<p><strong>Usage:</strong></p>
+<pre><code>pybritive ssh gcp identity-aware-proxy [OPTIONS]
+</code></pre>
+<p><strong>Options:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--username</code>, <code>-u</code></td>
+<td>text</td>
+<td>The EC2 OS username for whom the ephemeral SSH public key will be pushed.</td>
+<td>_required</td>
+</tr>
+<tr>
+<td><code>--hostname</code>, <code>-h</code></td>
+<td>text</td>
+<td>The SSH hostname from the SSH config file to which the ephemeral SSH public key will be pushed.</td>
+<td>_required</td>
+</tr>
+<tr>
+<td><code>--push-public-key</code>, <code>-P</code></td>
+<td>choice (<code>ec2-instance-connect</code> &#x7C; <code>os-login</code> &#x7C; <code>instance-metadata</code> &#x7C; <code>default</code>)</td>
+<td>Whether to push an ephemeral public key to the remote server.</td>
+<td>None</td>
 </tr>
 <tr>
 <td><code>--port-number</code>, <code>-p</code></td>
@@ -2467,5 +2661,5 @@ Ensure the leading <code>/</code> is provided.</p>
 
 <!--
 MkDocs version : 1.3.1
-Build Date UTC : 2023-05-16 13:10:18.171521+00:00
+Build Date UTC : 2023-07-25 18:24:50.355693+00:00
 -->
