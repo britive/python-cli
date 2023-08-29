@@ -4,7 +4,6 @@ import click
 
 browser_choices = click.Choice(
     [
-        'default'
         'mozilla',
         'firefox',
         'windows-default',
