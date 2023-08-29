@@ -46,12 +46,13 @@ def b64_encode_url_safe(value: bytes):
 
 # this base class expects self.credentials to be a dict - so sub classes need to convert to dict
 class CredentialManager:
-    def __init__(self, tenant_name: str, tenant_alias: str, cli: any, federation_provider: str = None):
+    def __init__(self, tenant_name: str, tenant_alias: str, cli: any, federation_provider: str = None, browser: str = os.getenv("PYBRITIVE_BROWSER")):
         self.cli = cli
         self.tenant = tenant_name
         self.alias = tenant_alias
         self.base_url = f'https://{Britive.parse_tenant(tenant_name)}'
         self.federation_provider = federation_provider
+        self.browser = browser
         self.session = None
 
         # not sure if we really need 32 random bytes or if any random string would work
@@ -90,8 +91,8 @@ class CredentialManager:
         self._setup_requests_session()
 
         try:
-            webbrowser.get()
-            webbrowser.open(url)
+            browser = webbrowser.get(using=self.browser)
+            browser.open(url)
         except webbrowser.Error:
             self.cli.print(
                 'No web browser found. Please manually navigate to the link below and authenticate.'
