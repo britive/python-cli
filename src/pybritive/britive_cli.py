@@ -1053,7 +1053,7 @@ class BritiveCli:
         # but use the url to pop open a browser
         console_url = requests.Request('GET', url, params=params).prepare().url
 
-        browser = webbrowser.get(using=browser)
+        browser = webbrowser.get(using=os.getenv("PYBRITIVE_BROWSER", browser))
         browser.open(console_url)
 
     def request_disposition(self, request_id, decision):
