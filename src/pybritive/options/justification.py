@@ -7,4 +7,3 @@ option = click.option(
     show_default=True,
     help='Justification for the checkout approval process, if the profile checkout requires approval.',
 )
-

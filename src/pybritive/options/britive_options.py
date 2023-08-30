@@ -80,4 +80,3 @@ def britive_options(*args, **kwargs):
             f = option(f)
         return f
     return inner
-

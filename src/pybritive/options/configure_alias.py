@@ -6,4 +6,3 @@ option = click.option(
     default=None,
     help='Optional alias for the above tenant. This alias would be used with the `--tenant` flag.'
 )
-
