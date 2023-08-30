@@ -28,4 +28,3 @@ def gcloud_auth_key_files(ctx):
 def cached_aws_credentials(ctx, profile):
     """Clears cached AWS credentials used as part of the AWS CLI credential process."""
     ctx.obj.britive.clear_cached_aws_credentials(profile=profile)
-

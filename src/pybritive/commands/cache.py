@@ -22,6 +22,3 @@ def profiles(ctx, tenant, token, silent, passphrase, federation_provider):
 def clear(ctx):
     """Clears the local cache."""
     ctx.obj.britive.cache_clear()
-
-
-

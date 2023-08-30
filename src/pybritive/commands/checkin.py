@@ -17,5 +17,3 @@ def checkin(ctx, tenant, token, silent, passphrase, federation_provider, profile
     ctx.obj.britive.checkin(
         profile=profile
     )
-
-
