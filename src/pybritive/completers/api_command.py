@@ -1,5 +1,6 @@
-import typing as t
 import inspect
+import typing as t
+
 from britive.britive import Britive
 import pkg_resources
 
@@ -41,7 +42,7 @@ def get_dynamic_method_parameters(method):
             doc_lines = inspect.getdoc(b)
             doc_lines = doc_lines.replace(':returns:', 'RETURNSPLIT')
             doc_lines = doc_lines.replace(':return:', 'RETURNSPLIT')
-            doc_lines = doc_lines.split('RETURNSPLIT')[0].split(':param ')[1:]
+            doc_lines = doc_lines.split('RETURNSPLIT', maxsplit=1)[0].split(':param ')[1:]
 
             for line in doc_lines:
                 helper = line.split(':')
@@ -71,7 +72,7 @@ def get_dynamic_method_parameters(method):
             param_list.append(param)
 
         return param_list
-    except Exception as e:
+    except Exception:
         return []
 
 
@@ -79,7 +80,7 @@ def command_api_patch_shell_complete(cls):
     # click < 8.0.0 does shell completion different...
     # not all the classes/decorators are available, so we cannot
     # create custom shell completions like we can with click > 8.0.0
-    major, minor, patch = pkg_resources.get_distribution('click').version.split('.')[0:3]
+    major, minor = pkg_resources.get_distribution('click').version.split('.')[:2]
 
     # we cannot patch the shell_complete method because it does not exist (click 7.x doesn't have it)
     # future proofing this as well in case click 9.x changes things up a lot
@@ -100,8 +101,6 @@ def command_api_patch_shell_complete(cls):
     __class__ = cls  # provide closure cell for super()
 
     def shell_complete(self, ctx: Context, incomplete: str) -> t.List["CompletionItem"]:
-        from click.shell_completion import CompletionItem
-
         results: t.List["CompletionItem"] = []
 
         if incomplete and not incomplete[0].isalnum():

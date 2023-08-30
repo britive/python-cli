@@ -1,5 +1,4 @@
 from britive.britive import Britive
-import json
 
 
 def api_completer(ctx, param, incomplete):
