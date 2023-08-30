@@ -236,10 +236,10 @@ class CredentialManager:
 
 
 class FileCredentialManager(CredentialManager):
-    def __init__(self, tenant_name: str, tenant_alias: str, cli: any, federation_provider: str = None):
+    def __init__(self, tenant_name: str, tenant_alias: str, cli: any, federation_provider: str = None, browser: str = os.getenv('PYBRITIVE_BROWSER')):
         home = os.getenv('PYBRITIVE_HOME_DIR', str(Path.home()))
         self.path = str(Path(home) / '.britive' / 'pybritive.credentials')
-        super().__init__(tenant_name, tenant_alias, cli, federation_provider)
+        super().__init__(tenant_name, tenant_alias, cli, federation_provider, browser)
 
     def load(self, full=False):
         path = Path(self.path)
@@ -278,7 +278,7 @@ class FileCredentialManager(CredentialManager):
 
 class EncryptedFileCredentialManager(CredentialManager):
     def __init__(self, tenant_name: str, tenant_alias: str, cli: any, passphrase: str = None,
-                 federation_provider: str = None):
+                 federation_provider: str = None, browser: str = os.getenv('PYBRITIVE_BROWSER')):
         home = os.getenv('PYBRITIVE_HOME_DIR', str(Path.home()))
         self.path = str(Path(home) / '.britive' / 'pybritive.credentials.encrypted')
         self.passphrase = passphrase

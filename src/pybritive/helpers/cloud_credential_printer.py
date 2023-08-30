@@ -1,5 +1,6 @@
 import json
 import uuid
+import os
 import click
 import platform
 import configparser
@@ -65,7 +66,8 @@ class CloudCredentialPrinter:
     def print_console(self):
         url = self.credentials.get('url', self.credentials)
         if self.mode == 'browser':
-            webbrowser.get(self.mode_modifier).open(url)
+            browser = self.mode_modifier or os.getenv('PYBRITIVE_BROWSER')
+            webbrowser.get(using=browser).open(url)
         else:
             self.cli.print(url, ignore_silent=True)
 

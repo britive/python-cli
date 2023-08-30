@@ -28,7 +28,7 @@ debug_enabled = os.getenv('PYBRITIVE_DEBUG')
 
 class BritiveCli:
     def __init__(self, tenant_name: str = None, token: str = None, silent: bool = False,
-                 passphrase: str = None, federation_provider: str = None):
+                 passphrase: str = None, federation_provider: str = None, browser: str = os.getenv('PYBRITIVE_BROWSER')):
         self.silent = silent
         self.output_format = None
         self.tenant_name = None
@@ -43,6 +43,7 @@ class BritiveCli:
         self.credential_manager = None
         self.verbose_checkout = False
         self.checkout_progress_previous_message = None
+        self.browser = browser
 
     def set_output_format(self, output_format: str):
         self.output_format = self.config.get_output_format(output_format)
@@ -56,7 +57,8 @@ class BritiveCli:
                 tenant_alias=self.tenant_alias,
                 tenant_name=self.tenant_name,
                 cli=self,
-                federation_provider=self.federation_provider
+                federation_provider=self.federation_provider,
+                browser=self.browser
             )
         elif backend == 'encrypted-file':
             self.credential_manager = EncryptedFileCredentialManager(
@@ -64,7 +66,8 @@ class BritiveCli:
                 tenant_name=self.tenant_name,
                 cli=self,
                 passphrase=self.passphrase,
-                federation_provider=self.federation_provider
+                federation_provider=self.federation_provider,
+                browser=self.browser
             )
         else:
             raise click.ClickException(f'invalid credential backend {backend}.')
@@ -474,8 +477,8 @@ class BritiveCli:
 
         # these 2 modes implicitly say that console access should be checked out without having to provide
         # the --console flag
-        if mode and (mode == 'console' or mode.startswith('browser')):
-            console = True
+        if console := (mode and (mode == 'console' or mode.startswith('browser'))):
+            self.browser = mode.replace("browser-","")
 
         self._validate_justification(justification)
 
