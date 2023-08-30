@@ -46,7 +46,7 @@ def b64_encode_url_safe(value: bytes):
 
 # this base class expects self.credentials to be a dict - so sub classes need to convert to dict
 class CredentialManager:
-    def __init__(self, tenant_name: str, tenant_alias: str, cli: any, federation_provider: str = None, browser: str = os.getenv("PYBRITIVE_BROWSER")):
+    def __init__(self, tenant_name: str, tenant_alias: str, cli: any, federation_provider: str = None, browser: str = os.getenv('PYBRITIVE_BROWSER')):
         self.cli = cli
         self.tenant = tenant_name
         self.alias = tenant_alias
