@@ -1,11 +1,11 @@
+import base64
+import os
 import uuid
+
 from cryptography.fernet import Fernet, InvalidToken
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-import os
-import base64
-import click
 
 
 class InvalidPassphraseException(Exception):
@@ -41,5 +41,5 @@ class StringEncryption:
             ciphertext, b64salt = ciphertext.split(':')
             key = self._key(b64salt)
             return Fernet(key).decrypt(base64.b64decode(ciphertext.encode())).decode('utf-8')
-        except InvalidToken:
-            raise InvalidPassphraseException()
+        except InvalidToken as e:
+            raise InvalidPassphraseException() from e

@@ -1,8 +1,9 @@
-from ..britive_cli import BritiveCli
-import click
-from functools import wraps
-from merge_args import merge_args
 from dataclasses import dataclass
+from functools import wraps
+
+import click
+from merge_args import merge_args
+from ..britive_cli import BritiveCli
 
 
 @dataclass
@@ -26,7 +27,6 @@ def build_britive(f):
             passphrase=kwargs.get('passphrase'),
             federation_provider=kwargs.get('federation_provider')
         ))
-
         parent_command = ctx.parent.command.name
         if parent_command != 'configure':
             ctx.obj.britive.set_output_format(kwargs.get('output_format'))
