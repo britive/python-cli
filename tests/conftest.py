@@ -74,7 +74,3 @@ def unset_api_token_env_var():
     name = 'BRITIVE_API_TOKEN'
     if name in os.environ.keys():
         del os.environ[name]
-
-
-
-
