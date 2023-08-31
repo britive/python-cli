@@ -1,19 +1,20 @@
-import random
 import base64
+import configparser
 import hashlib
+import json
+import os
+from pathlib import Path
+import random
 import time
 import webbrowser
 import requests
-from requests.adapters import HTTPAdapter, Retry
-from pathlib import Path
-import click
-import configparser
-import json
-import os
-from .encryption import StringEncryption, InvalidPassphraseException
+
 from britive.britive import Britive
+import click
 from dateutil import parser
 import jwt
+from requests.adapters import HTTPAdapter, Retry
+from .encryption import StringEncryption, InvalidPassphraseException
 
 
 interactive_login_fields_to_pop = [
@@ -46,7 +47,7 @@ def b64_encode_url_safe(value: bytes):
 
 # this base class expects self.credentials to be a dict - so sub classes need to convert to dict
 class CredentialManager:
-    def __init__(self, tenant_name: str, tenant_alias: str, cli: any, federation_provider: str = None, browser: str = os.getenv("PYBRITIVE_BROWSER")):
+    def __init__(self, tenant_name: str, tenant_alias: str, cli: any, federation_provider: str = None, browser: str = os.getenv('PYBRITIVE_BROWSER')):
         self.cli = cli
         self.tenant = tenant_name
         self.alias = tenant_alias
@@ -172,7 +173,7 @@ class CredentialManager:
                         'verify_aud': False
                     }
                 )['exp'] * 1000
-        except Exception as e:
+        except Exception:
             self.cli.print(f'Cannot obtain token expiration time for {self.federation_provider}. Defaulting to '
                            f'{federation_provider_default_expiration_seconds} seconds.')
 
@@ -236,16 +237,16 @@ class CredentialManager:
 
 
 class FileCredentialManager(CredentialManager):
-    def __init__(self, tenant_name: str, tenant_alias: str, cli: any, federation_provider: str = None):
+    def __init__(self, tenant_name: str, tenant_alias: str, cli: any, federation_provider: str = None, browser: str = os.getenv('PYBRITIVE_BROWSER')):
         home = os.getenv('PYBRITIVE_HOME_DIR', str(Path.home()))
         self.path = str(Path(home) / '.britive' / 'pybritive.credentials')
-        super().__init__(tenant_name, tenant_alias, cli, federation_provider)
+        super().__init__(tenant_name, tenant_alias, cli, federation_provider, browser)
 
     def load(self, full=False):
         path = Path(self.path)
         if not path.is_file():  # credentials file does not yet exist, create it as an empty file
             path.parent.mkdir(exist_ok=True, parents=True)
-            path.write_text('')
+            path.write_text('', encoding='utf-8')
 
         # open the file with configparser
         credentials = configparser.ConfigParser()
@@ -268,7 +269,7 @@ class FileCredentialManager(CredentialManager):
         config.read_dict(full_credentials)
 
         # write the new credentials file
-        with open(str(self.path), 'w') as f:
+        with open(str(self.path), 'w', encoding='utf-8') as f:
             config.write(f, space_around_delimiters=False)
         self.credentials = credentials
 
@@ -278,7 +279,7 @@ class FileCredentialManager(CredentialManager):
 
 class EncryptedFileCredentialManager(CredentialManager):
     def __init__(self, tenant_name: str, tenant_alias: str, cli: any, passphrase: str = None,
-                 federation_provider: str = None):
+                 federation_provider: str = None, browser: str = os.getenv('PYBRITIVE_BROWSER')):
         home = os.getenv('PYBRITIVE_HOME_DIR', str(Path.home()))
         self.path = str(Path(home) / '.britive' / 'pybritive.credentials.encrypted')
         self.passphrase = passphrase
@@ -301,7 +302,7 @@ class EncryptedFileCredentialManager(CredentialManager):
         path = Path(self.path)
         if not path.is_file():  # credentials file does not yet exist, create it as an empty file
             path.parent.mkdir(exist_ok=True, parents=True)
-            path.write_text('')
+            path.write_text('', encoding='utf-8')
 
         # open the file with configparser
         credentials = configparser.ConfigParser()
@@ -332,7 +333,7 @@ class EncryptedFileCredentialManager(CredentialManager):
         config.read_dict(full_credentials)
 
         # write the new credentials file
-        with open(str(self.path), 'w') as f:
+        with open(str(self.path), 'w', encoding='utf-8') as f:
             config.write(f, space_around_delimiters=False)
 
     def delete(self):

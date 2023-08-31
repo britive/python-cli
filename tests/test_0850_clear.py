@@ -33,9 +33,3 @@ def test_clear_gcloud_key_files(runner, cli):
     assert not file1.is_file()
     assert not file2.is_file()
     assert not path.is_dir()
-
-
-
-
-
-

@@ -9,4 +9,3 @@ click_major_version = int(pkg_resources.get_distribution('click').version.split(
 if click_major_version >= 8:
     from . import powershell_completion
     from . import bash_gte_42
-

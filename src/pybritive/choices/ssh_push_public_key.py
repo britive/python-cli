@@ -11,4 +11,3 @@ ssh_push_public_key_choices = click.Choice(
     ],
     case_sensitive=False
 )
-

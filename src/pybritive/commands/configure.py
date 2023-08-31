@@ -21,7 +21,6 @@ def tenant(ctx, configure_tenant, configure_alias, output_format, configure_prom
     tenant_name = configure_tenant
     no_prompt = configure_prompt
     alias = configure_alias
-    output_format = output_format
 
     if not no_prompt:
         if not tenant_name:
@@ -67,7 +66,6 @@ def global_command(ctx, configure_tenant, output_format, configure_prompt, confi
     """
     default_tenant_name = configure_tenant
     no_prompt = configure_prompt
-    output_format = output_format
     backend = configure_backend
 
     if not no_prompt:
@@ -130,6 +128,3 @@ def update(ctx, silent, section, field, value):  # silent is handled by @build_b
     field = field.lower().strip()
     value = value.lower().strip()
     ctx.obj.britive.configure_update(section=section, field=field, value=value)
-
-
-

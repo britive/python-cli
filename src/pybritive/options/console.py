@@ -8,4 +8,3 @@ option = click.option(
     show_default=True,
     help='Checkout the console access for the profile instead of programmatic access.'
 )
-

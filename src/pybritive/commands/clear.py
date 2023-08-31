@@ -1,6 +1,6 @@
 import click
 from ..helpers.build_britive import build_britive
-from ..helpers.profile_argument_dectorator import click_smart_profile_argument
+from ..helpers.profile_argument_decorator import click_smart_profile_argument
 
 @click.group()
 def clear():
@@ -28,4 +28,3 @@ def gcloud_auth_key_files(ctx):
 def cached_aws_credentials(ctx, profile):
     """Clears cached AWS credentials used as part of the AWS CLI credential process."""
     ctx.obj.britive.clear_cached_aws_credentials(profile=profile)
-

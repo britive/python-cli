@@ -9,4 +9,3 @@ from ..options.britive_options import britive_options
 def user(ctx, tenant, token, silent, passphrase, federation_provider):
     """Print details about the authenticated identity."""
     ctx.obj.britive.user()
-

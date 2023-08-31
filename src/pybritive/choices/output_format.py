@@ -41,4 +41,3 @@ output_format_choices = click.Choice(
     ],
     case_sensitive=False
 )
-

@@ -13,8 +13,3 @@ def test_cache_profiles(runner, cli):
     assert 'profiles' in data.keys()
     assert len(data['profiles']) > 0
     assert len(data['profiles'][0].split('/')) in [2, 3]
-
-
-
-
-
