@@ -477,7 +477,7 @@ class BritiveCli:
         # these 2 modes implicitly say that console access should be checked out without having to provide
         # the --console flag
         if console := (mode and (mode == 'console' or mode.startswith('browser'))):
-            self.browser = mode.replace("browser-","")
+            self.browser = mode.replace('browser-', '') if mode.startswith('browser') else os.getenv('PYBRITIVE_BROWSER')
 
         self._validate_justification(justification)
 
