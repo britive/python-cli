@@ -7,7 +7,7 @@
 * None
 
 #### Enhancements
-* None
+* Enrich shell completion results for the `api` command
 
 #### Bug Fixes
 * Fix issue with interactive login when randomly generated tokens include `--` which the WAF sometimes sees as a SQL injection attack

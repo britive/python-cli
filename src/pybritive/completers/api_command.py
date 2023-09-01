@@ -15,28 +15,27 @@ def get_dynamic_method_parameters(method):
 
         # parse the method, so we can determine where in the "hierarchy" we are
         # and what commands/subcommands the user should be presented with
+
         for part in method.split('.'):
             b = getattr(b, part)
 
         params = {}
         spec = inspect.getfullargspec(b)
-
         # reformat parameters into a more consumable dict while holds all the required details
         helper = spec[6]
         helper.pop('return', None)
-        for param, param_type in helper.items():
-            params[param] = {
-                'type': str(param_type).split("'")[1]
-            }
 
-        defaults = list(spec[3])
-        names = list(spec[0])
+        for param, param_type in helper.items():
+            params[param] = {}
+
+        defaults = [] if spec[3] is None else list(spec[3])
+        names = [] if spec[0] is None else list(spec[0])
 
         if len(defaults) > 0:
             for i in range(1, len(defaults) + 1):
                 name = names[-1 * i]
                 default = defaults[-1 * i]
-                params[name]['default'] = default
+                params[name]['default'] = '<empty string>' if default == '' else default
 
         try:  # we don't REALLY need the doc string so if there are errors just eat them and move on
             doc_lines = inspect.getdoc(b)
@@ -70,6 +69,11 @@ def get_dynamic_method_parameters(method):
             }
 
             param_list.append(param)
+
+        param_list.append({
+            'flag': '---------------------',
+            'help': 'separator between sdk parameters and cli parameters'
+        })
 
         return param_list
     except Exception:

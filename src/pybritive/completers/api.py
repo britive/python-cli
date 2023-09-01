@@ -1,4 +1,6 @@
 from britive.britive import Britive
+from click.shell_completion import CompletionItem
+import inspect
 
 
 def api_completer(ctx, param, incomplete):
@@ -15,17 +17,49 @@ def api_completer(ctx, param, incomplete):
     for part in parts:
         b = getattr(b, part)
 
+    existing = '.'.join(parts)
+
     options = []
 
     # vars happen at all levels
-    options += [var for var, value in vars(b).items() if str(value).startswith('<britive.') and var != 'britive']
+    for var, value in vars(b).items():
+        # filter out things which should not show as completion items
+        if not str(value).startswith('<britive.') or var == 'britive':
+            continue
+
+        if not_base_level:
+            method = f'{existing}.{var}'
+        else:
+            method = var
+
+        if method.lower().startswith(incomplete.lower()):
+            doc_line = f'methods related to {var}'
+            try:
+                doc_line = inspect.getdoc(getattr(b, var)).split('\n')[0]
+            except:
+                pass
+            options.append(CompletionItem(method, help=doc_line))
 
     # dir only happens at non "base" levels
     if not_base_level:
-        options += [func for func in dir(b) if callable(getattr(b, func)) and not func.startswith("_")]
+        # for each method in the class
+        for func in dir(b):
+            # filter out methods which are not callable and methods which are not "public"
+            if not callable(getattr(b, func)) or func.startswith("_"):
+                continue
 
-    # pull it all back together and make it look nice
-    existing = '.'.join(parts)
-    options = [f'{existing}.{o}' if not_base_level else o for o in options]
+            method = f'{existing}.{func}'
 
-    return [o for o in options if o.lower().startswith(incomplete.lower())]
+            # if this method is a potential match add it to the completion list
+            if method.lower().startswith(incomplete.lower()):
+                # grab the doc string if present
+                doc_line = f'no docs found for {method}'
+
+                try:
+                    doc_line = inspect.getdoc(getattr(b, func)).split('\n')[0]
+                except:
+                    pass
+
+                options.append(CompletionItem(method, help=doc_line))
+    return options
+
