@@ -27,10 +27,7 @@ def api_completer(ctx, param, incomplete):
         if not str(value).startswith('<britive.') or var == 'britive':
             continue
 
-        if not_base_level:
-            method = f'{existing}.{var}'
-        else:
-            method = var
+        method = f'{existing}.{var}' if not_base_level else var
 
         if method.lower().startswith(incomplete.lower()):
             doc_line = f'methods related to {var}'
