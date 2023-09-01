@@ -57,8 +57,14 @@ class CredentialManager:
         # not sure if we really need 32 random bytes or if any random string would work
         # but the current britive-cli in node.js does it this way so it will be done the same
         # way in python
-        self.verifier = b64_encode_url_safe(bytes([random.getrandbits(8) for _ in range(0, 32)]))
-        self.auth_token = b64_encode_url_safe(bytes(hashlib.sha512(self.verifier.encode('utf-8')).digest()))
+        while True:  # will break eventually when we get values that do not include --
+            self.verifier = b64_encode_url_safe(bytes([random.getrandbits(8) for _ in range(0, 32)]))
+            self.auth_token = b64_encode_url_safe(bytes(hashlib.sha512(self.verifier.encode('utf-8')).digest()))
+
+            # WAF doesn't like to see `--` as it thinks it is a sql injection attempt
+            if '--' not in self.verifier and '--' not in self.auth_token:
+                break
+
         self.credentials = self.load() or {}
 
     def _setup_requests_session(self):
