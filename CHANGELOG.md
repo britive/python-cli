@@ -2,6 +2,23 @@
 
 * As of v1.4.0 release candidates will be published in an effort to get new features out faster while still allowing time for full QA testing before moving the release candidate to a full release.
 
+## v1.5.0rc1 [2023-09-XX]
+#### What's New
+* None
+
+#### Enhancements
+* None
+
+#### Bug Fixes
+* Fix issue with interactive login when randomly generated tokens include `--` which the WAF sometimes sees as a SQL injection attack
+
+#### Dependencies
+* None
+
+#### Other
+* None
+
+
 ## v1.4.0 [2023-07-25]
 #### What's New
 * `pybritive ssh gcp identity-aware-proxy` command - supports OS Login and SSH Instance Metadata
