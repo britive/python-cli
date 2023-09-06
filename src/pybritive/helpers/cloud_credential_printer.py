@@ -5,6 +5,7 @@ import platform
 import configparser
 import webbrowser
 from pathlib import Path
+import os
 
 
 # trailing spaces matter as some options do not have the trailing space
@@ -61,6 +62,8 @@ class CloudCredentialPrinter:
             self.print_azps()
         if self.mode == 'gcloudauth':
             self.print_gcloudauth()
+        if self.mode == 'kube':
+            self.print_kube()
 
     def print_console(self):
         url = self.credentials.get('url', self.credentials)
@@ -91,6 +94,9 @@ class CloudCredentialPrinter:
         self._not_implemented()
 
     def print_gcloudauth(self):
+        self._not_implemented()
+
+    def print_kube(self):
         self._not_implemented()
 
     def _not_implemented(self):
@@ -251,3 +257,56 @@ class GcpCloudCredentialPrinter(CloudCredentialPrinter):
             f"gcloud auth activate-service-account {self.credentials['client_email']} --key-file {str(path)}",
             ignore_silent=True
         )
+
+
+class KubernetesCredentialPrinter(CloudCredentialPrinter):
+    def __init__(self, console, mode, profile, silent, credentials, cli, api_version):
+        self.api_version = api_version
+        super().__init__('Kubernetes', console, mode, profile, silent, credentials, cli)
+
+    # expected kube credentials format is
+    # creds = {
+    #     'user': {
+    #         'token': '...',
+    #         'issuer_url': '...',
+    #         'client_id': '...',
+    #         'expiration': '...',
+    #         'expiration_epoch': '...'
+    #     },
+    #     'environment': {
+    #         'cluster': {
+    #             'server': '...',
+    #             'certificate_authority_data': '...'
+    #         },
+    #         'name': '...'
+    #     }
+    # }
+
+    def print_json(self):
+        try:
+            self.cli.print(json.dumps(self.credentials, indent=2), ignore_silent=True)
+        except json.JSONDecodeError:
+            self.cli.print(self.credentials, ignore_silent=True)
+
+    def print_kube(self):
+        if self.mode_modifier == 'exec':
+            if self.api_version in ['client.authentication.k8s.io/v1', 'client.authentication.k8s.io/v1beta1']:
+                response = {
+                    'kind': 'ExecCredential',
+                    'apiVersion': self.api_version,
+                    'spec': {},
+                    'status': {
+                        'expirationTimestamp': self.credentials['user']['expiration'],
+                        'token': self.credentials['user']['token']
+                    }
+                }
+                self.cli.print(json.dumps(response), ignore_silent=True)
+            else:
+                raise Exception(f'apiVersion {self.api_version} not accounted for.')
+        elif self.mode_modifier == 'config':
+            # write file to ~/.britive/kubeconfig/...
+            # clean up any older config file that are no longer required
+            # print out `export KUBECONFIG=~/.britive/kubeconfig/...`
+            pass
+        else:
+            raise ValueError(f'--mode modifier {self.mode_modifier} for mode {self.mode} not supported')

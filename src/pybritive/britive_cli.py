@@ -43,6 +43,16 @@ class BritiveCli:
         self.credential_manager = None
         self.verbose_checkout = False
         self.checkout_progress_previous_message = None
+        self.cachable_modes = {
+            'awscredentialprocess': {
+                'app_type': 'AWS',
+                'expiration_jmespath': 'expirationTime'
+            },
+            'kube-exec': {
+                'app_type': 'Kubernetes',
+                'expiration_jmespath': 'user.expiration'
+            }
+        }
 
     def set_output_format(self, output_format: str):
         self.output_format = self.config.get_output_format(output_format)
@@ -337,7 +347,7 @@ class BritiveCli:
         raise click.ClickException(f'Application {application_id} not found')
 
     def __get_cloud_credential_printer(self, app_type, console, mode, profile, silent, credentials,
-                                       aws_credentials_file, gcloud_key_file):
+                                       aws_credentials_file, gcloud_key_file, kube_exec_api_version):
         if app_type in ['AWS', 'AWS Standalone']:
             return printer.AwsCloudCredentialPrinter(
                 console=console,
@@ -366,6 +376,16 @@ class BritiveCli:
                 silent=silent,
                 cli=self,
                 gcloud_key_file=gcloud_key_file
+            )
+        elif app_type in ['Kubernetes']:
+            return printer.KubernetesCredentialPrinter(
+                console=console,
+                mode=mode,
+                profile=profile,
+                credentials=credentials,
+                silent=silent,
+                cli=self,
+                api_version=kube_exec_api_version
             )
         else:
             return printer.GenericCloudCredentialPrinter(
@@ -468,9 +488,69 @@ class BritiveCli:
                  force_renew, aws_credentials_file, gcloud_key_file, verbose):
         credentials = None
         app_type = None
-        credential_process_creds_found = False
+        cached_credentials_found = False
         response = None
         self.verbose_checkout = verbose
+        kube_exec_api_version = None
+        kube_creds = None
+
+        # handle kube-exec since the profile is actually going to be passed in via another method
+        # and perform some basic validation so we don't waste time performing a checkout when we
+        # will not be able to return a response back to kubectl via the exec command
+        if mode == 'kube-exec' or 'KUBERNETES_EXEC_INFO' in os.environ:
+            mode = 'kube-exec'
+            exec_data = json.loads(os.getenv('KUBERNETES_EXEC_INFO'))
+
+            if not exec_data:  # this env var HAS to exist if we are being invoked by k8s kubeconfig exec command
+                raise Exception('could not find environment variable KUBERNETES_EXEC_INFO')
+
+            kube_exec_api_version = exec_data.get('apiVersion')
+
+            if not kube_exec_api_version:
+                raise ValueError('apiVersion not found. Cannot continue.')
+
+            if kube_exec_api_version == 'client.authentication.k8s.io/v1alpha1':
+                raise ValueError(f'apiVersion {kube_exec_api_version} is not supported.')
+
+            #### REMOVE AFTER TESTING ###
+            # without group system:masters as GKE doesn't like it
+            # Error from server (Forbidden): groups "system:masters" is forbidden:
+            # User "system:serviceaccount:anthos-identity-service:gke-oidc-envoy-sa" cannot impersonate resource
+            # "groups" in API group "" at the cluster scope: GKE Warden authz [denied by user-impersonation-limitation]:
+            # impersonating system identities are not allowed
+            gke_token = "eyJhbGciOiJSUzI1NiIsImtpZCI6ImIyZGFiMTJhLTExZmYtNDQyOC05YzRjLTkzZmViZmZjNzAwNyIsInR5cCI6IkpXVCJ9" \
+                        ".eyJzdWIiOiJrdWJlcm5ldGVzLWFkbWluIiwiZ3JvdXBzIjpbXSwiaXNzIjoiaHR0cHM6Ly90ZXN0MS5kZXYyLmF3cy5icml" \
+                        "0aXZlLWFwcC5jb20vYXBpL29pZGMvdGVzdCIsImF1ZCI6InRlc3QiLCJleHAiOjE3MjMyMTM2MTUsImlhdCI6MTY5MTU5MTI" \
+                        "xNiwibmJmIjoxNjkxNTkxMjE2fQ.j3G-J4MsgNBwVkMmEfov-39SmIzuEAOLoq6_QebFwAYPNJpPrmxQd0KxsKu3meIFlj-M" \
+                        "qmJ4_3nEleklyQ9iOCgLt91Kb9vNt55ooFTymxm9iBpAkBW14sDbOfBACtoFNAxZ116S8cfeLqGIcNRw4t1bB0F97E0yX1Pk" \
+                        "T-12gDLsFGXOKMhWlcLviTuJn75tEp67E5VNEwQPuw5wAVemggprEmxVj6CqTuZK9YjurKyb2ANLW7lk-OzSEtsqAXNzPpC1" \
+                        "0T09e3SDuaFID_W972CUDsDlYP5qHNoKx5-k0dwsIQ1dOTVeEun84Jh1Kzv_JQNjx4Pm50bvWDt3uxUfyg"
+
+            # eks token which does allow system:master
+            eks_token = "eyJhbGciOiJSUzI1NiIsImtpZCI6ImIyZGFiMTJhLTExZmYtNDQyOC05YzRjLTkzZmViZmZjNzAwNyIsInR5cCI6IkpXVCJ9" \
+                        ".eyJzdWIiOiJrdWJlcm5ldGVzLWFkbWluIiwiZ3JvdXBzIjpbInN5c3RlbTptYXN0ZXJzIl0sImlzcyI6Imh0dHBzOi8vdGV" \
+                        "zdDEuZGV2Mi5hd3MuYnJpdGl2ZS1hcHAuY29tL2FwaS9vaWRjL3Rlc3QiLCJhdWQiOiJ0ZXN0IiwiZXhwIjoxNzIzMjEzNjE" \
+                        "1LCJpYXQiOjE2OTE1OTEyMTYsIm5iZiI6MTY5MTU5MTIxNn0.bXcAOCHUBxBCwJDnTvxxEuNlQfW5y8d--i_HgtgYL1ptKNx" \
+                        "GU2aAaEIXhNd81ArVetcHDZmG41rODCAuLmUm5aZN8EKXO4FyqlP9zaFb8JNjSZ_U0KbBUymWrx_KgSyqoue_qEYXa-BCzEq" \
+                        "nFyXHEdpIJYvQ3KB2dAmXTpPQtdAls7D0g6oKhGJYAwwMSr_bkKRecn1y6ctetiKno2CE_OrGikU7LPgijj4G-71d_cT7jRM" \
+                        "FrA7VOUdTJ1CmrWTRT22b8RSlqCVePUmOyQ9Zg-2na0gn39WR1hmUpXQQrqPpdyIxuc4lmZT3oR21qDT0CENJxdVmROWb5aH4cFLiXw"
+
+            kube_creds = {
+                'user': {
+                    'token': gke_token if 'gke' in profile.lower() else eks_token,
+                    'issuer_url': 'https://test1.dev2.aws.britive-app.com/api/oidc/test',
+                    'client_id': 'test',
+                    'expiration': '2024-08-09T22:50:09Z',
+                    'expiration_epoch': 1723243809
+                },
+                'environment': {
+                    'cluster': {
+                        'server': exec_data['spec']['cluster']['server'],
+                        'certificate_authority_data': exec_data['spec']['cluster']['certificate-authority-data']
+                    },
+                    'name': 'environ_name'
+                }
+            }
 
         # these 2 modes implicitly say that console access should be checked out without having to provide
         # the --console flag
@@ -479,24 +559,25 @@ class BritiveCli:
 
         self._validate_justification(justification)
 
-        if mode == 'awscredentialprocess':
-            self.silent = True  # the aws credential process CANNOT output anything other than the expected JSON
-            # we need to check the credential process cache for the credentials first
-            # then check to see if they are expired
-            # if not simply return those credentials
-            # if they are expired
-            app_type = 'AWS'  # just hardcode as we know for sure this is for AWS
-            credentials = Cache(passphrase=passphrase).get_awscredentialprocess(profile_name=alias or profile)
+        if mode in self.cachable_modes:
+            self.silent = True  # CANNOT output anything other than the expected JSON
+            # we need to check the cache for the credentials first and then check to see if they are expired
+            # if not simply return those credentials, if they are expired, continue to do an actual checkout
+            app_type = self.cachable_modes[mode]['app_type']
+            credentials = Cache(passphrase=passphrase).get_credentials(profile_name=alias or profile, mode=mode)
             if credentials:
-                expiration_timestamp_str = credentials['expirationTime'].replace('Z', '')
+                expiration_timestamp_str = jmespath.search(
+                    expression=self.cachable_modes[mode]['expiration_jmespath'],
+                    data=credentials
+                ).replace('Z', '')
                 expires = datetime.fromisoformat(expiration_timestamp_str)
                 now = datetime.utcnow()
                 if now >= expires:  # check to ensure the credentials are still valid, if not, set to None and get new
                     credentials = None
                 else:
-                    credential_process_creds_found = True
+                    cached_credentials_found = True
 
-        parts = self._split_profile_into_parts(profile)
+        parts = self._split_profile_into_parts(profile) if not kube_creds else {'profile': profile, 'env': 'env', 'app': 'app'}
 
         # create this params once so we can use it multiple places
         params = {
@@ -509,10 +590,10 @@ class BritiveCli:
             'justification': justification
         }
 
-        if not credential_process_creds_found:  # nothing found via aws cred process or not aws cred process mode
-            response = self._checkout(**params)
-            app_type = self._get_app_type(response['appContainerId'])
-            credentials = response['credentials']
+        if not cached_credentials_found:  # nothing found in cache, cache is expired, or not a cachable mode
+            response = kube_creds or self._checkout(**params)
+            app_type = kube_creds or self._get_app_type(response['appContainerId'])
+            credentials = kube_creds or response['credentials']
 
         # this handles the --force-renew flag
         # lets check to see if we should checkin this profile first and check it out again
@@ -524,16 +605,17 @@ class BritiveCli:
                 self.print('checking in the profile to get renewed credentials....standby')
                 self.checkin(profile=profile)
                 response = self._checkout(**params)
-                credential_process_creds_found = False  # need to write new creds to cache
+                cached_credentials_found = False  # need to write new creds to cache
                 credentials = response['credentials']
 
         if alias:  # do this down here, so we know that the profile is valid and a checkout was successful
             self.config.save_profile_alias(alias=alias, profile=profile)
 
-        if mode == 'awscredentialprocess' and not credential_process_creds_found:
-            Cache(passphrase=passphrase).save_awscredentialprocess(
+        if mode in self.cachable_modes and not cached_credentials_found:
+            Cache(passphrase=passphrase).save_credentials(
                 profile_name=alias or profile,
-                credentials=credentials
+                credentials=credentials,
+                mode=mode
             )
 
         self.__get_cloud_credential_printer(
@@ -544,7 +626,8 @@ class BritiveCli:
             self.silent,
             credentials,
             aws_credentials_file,
-            gcloud_key_file
+            gcloud_key_file,
+            kube_exec_api_version
         ).print()
 
     def import_existing_npm_config(self):
