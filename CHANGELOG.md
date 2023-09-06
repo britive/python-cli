@@ -10,7 +10,8 @@
 * Enrich shell completion results for the `api` command
 
 #### Bug Fixes
-* Fix issue with interactive login when randomly generated tokens include `--` which the WAF sometimes sees as a SQL injection attack
+* Fixes an issue with interactive login when randomly generated tokens include `--` which the WAF sometimes sees as a SQL injection attack
+* Fix an issue with `ssh-add` and temporary keys filling up the `ssh-agent` due to the order of command flags
 
 #### Dependencies
 * None

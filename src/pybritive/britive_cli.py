@@ -942,7 +942,7 @@ class BritiveCli:
 
         # and if we are using ssh-agent we need to add the private key via ssh-add
         if key_source == 'ssh-agent':
-            subprocess.run(['ssh-add', str(pem_file), '-t', '60', '-q'], check=False)
+            subprocess.run(['ssh-add', '-t', '60', '-q', str(pem_file)], check=False)
 
         return {
             'private_key_filename': pem_file,
