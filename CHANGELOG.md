@@ -11,7 +11,8 @@
 
 #### Bug Fixes
 * Fixes an issue with interactive login when randomly generated tokens include `--` which the WAF sometimes sees as a SQL injection attack
-* Fix an issue with `ssh-add` and temporary keys filling up the `ssh-agent` due to the order of command flags
+* Fixes an issue with `ssh-add` and temporary keys filling up the `ssh-agent` due to the order of command flags
+* Fixes and issue with `checkin` checking in the wrong profile type (programmatic vs console)
 
 #### Dependencies
 * None
