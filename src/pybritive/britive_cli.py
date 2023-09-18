@@ -29,7 +29,7 @@ debug_enabled = os.getenv('PYBRITIVE_DEBUG')
 
 class BritiveCli:
     def __init__(self, tenant_name: str = None, token: str = None, silent: bool = False,
-                 passphrase: str = None, federation_provider: str = None, browser: str = os.getenv('PYBRITIVE_BROWSER')):
+                 passphrase: str = None, federation_provider: str = None):
         self.silent = silent
         self.output_format = None
         self.tenant_name = None
@@ -44,7 +44,7 @@ class BritiveCli:
         self.credential_manager = None
         self.verbose_checkout = False
         self.checkout_progress_previous_message = None
-        self.browser = browser
+        self.browser = None
 
     def set_output_format(self, output_format: str):
         self.output_format = self.config.get_output_format(output_format)
@@ -73,7 +73,9 @@ class BritiveCli:
         else:
             raise click.ClickException(f'invalid credential backend {backend}.')
 
-    def login(self, explicit: bool = False):
+    def login(self, explicit: bool = False, browser: str = None):
+        self.browser = browser
+        self.print(self.browser)
         self.tenant_name = self.config.get_tenant()['name']
         self.tenant_alias = self.config.alias
         if explicit and self.token:
@@ -1064,8 +1066,7 @@ class BritiveCli:
         # but use the url to pop open a browser
         console_url = requests.Request('GET', url, params=params).prepare().url
 
-        browser = webbrowser.get(using=os.getenv('PYBRITIVE_BROWSER', browser))
-        browser.open(console_url)
+        webbrowser.get(using=browser).open(console_url)
 
     def request_disposition(self, request_id, decision):
         self.login()

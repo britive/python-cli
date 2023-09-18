@@ -12,4 +12,4 @@ def login(ctx, tenant, token, silent, passphrase, federation_provider, browser):
     This only applies when an API token has not been specified via `--token,-T` or via environment variable
     `BRITIVE_API_TOKEN`.
     """
-    ctx.obj.britive.login(explicit=True)
+    ctx.obj.britive.login(explicit=True, browser=browser)

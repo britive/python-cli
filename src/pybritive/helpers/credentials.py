@@ -47,7 +47,8 @@ def b64_encode_url_safe(value: bytes):
 
 # this base class expects self.credentials to be a dict - so sub classes need to convert to dict
 class CredentialManager:
-    def __init__(self, tenant_name: str, tenant_alias: str, cli: any, federation_provider: str = None, browser: str = os.getenv('PYBRITIVE_BROWSER')):
+    def __init__(self, tenant_name: str, tenant_alias: str, cli: any, federation_provider: str = None,
+                 browser: str = None):
         self.cli = cli
         self.tenant = tenant_name
         self.alias = tenant_alias
@@ -98,8 +99,7 @@ class CredentialManager:
         self._setup_requests_session()
 
         try:
-            browser = webbrowser.get(using=self.browser)
-            browser.open(url)
+            webbrowser.get(using=self.browser).open(url)
         except webbrowser.Error:
             self.cli.print(
                 'No web browser found. Please manually navigate to the link below and authenticate.'
@@ -243,7 +243,8 @@ class CredentialManager:
 
 
 class FileCredentialManager(CredentialManager):
-    def __init__(self, tenant_name: str, tenant_alias: str, cli: any, federation_provider: str = None, browser: str = os.getenv('PYBRITIVE_BROWSER')):
+    def __init__(self, tenant_name: str, tenant_alias: str, cli: any, federation_provider: str = None,
+                 browser: str = None):
         home = os.getenv('PYBRITIVE_HOME_DIR', str(Path.home()))
         self.path = str(Path(home) / '.britive' / 'pybritive.credentials')
         super().__init__(tenant_name, tenant_alias, cli, federation_provider, browser)
@@ -285,12 +286,12 @@ class FileCredentialManager(CredentialManager):
 
 class EncryptedFileCredentialManager(CredentialManager):
     def __init__(self, tenant_name: str, tenant_alias: str, cli: any, passphrase: str = None,
-                 federation_provider: str = None, browser: str = os.getenv('PYBRITIVE_BROWSER')):
+                 federation_provider: str = None, browser: str = None):
         home = os.getenv('PYBRITIVE_HOME_DIR', str(Path.home()))
         self.path = str(Path(home) / '.britive' / 'pybritive.credentials.encrypted')
         self.passphrase = passphrase
         self.string_encryptor = StringEncryption(passphrase=self.passphrase)
-        super().__init__(tenant_name, tenant_alias, cli, federation_provider)
+        super().__init__(tenant_name, tenant_alias, cli, federation_provider, browser)
 
     def decrypt(self, encrypted_access_token: str):
         try:

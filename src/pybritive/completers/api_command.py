@@ -105,6 +105,8 @@ def command_api_patch_shell_complete(cls):
     __class__ = cls  # provide closure cell for super()
 
     def shell_complete(self, ctx: Context, incomplete: str) -> t.List["CompletionItem"]:
+        from click.shell_completion import CompletionItem  # here since this method will be monkey patched in
+
         results: t.List["CompletionItem"] = []
 
         if incomplete and not incomplete[0].isalnum():

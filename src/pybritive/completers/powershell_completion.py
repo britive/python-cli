@@ -5,7 +5,6 @@ from click.parser import split_arg_string
 from click.shell_completion import add_completion_class
 from click.shell_completion import ShellComplete, CompletionItem
 
-
 # inspired by https://raw.githubusercontent.com/tibortakacs/powershell-argcomplete/master/mat.complete.ps1
 _powershell_source = """\
 $%(complete_func)s = {
@@ -31,8 +30,8 @@ $%(complete_func)s = {
     Invoke-Expression %(prog_name)s -ErrorAction SilentlyContinue | Tee-Object -Var completionResult | Out-Null
 
     # cleanup environment variables
-    Remove-Item Env:COMP_LINE | Out-Null
-    Remove-Item Env:%(complete_var)s | Out-Null
+    Remove-Item Env:\\COMP_LINE | Out-Null
+    Remove-Item Env:\\%(complete_var)s | Out-Null
 
     # get list of completion items
     $items = $completionResult -split '\\r?\\n'
