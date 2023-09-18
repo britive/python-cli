@@ -2,6 +2,25 @@
 
 * As of v1.4.0 release candidates will be published in an effort to get new features out faster while still allowing time for full QA testing before moving the release candidate to a full release.
 
+## v1.5.0rc1 [2023-09-18]
+#### What's New
+* None
+
+#### Enhancements
+* Enrich shell completion results for the `api` command
+
+#### Bug Fixes
+* Fixes an issue with interactive login when randomly generated tokens include `--` which the WAF sometimes sees as a SQL injection attack
+* Fixes an issue with `ssh-add` and temporary keys filling up the `ssh-agent` due to the order of command flags
+* Fixes and issue with `checkin` checking in the wrong profile type (programmatic vs console)
+
+#### Dependencies
+* `britive>=2.21.0`
+
+#### Other
+* None
+
+
 ## v1.4.0 [2023-07-25]
 #### What's New
 * `pybritive ssh gcp identity-aware-proxy` command - supports OS Login and SSH Instance Metadata
