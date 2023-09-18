@@ -1,7 +1,4 @@
-<<<<<<< HEAD
-=======
 boto3
->>>>>>> theborch-just_browsing
 britive>=2.21.0
 certifi>=2022.12.7
 charset-normalizer==2.1.0

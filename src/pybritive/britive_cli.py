@@ -474,13 +474,16 @@ class BritiveCli:
         credentials = None
         app_type = None
         credential_process_creds_found = False
-        response = None
         self.verbose_checkout = verbose
 
         # these 2 modes implicitly say that console access should be checked out without having to provide
         # the --console flag
-        if console := (mode and (mode == 'console' or mode.startswith('browser'))):
-            self.browser = mode.replace('browser-', '') if mode.startswith('browser') else os.getenv('PYBRITIVE_BROWSER')
+        if mode and (mode == 'console' or mode.startswith('browser')):
+            console = True
+            if mode.startswith('browser'):
+                self.browser = mode.replace('browser-', '')
+            else:
+                self.browser = os.getenv('PYBRITIVE_BROWSER')
 
         self._validate_justification(justification)
 
@@ -945,11 +948,7 @@ class BritiveCli:
 
         # and if we are using ssh-agent we need to add the private key via ssh-add
         if key_source == 'ssh-agent':
-<<<<<<< HEAD
-            subprocess.run(['ssh-add', '-t', '60', '-q', str(pem_file)])
-=======
             subprocess.run(['ssh-add', '-t', '60', '-q', str(pem_file)], check=False)
->>>>>>> theborch-just_browsing
 
         return {
             'private_key_filename': pem_file,
