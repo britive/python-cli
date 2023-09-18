@@ -75,7 +75,6 @@ class BritiveCli:
 
     def login(self, explicit: bool = False, browser: str = None):
         self.browser = browser
-        self.print(self.browser)
         self.tenant_name = self.config.get_tenant()['name']
         self.tenant_alias = self.config.alias
         if explicit and self.token:
@@ -559,6 +558,7 @@ class BritiveCli:
 
     def import_existing_npm_config(self):
         profile_aliases = self.config.import_global_npm_config()
+
         if len(profile_aliases) == 0:
             return
         self.print('')
