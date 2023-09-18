@@ -16,4 +16,3 @@ option = click.option(
          '`gcloudauth` will save the generated key file/credentials to the pybritive config directory and generate a '
          'gcloud auth command which can be directly evaluated. Will default to `json` if not provided.'
 )
-

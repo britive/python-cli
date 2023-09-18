@@ -6,4 +6,3 @@ option = click.option(
     required=True,
     help='The SSH port number from the SSH config file for the given host.'
 )
-

@@ -35,6 +35,3 @@ def test_download_filename_provided(runner, cli):
         assert 'test' in f.read()
     path = Path(filename)
     path.unlink(missing_ok=True)
-
-
-
