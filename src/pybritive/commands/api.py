@@ -3,7 +3,7 @@ from click import Command
 from ..helpers.build_britive import build_britive
 from ..options.britive_options import britive_options
 from ..completers.api_command import command_api_patch_shell_complete
-from ..helpers.api_method_argument_dectorator import click_smart_api_method_argument
+from ..helpers.api_method_argument_decorator import click_smart_api_method_argument
 
 
 # this holds all the click version logic to gracefully degrade functionality

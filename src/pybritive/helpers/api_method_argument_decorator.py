@@ -12,5 +12,3 @@ def click_smart_api_method_argument(func):
     else:
         dec = click.argument('method')
     return dec(func)
-
-

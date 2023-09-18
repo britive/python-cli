@@ -7,4 +7,3 @@ option = click.option(
     show_default=True,
     help='Maximum seconds to poll before exiting.'
 )
-

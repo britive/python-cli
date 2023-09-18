@@ -1,25 +1,26 @@
-import io
-import pathlib
-import uuid
-from britive.britive import Britive
-from .helpers.config import ConfigManager
-from .helpers.credentials import FileCredentialManager, EncryptedFileCredentialManager
-from .helpers.split import profile_split
-import json
-import click
 import csv
-from tabulate import tabulate
-import yaml
-from .helpers import cloud_credential_printer as printer
-from .helpers.cache import Cache
-from britive import exceptions
-from pathlib import Path
 from datetime import datetime
 from datetime import timezone
 from datetime import timedelta
+import io
+import json
 import os
+import pathlib
+from pathlib import Path
 import sys
+import uuid
+import yaml
+
+import click
 import jmespath
+from britive.britive import Britive
+from britive import exceptions
+from tabulate import tabulate
+from .helpers.config import ConfigManager
+from .helpers.credentials import FileCredentialManager, EncryptedFileCredentialManager
+from .helpers.split import profile_split
+from .helpers import cloud_credential_printer as printer
+from .helpers.cache import Cache
 
 
 default_table_format = 'fancy_grid'
@@ -28,7 +29,7 @@ debug_enabled = os.getenv('PYBRITIVE_DEBUG')
 
 class BritiveCli:
     def __init__(self, tenant_name: str = None, token: str = None, silent: bool = False,
-                 passphrase: str = None, federation_provider: str = None):
+                 passphrase: str = None, federation_provider: str = None, browser: str = os.getenv('PYBRITIVE_BROWSER')):
         self.silent = silent
         self.output_format = None
         self.tenant_name = None
@@ -43,6 +44,7 @@ class BritiveCli:
         self.credential_manager = None
         self.verbose_checkout = False
         self.checkout_progress_previous_message = None
+        self.browser = browser
 
     def set_output_format(self, output_format: str):
         self.output_format = self.config.get_output_format(output_format)
@@ -56,7 +58,8 @@ class BritiveCli:
                 tenant_alias=self.tenant_alias,
                 tenant_name=self.tenant_name,
                 cli=self,
-                federation_provider=self.federation_provider
+                federation_provider=self.federation_provider,
+                browser=self.browser
             )
         elif backend == 'encrypted-file':
             self.credential_manager = EncryptedFileCredentialManager(
@@ -64,7 +67,8 @@ class BritiveCli:
                 tenant_name=self.tenant_name,
                 cli=self,
                 passphrase=self.passphrase,
-                federation_provider=self.federation_provider
+                federation_provider=self.federation_provider,
+                browser=self.browser
             )
         else:
             raise click.ClickException(f'invalid credential backend {backend}.')
@@ -82,8 +86,8 @@ class BritiveCli:
                     token=self.token,
                     query_features=False
                 )
-            except exceptions.UnauthorizedRequest:
-                raise click.ClickException('Invalid API token provided.')
+            except exceptions.UnauthorizedRequest as e:
+                raise click.ClickException('Invalid API token provided.') from e
         else:
             while True:  # will break after we successfully get logged in
                 try:
@@ -94,7 +98,7 @@ class BritiveCli:
                         query_features=False
                     )
                     break
-                except exceptions.UnauthorizedRequest as e:
+                except exceptions.UnauthorizedRequest:
                     self._cleanup_credentials()
 
         # if user called `pybritive login` and we should refresh the profile cache...do so
@@ -174,7 +178,7 @@ class BritiveCli:
                 else:
                     click.echo(row)
         elif self.output_format == 'csv':
-            fields = list(data[0].keys())
+            fields = list(data[0])
             output = io.StringIO()
             writer = csv.DictWriter(output, fieldnames=fields, delimiter=',')
             writer.writeheader()
@@ -348,7 +352,7 @@ class BritiveCli:
                 cli=self,
                 aws_credentials_file=aws_credentials_file
             )
-        elif app_type in ['Azure']:
+        if app_type in ['Azure']:
             return printer.AzureCloudCredentialPrinter(
                 console=console,
                 mode=mode,
@@ -357,7 +361,7 @@ class BritiveCli:
                 silent=silent,
                 cli=self
             )
-        elif app_type in ['GCP']:
+        if app_type in ['GCP']:
             return printer.GcpCloudCredentialPrinter(
                 console=console,
                 mode=mode,
@@ -367,15 +371,14 @@ class BritiveCli:
                 cli=self,
                 gcloud_key_file=gcloud_key_file
             )
-        else:
-            return printer.GenericCloudCredentialPrinter(
-                console=console,
-                mode=mode,
-                profile=profile,
-                credentials=credentials,
-                silent=silent,
-                cli=self
-            )
+        return printer.GenericCloudCredentialPrinter(
+            console=console,
+            mode=mode,
+            profile=profile,
+            credentials=credentials,
+            silent=silent,
+            cli=self
+        )
 
     def checkin(self, profile, console):
         self.login()
@@ -407,7 +410,7 @@ class BritiveCli:
                         break
                 break
         if not transaction_id:
-            raise ValueError(f'no checked out profile found for the given profile')
+            raise ValueError('no checked out profile found for the given profile')
 
         self.b.my_access.checkin(
             transaction_id=transaction_id
@@ -436,8 +439,8 @@ class BritiveCli:
                 justification=justification,
                 progress_func=self.checkout_callback_printer  # callback will handle silent, isatty, etc.
             )
-        except exceptions.ApprovalRequiredButNoJustificationProvided:
-            raise click.ClickException('approval required and no justification provided.')
+        except exceptions.ApprovalRequiredButNoJustificationProvided as e:
+            raise click.ClickException('approval required and no justification provided.') from e
         except ValueError as e:
             raise click.BadParameter(str(e))
         except Exception as e:
@@ -446,8 +449,7 @@ class BritiveCli:
                 # this is a cli only feature - not available in the sdk
                 self.print('no programmatic access available - checking out console access instead')
                 return self._checkout(profile_name, env_name, app_name, False, blocktime, maxpolltime, justification)
-            else:
-                raise e
+            raise e
 
     @staticmethod
     def _should_check_force_renew(app, force_renew, console):
@@ -477,8 +479,8 @@ class BritiveCli:
 
         # these 2 modes implicitly say that console access should be checked out without having to provide
         # the --console flag
-        if mode and (mode == 'console' or mode.startswith('browser')):
-            console = True
+        if console := (mode and (mode == 'console' or mode.startswith('browser'))):
+            self.browser = mode.replace('browser-', '') if mode.startswith('browser') else os.getenv('PYBRITIVE_BROWSER')
 
         self._validate_justification(justification)
 
@@ -506,7 +508,7 @@ class BritiveCli:
             'profile_name': parts['profile'],
             'env_name': parts['env'],
             'app_name': parts['app'],
-            'programmatic': False if console else True,
+            'programmatic': not console,
             'blocktime': blocktime,
             'maxpolltime': maxpolltime,
             'justification': justification
@@ -552,7 +554,7 @@ class BritiveCli:
 
     def import_existing_npm_config(self):
         profile_aliases = self.config.import_global_npm_config()
-        if len(profile_aliases.keys()) == 0:
+        if len(profile_aliases) == 0:
             return
         self.print('')
         self.print('Profile aliases exist...will retrieve profile details from the tenant.')
@@ -565,7 +567,7 @@ class BritiveCli:
         for alias, ids in profile_aliases.items():
             if '/' in alias:  # no need to import the aliases that aren't really aliases
                 continue
-            app, env, profile, cloud = ids.split('/')
+            app, env, profile = ids.split('/')[:3]
             for p in self.available_profiles:
                 if p['app_id'] == app and p['env_id'] == env and p['profile_id'] == profile:
                     profile_str = f"{p['app_name']}/{p['env_name']}/{p['profile_name']}"
@@ -597,13 +599,13 @@ class BritiveCli:
                 wait_time=blocktime,
                 max_wait_time=maxpolltime
             )
-        except exceptions.AccessDenied:
-            raise click.ClickException('user does not have access to the secret.')
-        except exceptions.ApprovalRequiredButNoJustificationProvided:
-            raise click.ClickException('approval required and no justification provided.')
+        except exceptions.AccessDenied as e:
+            raise click.ClickException('user does not have access to the secret.') from e
+        except exceptions.ApprovalRequiredButNoJustificationProvided as e:
+            raise click.ClickException('approval required and no justification provided.') from e
 
         # handle the generic note template type for a better UX
-        if len(value.keys()) == 1 and 'Note' in value.keys():
+        if len(value) == 1 and 'Note' in value:
             value = value['Note']
 
         # if the value can be converted from JSON to python dict, do it
@@ -628,10 +630,10 @@ class BritiveCli:
                 wait_time=blocktime,
                 max_wait_time=maxpolltime
             )
-        except exceptions.AccessDenied:
-            raise click.ClickException('user does not have access to the secret.')
-        except exceptions.ApprovalRequiredButNoJustificationProvided:
-            raise click.ClickException('approval required and no justification provided.')
+        except exceptions.AccessDenied as e:
+            raise click.ClickException('user does not have access to the secret.') from e
+        except exceptions.ApprovalRequiredButNoJustificationProvided as e:
+            raise click.ClickException('approval required and no justification provided.') from e
 
         filename_from_secret = response['filename']
         content = response['content_bytes']
@@ -643,7 +645,7 @@ class BritiveCli:
                 raise click.ClickException(
                     'Secret file contents cannot be decoded to utf-8. '
                     'Save the contents of the file to disk instead.'
-                )
+                ) from e
             return
 
         filename = file or filename_from_secret
@@ -716,37 +718,40 @@ class BritiveCli:
     def clear_gcloud_auth_key_files(self):
         self.config.clear_gcloud_auth_key_files()
 
-    def api(self, method, parameters={}, query=None):
+    def api(self, method, parameters: dict, query=None):
         self.login()
 
         # clean up parameters - need to load json as dict if json string is provided and handle file inputs
         computed_parameters = {}
         open_file_keys = []
-        for key, value in parameters.items():
-            computed_key = key.replace('-', '_')
-            computed_value = value
+        try:
+            for key, value in parameters.items():
+                computed_key = key.replace('-', '_')
+                computed_value = value
 
-            if value.lower() == 'none':
-                computed_value = None
+                if value.lower() == 'none':
+                    computed_value = None
 
-            if value.startswith('file://'):
-                filepath = value.replace('file://', '')
-                path = pathlib.Path(filepath)
-                with open(str(path), 'r') as f:
-                    computed_value = f.read().strip()
+                if value.startswith('file://'):
+                    filepath = value.replace('file://', '')
+                    path = pathlib.Path(filepath)
+                    with open(str(path), 'r', encoding='utf-8') as f:
+                        computed_value = f.read().strip()
 
-            if value.startswith('fileb://'):
-                filepath = value.replace('fileb://', '')
-                path = pathlib.Path(filepath)
-                computed_value = open(str(path), 'rb')
-                open_file_keys.append(computed_key)
+                if value.startswith('fileb://'):
+                    filepath = value.replace('fileb://', '')
+                    path = pathlib.Path(filepath)
+                    computed_value = open(str(path), 'rb')
+                    open_file_keys.append(computed_key)
 
-            try:
-                computed_parameters[computed_key] = json.loads(computed_value)
-            except json.JSONDecodeError:
-                computed_parameters[computed_key] = computed_value
-            except Exception:  # not sure what else we would do so just default to the value provided
-                computed_parameters[computed_key] = computed_value
+                try:
+                    computed_parameters[computed_key] = json.loads(computed_value)
+                except json.JSONDecodeError:
+                    computed_parameters[computed_key] = computed_value
+                except Exception:  # not sure what else we would do so just default to the value provided
+                    computed_parameters[computed_key] = computed_value
+        except AttributeError as e:
+            raise click.ClickException(f'invalid parameters {parameters} provided.') from e
 
         # determine the sdk method we need to execute, starting at the base Britive class
         func = self.b
@@ -754,7 +759,7 @@ class BritiveCli:
             for m in method.split('.'):
                 func = getattr(func, m)
         except Exception as e:
-            raise click.ClickException(f'invalid method {method} provided.')
+            raise click.ClickException(f'invalid method {method} provided.') from e
 
         # execute the method with the computed parameters
         response = func(**computed_parameters)
@@ -795,7 +800,7 @@ class BritiveCli:
 
             found_profile_id = profile['profile_id']
 
-            if found_profile_id not in found_profiles.keys():
+            if found_profile_id not in found_profiles:
                 found_profiles[found_profile_id] = []
 
             # load up multiple options
@@ -809,13 +814,13 @@ class BritiveCli:
                 found_profiles[found_profile_id].append(profile['env_id'])
 
         # let's first check to ensure we have only 1 profile
-        if len(found_profiles.keys()) == 0:
+        if len(found_profiles) == 0:
             raise click.ClickException('no profile found with the provided application, environment, and profile names')
-        if len(found_profiles.keys()) > 1:
+        if len(found_profiles) > 1:
             raise click.ClickException('multiple matching profiles found - cannot determine which profile to use')
 
         # and now we can check to ensure we have only 1 environment
-        found_profile_id = list(found_profiles.keys())[0]
+        found_profile_id = list(found_profiles)[0]
         possible_environments = found_profiles[found_profile_id]
         if len(possible_environments) == 0:
             raise click.ClickException('no profile found with the provided application, environment, and profile names')
@@ -934,13 +939,17 @@ class BritiveCli:
         # as the public key is just pushed to the ec2 instance
         # as a string in the ec2 instance connect api call (no file
         # reference)
-        with open(str(pem_file), 'w') as f:
+        with open(str(pem_file), 'w', encoding='utf-8') as f:
             f.write(key_pair['private'].decode())
         os.chmod(pem_file, 0o400)
 
         # and if we are using ssh-agent we need to add the private key via ssh-add
         if key_source == 'ssh-agent':
+<<<<<<< HEAD
             subprocess.run(['ssh-add', '-t', '60', '-q', str(pem_file)])
+=======
+            subprocess.run(['ssh-add', '-t', '60', '-q', str(pem_file)], check=False)
+>>>>>>> theborch-just_browsing
 
         return {
             'private_key_filename': pem_file,
@@ -951,9 +960,9 @@ class BritiveCli:
     def _ssh_aws_push_key(aws_profile, aws_region, instance_id, username, key_pair):
         try:
             import boto3
-        except ImportError:
+        except ImportError as e:
             message = 'boto3 package is required. Please ensure the package is installed.'
-            raise click.ClickException(message)
+            raise click.ClickException(message) from e
 
         # we know we will be pushing the key to the instance so establish the
         # boto3 clients which are required to perform those actions
@@ -1010,9 +1019,9 @@ class BritiveCli:
         # this is the one that may not be available so be careful
         try:
             import boto3
-        except ImportError:
+        except ImportError as e:
             message = 'boto3 package is required. Please ensure the package is installed.'
-            raise click.ClickException(message)
+            raise click.ClickException(message) from e
 
         creds = boto3.Session(profile_name=profile).get_credentials()
         session_id = creds.access_key
@@ -1056,7 +1065,7 @@ class BritiveCli:
         # but use the url to pop open a browser
         console_url = requests.Request('GET', url, params=params).prepare().url
 
-        browser = webbrowser.get(using=browser)
+        browser = webbrowser.get(using=os.getenv('PYBRITIVE_BROWSER', browser))
         browser.open(console_url)
 
     def request_disposition(self, request_id, decision):
@@ -1151,7 +1160,7 @@ class BritiveCli:
                     ssh_dir = Path(self.config.path).parent.absolute() / 'ssh'
                     ssh_dir.mkdir(exist_ok=True, parents=True)  # create the directory if it doesn't exist already
                     key_file = ssh_dir / uuid.uuid4().hex
-                    with open(str(key_file), 'w') as f:
+                    with open(str(key_file), 'w', encoding='utf-8') as f:
                         f.write('\n'.join(future_keys))
 
                     commands = [
@@ -1170,7 +1179,7 @@ class BritiveCli:
                         '--no-user-output-enabled',
                         '--quiet'
                     ]
-                    subprocess.run(commands)
+                    subprocess.run(commands, check=False)
                     key_file.unlink(missing_ok=True)
 
         commands = [
@@ -1212,5 +1221,3 @@ class BritiveCli:
         self.print('')
         self.print('')
         self.print('\n'.join(lines))
-
-

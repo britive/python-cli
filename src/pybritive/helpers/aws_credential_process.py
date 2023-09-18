@@ -1,7 +1,7 @@
 def get_args():
     from getopt import getopt  # lazy load
     from sys import argv  # lazy load
-    options, non_options = getopt(argv[1:], 't:T:p:f:P:hv', [
+    options = getopt(argv[1:], 't:T:p:f:P:hv', [
         'tenant=',
         'token=',
         'passphrase=',
@@ -9,7 +9,7 @@ def get_args():
         'profile=',
         'help',
         'version'
-    ])
+    ])[0]
 
     args = {
         'tenant': None,
@@ -39,15 +39,15 @@ def get_args():
             print(
                 f'pybritive: {cli_version} / platform: {platform()} / python: {python_version()}'
             )
-            exit()
+            raise SystemExit()
 
     return args
 
 
 def usage():
     from sys import argv  # lazy load
-    print("Usage : %s --profile <profile> [-t/--tenant, -T/--token, -t/--passphrase, -f/--force-renew]" % (argv[0]))
-    exit()
+    print(f'Usage : {argv[0]} --profile <profile> [-t/--tenant, -T/--token, -t/--passphrase, -f/--force-renew]')
+    raise SystemExit()
 
 
 def main():
@@ -74,7 +74,7 @@ def main():
                 json += f'"Expiration": "{creds["expirationTime"]}",'
                 json += '"Version": 1}'
                 print(json)
-                exit()
+                raise SystemExit()
     if not creds:
         from ..britive_cli import BritiveCli  # lazy load for performance purposes
 
@@ -94,7 +94,7 @@ def main():
             gcloud_key_file=None,
             verbose=None
         )
-        exit()
+        raise SystemExit()
 
 
 if __name__ == '__main__':

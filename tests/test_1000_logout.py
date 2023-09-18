@@ -10,8 +10,3 @@ def test_logout(runner, cli):
     with open(str(path), 'r') as f:
         data = f.read()
     assert len(data) == 0
-
-
-
-
-

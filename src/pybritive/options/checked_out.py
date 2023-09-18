@@ -8,4 +8,3 @@ option = click.option(
     show_default=True,
     help='Filter profile list to currently checked out profiles.'
 )
-

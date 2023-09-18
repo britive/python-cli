@@ -14,10 +14,3 @@ def common_asserts(result, substring=None, exit_code=0):
 def test_api(runner, cli):
     result = runner.invoke(cli, 'api users.list'.split(' '))
     common_asserts(result, ['userId', 'status', 'email', 'identityProvider'])
-
-
-
-
-
-
-
