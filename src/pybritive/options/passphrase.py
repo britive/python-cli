@@ -8,4 +8,3 @@ option = click.option(
     show_envvar=True,
     show_default=True
 )
-

@@ -1,14 +1,15 @@
-import os
-import shutil
-from pathlib import Path
-import click
 import configparser
 import json
+import os
+from pathlib import Path
+import shutil
 import toml
-from ..choices.output_format import output_format_choices
+
+from britive.britive import Britive
+import click
 from ..choices.backend import backend_choices
 from ..choices.mode import mode_choices
-from britive.britive import Britive
+from ..choices.output_format import output_format_choices
 from ..helpers.split import profile_split
 
 
@@ -20,13 +21,12 @@ def lowercase(obj):
     """ Make dictionary lowercase """
     if isinstance(obj, dict):
         return {k.lower(): lowercase(v) for k, v in obj.items()}
-    elif isinstance(obj, (list, set, tuple)):
+    if isinstance(obj, (list, set, tuple)):
         t = type(obj)
         return t(lowercase(o) for o in obj)
-    elif isinstance(obj, str):
+    if isinstance(obj, str):
         return obj.lower()
-    else:
-        return obj
+    return obj
 
 
 def coalesce(*arg):
@@ -93,7 +93,7 @@ class ConfigManager:
 
         if not path.is_file():  # config file does not yet exist, create it as an empty file
             path.parent.mkdir(exist_ok=True, parents=True)
-            path.write_text('')
+            path.write_text('', encoding='utf-8')
 
         config = configparser.ConfigParser()
         config.optionxform = str  # maintain key case
@@ -104,7 +104,7 @@ class ConfigManager:
         self.alias = None  # will be set in self.get_tenant()
         self.default_tenant = self.config.get('global', {}).get('default_tenant')
         self.tenants = {}
-        for key in list(self.config.keys()):
+        for key in self.config:
             if key.startswith('tenant-'):
                 alias = extract_tenant(key)
                 self.tenants[alias] = self.config[key]
@@ -120,22 +120,22 @@ class ConfigManager:
         name = self.tenant_name.lower() if self.tenant_name else None
 
         # do some error checking to ensure we can actually grab a tenant
-        if len(self.tenants.keys()) == 0 and not name:
+        if len(self.tenants) == 0 and not name:
             raise click.ClickException(f'No tenants found in {self.path}. Cannot continue.')
 
         # attempt to determine the name of the tenant based on what the user passed in (or didn't pass in)
         provided_tenant_name = name if name else self.default_tenant
 
         if not provided_tenant_name:  # name not provided and no default has been set
-            if len(self.tenants.keys()) != 1:
-                raise click.ClickException('Tenant not provided, no default tenant set, and more than one '
-                                           'tenant exists.')
-            else:
-                # nothing given but only 1 tenant so assume that is what should be used
-                provided_tenant_name = list(self.tenants.keys())[0]
+            if len(self.tenants) != 1:
+                raise click.ClickException(
+                    'Tenant not provided, no default tenant set, and more than one tenant exists.'
+                )
+            # nothing given but only 1 tenant so assume that is what should be used
+            provided_tenant_name = list(self.tenants)[0]
 
         # if we get here then we now have a tenant name we can check to ensure exists
-        if provided_tenant_name not in self.tenants.keys() and not name:
+        if provided_tenant_name not in self.tenants and not name:
             raise click.ClickException(f'Tenant name "{provided_tenant_name}" not found in {self.path}')
 
         self.alias = provided_tenant_name or name
@@ -149,14 +149,14 @@ class ConfigManager:
         config.read_dict(self.config)
 
         # write the new credentials file
-        with open(str(self.path), 'w') as f:
+        with open(str(self.path), 'w', encoding='utf-8') as f:
             config.write(f, space_around_delimiters=False)
 
     def save_tenant(self, tenant: str, alias: str = None, output_format: str = None):
         self.load()
         if not alias:
             alias = tenant
-        if f'tenant-{alias}' not in self.config.keys():
+        if f'tenant-{alias}' not in self.config:
             self.config[f'tenant-{alias}'] = {}
         self.config[f'tenant-{alias}']['name'] = tenant
         if output_format:
@@ -167,7 +167,7 @@ class ConfigManager:
         self.load()
         if not default_tenant_name and not output_format and not backend:
             return
-        if 'global' not in self.config.keys():
+        if 'global' not in self.config:
             self.config['global'] = {}
         if default_tenant_name:
             self.config['global']['default_tenant'] = default_tenant_name
@@ -186,7 +186,7 @@ class ConfigManager:
     def import_global_npm_config(self):
         self.load()
         path = str(Path(self.home) / '.britive' / 'config')  # handle os specific separators properly
-        with open(path, 'r') as f:
+        with open(path, 'r', encoding='utf-8') as f:
             npm_config = toml.load(f)
         tenant = npm_config.get('tenantURL', '').replace('https://', '').replace('.britive-app.com', '').lower()
         output_format = npm_config.get('output_format', '').lower()
@@ -227,9 +227,9 @@ class ConfigManager:
 
     def update(self, section, field, value):
         self.load()
-        if section not in self.config.keys():
+        if section not in self.config:
             self.config[section] = {}
-        if field not in self.config[section].keys():
+        if field not in self.config[section]:
             self.config[section][field] = ''
         self.config[section][field] = value
         self.save()
@@ -269,7 +269,7 @@ class ConfigManager:
                 self.validation_error_messages.append(error)
             if field == 'default_tenant':
                 tenant_aliases_from_sections = [
-                    extract_tenant(t) for t in self.config.keys() if t.startswith('tenant-')
+                    extract_tenant(t) for t in self.config if t.startswith('tenant-')
                 ]
                 if value not in tenant_aliases_from_sections:
                     error = f'Invalid {section} field {field} value {value} provided. Tenant not found.'

@@ -17,7 +17,3 @@ def test_login_interactive(runner, cli, unset_api_token_env_var):
         data = f.read()
     assert 'accessToken=' in data
     assert os.getenv('PYBRITIVE_TEST_TENANT') in data
-
-
-
-

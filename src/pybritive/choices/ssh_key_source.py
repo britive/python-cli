@@ -7,4 +7,3 @@ ssh_key_source_choices = click.Choice(
     ],
     case_sensitive=False
 )
-

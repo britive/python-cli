@@ -7,4 +7,3 @@ option = click.option(
          'result in the file being saved to the current directory with the name provided when the secret '
          'file was initially uploaded. Providing `-` will print the contents of the secret file to stdout.'
 )
-

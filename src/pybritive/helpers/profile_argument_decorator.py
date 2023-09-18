@@ -11,5 +11,3 @@ def click_smart_profile_argument(func):
     else:
         dec = click.argument('profile')
     return dec(func)
-
-

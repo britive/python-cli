@@ -1,7 +1,7 @@
 import click
 from ..helpers.build_britive import build_britive
 from ..options.britive_options import britive_options
-from ..helpers.profile_argument_dectorator import click_smart_profile_argument
+from ..helpers.profile_argument_decorator import click_smart_profile_argument
 
 
 @click.command()
@@ -18,5 +18,3 @@ def checkin(ctx, console, tenant, token, silent, passphrase, federation_provider
         profile=profile,
         console=console
     )
-
-

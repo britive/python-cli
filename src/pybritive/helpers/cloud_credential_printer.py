@@ -1,10 +1,11 @@
-import json
-import uuid
-import click
-import platform
 import configparser
-import webbrowser
+import json
+import os
 from pathlib import Path
+import platform
+import uuid
+import webbrowser
+import click
 
 
 # trailing spaces matter as some options do not have the trailing space
@@ -38,7 +39,7 @@ class CloudCredentialPrinter:
             if self.mode_modifier:
                 self.env_command = env_options[self.mode_modifier]
             else:
-                self.on_windows = True if platform.system().lower() == 'windows' else False
+                self.on_windows = platform.system().lower() == 'windows'
                 self.env_command = env_options['wincmd'] if self.on_windows else env_options['nix']
 
     def print(self):
@@ -65,7 +66,8 @@ class CloudCredentialPrinter:
     def print_console(self):
         url = self.credentials.get('url', self.credentials)
         if self.mode == 'browser':
-            webbrowser.get(self.mode_modifier).open(url)
+            browser = self.mode_modifier or os.getenv('PYBRITIVE_BROWSER')
+            webbrowser.get(using=browser).open(url)
         else:
             self.cli.print(url, ignore_silent=True)
 
@@ -159,7 +161,7 @@ class AwsCloudCredentialPrinter(CloudCredentialPrinter):
         # if credentials file does not yet exist, create it as an empty file
         if not path.is_file():
             path.parent.mkdir(exist_ok=True, parents=True)
-            path.write_text('')
+            path.write_text('', encoding='utf-8')
 
         # open the file with configparser
         config = configparser.ConfigParser()
@@ -174,7 +176,7 @@ class AwsCloudCredentialPrinter(CloudCredentialPrinter):
         }
 
         # write the new credentials file
-        with open(str(path), 'w') as f:
+        with open(str(path), 'w', encoding='utf-8') as f:
             config.write(f, space_around_delimiters=False)
 
     def print_awscredentialprocess(self):
@@ -245,7 +247,7 @@ class GcpCloudCredentialPrinter(CloudCredentialPrinter):
 
         # key file does not yet exist so write to it
         path.parent.mkdir(exist_ok=True, parents=True)
-        path.write_text(json.dumps(self.credentials, indent=2))
+        path.write_text(json.dumps(self.credentials, indent=2), encoding='utf-8')
 
         self.cli.print(
             f"gcloud auth activate-service-account {self.credentials['client_email']} --key-file {str(path)}",

@@ -2,6 +2,23 @@
 
 * As of v1.4.0 release candidates will be published in an effort to get new features out faster while still allowing time for full QA testing before moving the release candidate to a full release.
 
+## v1.5.0rc2 [2023-09-18]
+#### What's New
+* None
+
+#### Enhancements
+* Support `browser` option for `login` command
+* Support environment variable `PYBRITIVE_BROWSER` to allow a user to specify a default browser option, as well as use non-standard `webbrowser` options.
+
+#### Bug Fixes
+* Fixes bug which did not always honor the specified browser.
+
+#### Dependencies
+* None
+
+#### Other
+* Various linting
+
 ## v1.5.0rc1 [2023-09-18]
 #### What's New
 * None

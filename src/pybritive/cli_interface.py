@@ -1,3 +1,5 @@
+import os
+import sys
 import click
 from .options.britive_options import britive_options
 from .commands.user import user as command_user
@@ -14,8 +16,6 @@ from .commands.clear import clear as group_clear
 from .commands.api import api as command_api
 from .commands.ssh import ssh as group_ssh
 from .commands.aws import aws as group_aws
-import sys
-import os
 
 
 def safe_cli():
@@ -33,8 +33,7 @@ def safe_cli():
             return
         if debug:
             raise e
-        else:
-            raise e from None
+        raise e from None
 
 
 # this is the "main" app - it really does nothing but print the overview/help section
