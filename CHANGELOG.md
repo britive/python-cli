@@ -15,7 +15,7 @@
 * Fixes and issue with `checkin` checking in the wrong profile type (programmatic vs console)
 
 #### Dependencies
-* None
+* `britive>=2.21.0`
 
 #### Other
 * None
