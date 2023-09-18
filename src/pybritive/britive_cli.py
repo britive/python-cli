@@ -377,7 +377,7 @@ class BritiveCli:
                 cli=self
             )
 
-    def checkin(self, profile):
+    def checkin(self, profile, console):
         self.login()
         self._set_available_profiles()
         parts = self._split_profile_into_parts(profile)
@@ -388,18 +388,21 @@ class BritiveCli:
             application_name=parts['app']
         )
 
+        access_type = 'CONSOLE' if console else 'PROGRAMMATIC'
+
         transaction_id = None
         application_type = None
         for checked_out_profile in self.b.my_access.list_checked_out_profiles():
             same_env = checked_out_profile['environmentId'] == ids['environment_id']
             same_profile = checked_out_profile['papId'] == ids['profile_id']
-            if all([same_env, same_profile]):
+            same_access_type = checked_out_profile['accessType'] == access_type
+            if all([same_env, same_profile, same_access_type]):
                 transaction_id = checked_out_profile['transactionId']
 
                 for available_profile in self.available_profiles:
                     same_env_2 = checked_out_profile['environmentId'] == available_profile['env_id']
                     same_profile_2 = checked_out_profile['papId'] == available_profile['profile_id']
-                    if all([same_env_2, same_profile_2]):
+                    if all([same_env_2, same_profile_2, access_type == 'PROGRAMMATIC']):
                         application_type = available_profile['app_type'].lower()
                         break
                 break
@@ -937,7 +940,7 @@ class BritiveCli:
 
         # and if we are using ssh-agent we need to add the private key via ssh-add
         if key_source == 'ssh-agent':
-            subprocess.run(['ssh-add', str(pem_file), '-t', '60', '-q'])
+            subprocess.run(['ssh-add', '-t', '60', '-q', str(pem_file)])
 
         return {
             'private_key_filename': pem_file,

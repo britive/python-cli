@@ -6,6 +6,6 @@ option = click.option(
     default=False,
     is_flag=True,
     show_default=True,
-    help='Checkout the console access for the profile instead of programmatic access.'
+    help='Checkout/checkin the console access for the profile instead of programmatic access.'
 )
 
