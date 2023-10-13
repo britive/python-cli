@@ -2,6 +2,22 @@
 
 * As of v1.4.0 release candidates will be published in an effort to get new features out faster while still allowing time for full QA testing before moving the release candidate to a full release.
 
+## v1.5.0rc3 [2023-10-13]
+#### What's New
+* None
+
+#### Enhancements
+* None
+
+#### Bug Fixes
+* None
+
+#### Dependencies
+* `britive>=2.22.0`
+
+#### Other
+* Updates to the documentation calling out the requirement to properly escape input based on the shell you are using
+
 ## v1.5.0rc2 [2023-09-18]
 #### What's New
 * None
