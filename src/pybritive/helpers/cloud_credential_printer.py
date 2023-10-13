@@ -260,27 +260,9 @@ class GcpCloudCredentialPrinter(CloudCredentialPrinter):
 
 
 class KubernetesCredentialPrinter(CloudCredentialPrinter):
-    def __init__(self, console, mode, profile, silent, credentials, cli, api_version):
-        self.api_version = api_version
+    def __init__(self, console, mode, profile, silent, credentials, cli, k8s_processor):
+        self.k8s_processor = k8s_processor
         super().__init__('Kubernetes', console, mode, profile, silent, credentials, cli)
-
-    # expected kube credentials format is
-    # creds = {
-    #     'user': {
-    #         'token': '...',
-    #         'issuer_url': '...',
-    #         'client_id': '...',
-    #         'expiration': '...',
-    #         'expiration_epoch': '...'
-    #     },
-    #     'environment': {
-    #         'cluster': {
-    #             'server': '...',
-    #             'certificate_authority_data': '...'
-    #         },
-    #         'name': '...'
-    #     }
-    # }
 
     def print_json(self):
         try:
@@ -290,19 +272,7 @@ class KubernetesCredentialPrinter(CloudCredentialPrinter):
 
     def print_kube(self):
         if self.mode_modifier == 'exec':
-            if self.api_version in ['client.authentication.k8s.io/v1', 'client.authentication.k8s.io/v1beta1']:
-                response = {
-                    'kind': 'ExecCredential',
-                    'apiVersion': self.api_version,
-                    'spec': {},
-                    'status': {
-                        'expirationTimestamp': self.credentials['user']['expiration'],
-                        'token': self.credentials['user']['token']
-                    }
-                }
-                self.cli.print(json.dumps(response), ignore_silent=True)
-            else:
-                raise Exception(f'apiVersion {self.api_version} not accounted for.')
+            self.cli.print(self.k8s_processor.construct_exec_credential(self.credentials), ignore_silent=True)
         elif self.mode_modifier == 'config':
             # write file to ~/.britive/kubeconfig/...
             # clean up any older config file that are no longer required

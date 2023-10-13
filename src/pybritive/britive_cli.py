@@ -50,7 +50,7 @@ class BritiveCli:
             },
             'kube-exec': {
                 'app_type': 'Kubernetes',
-                'expiration_jmespath': 'user.expiration'
+                'expiration_jmespath': 'expirationTime'
             }
         }
 
@@ -347,7 +347,7 @@ class BritiveCli:
         raise click.ClickException(f'Application {application_id} not found')
 
     def __get_cloud_credential_printer(self, app_type, console, mode, profile, silent, credentials,
-                                       aws_credentials_file, gcloud_key_file, kube_exec_api_version):
+                                       aws_credentials_file, gcloud_key_file, k8s_processor):
         if app_type in ['AWS', 'AWS Standalone']:
             return printer.AwsCloudCredentialPrinter(
                 console=console,
@@ -385,7 +385,7 @@ class BritiveCli:
                 credentials=credentials,
                 silent=silent,
                 cli=self,
-                api_version=kube_exec_api_version
+                k8s_processor=k8s_processor
             )
         else:
             return printer.GenericCloudCredentialPrinter(
@@ -489,68 +489,16 @@ class BritiveCli:
         credentials = None
         app_type = None
         cached_credentials_found = False
-        response = None
+        k8s_processor = None
         self.verbose_checkout = verbose
-        kube_exec_api_version = None
-        kube_creds = None
 
         # handle kube-exec since the profile is actually going to be passed in via another method
         # and perform some basic validation so we don't waste time performing a checkout when we
         # will not be able to return a response back to kubectl via the exec command
         if mode == 'kube-exec' or 'KUBERNETES_EXEC_INFO' in os.environ:
-            mode = 'kube-exec'
-            exec_data = json.loads(os.getenv('KUBERNETES_EXEC_INFO'))
-
-            if not exec_data:  # this env var HAS to exist if we are being invoked by k8s kubeconfig exec command
-                raise Exception('could not find environment variable KUBERNETES_EXEC_INFO')
-
-            kube_exec_api_version = exec_data.get('apiVersion')
-
-            if not kube_exec_api_version:
-                raise ValueError('apiVersion not found. Cannot continue.')
-
-            if kube_exec_api_version == 'client.authentication.k8s.io/v1alpha1':
-                raise ValueError(f'apiVersion {kube_exec_api_version} is not supported.')
-
-            #### REMOVE AFTER TESTING ###
-            # without group system:masters as GKE doesn't like it
-            # Error from server (Forbidden): groups "system:masters" is forbidden:
-            # User "system:serviceaccount:anthos-identity-service:gke-oidc-envoy-sa" cannot impersonate resource
-            # "groups" in API group "" at the cluster scope: GKE Warden authz [denied by user-impersonation-limitation]:
-            # impersonating system identities are not allowed
-            gke_token = "eyJhbGciOiJSUzI1NiIsImtpZCI6ImIyZGFiMTJhLTExZmYtNDQyOC05YzRjLTkzZmViZmZjNzAwNyIsInR5cCI6IkpXVCJ9" \
-                        ".eyJzdWIiOiJrdWJlcm5ldGVzLWFkbWluIiwiZ3JvdXBzIjpbXSwiaXNzIjoiaHR0cHM6Ly90ZXN0MS5kZXYyLmF3cy5icml" \
-                        "0aXZlLWFwcC5jb20vYXBpL29pZGMvdGVzdCIsImF1ZCI6InRlc3QiLCJleHAiOjE3MjMyMTM2MTUsImlhdCI6MTY5MTU5MTI" \
-                        "xNiwibmJmIjoxNjkxNTkxMjE2fQ.j3G-J4MsgNBwVkMmEfov-39SmIzuEAOLoq6_QebFwAYPNJpPrmxQd0KxsKu3meIFlj-M" \
-                        "qmJ4_3nEleklyQ9iOCgLt91Kb9vNt55ooFTymxm9iBpAkBW14sDbOfBACtoFNAxZ116S8cfeLqGIcNRw4t1bB0F97E0yX1Pk" \
-                        "T-12gDLsFGXOKMhWlcLviTuJn75tEp67E5VNEwQPuw5wAVemggprEmxVj6CqTuZK9YjurKyb2ANLW7lk-OzSEtsqAXNzPpC1" \
-                        "0T09e3SDuaFID_W972CUDsDlYP5qHNoKx5-k0dwsIQ1dOTVeEun84Jh1Kzv_JQNjx4Pm50bvWDt3uxUfyg"
-
-            # eks token which does allow system:master
-            eks_token = "eyJhbGciOiJSUzI1NiIsImtpZCI6ImIyZGFiMTJhLTExZmYtNDQyOC05YzRjLTkzZmViZmZjNzAwNyIsInR5cCI6IkpXVCJ9" \
-                        ".eyJzdWIiOiJrdWJlcm5ldGVzLWFkbWluIiwiZ3JvdXBzIjpbInN5c3RlbTptYXN0ZXJzIl0sImlzcyI6Imh0dHBzOi8vdGV" \
-                        "zdDEuZGV2Mi5hd3MuYnJpdGl2ZS1hcHAuY29tL2FwaS9vaWRjL3Rlc3QiLCJhdWQiOiJ0ZXN0IiwiZXhwIjoxNzIzMjEzNjE" \
-                        "1LCJpYXQiOjE2OTE1OTEyMTYsIm5iZiI6MTY5MTU5MTIxNn0.bXcAOCHUBxBCwJDnTvxxEuNlQfW5y8d--i_HgtgYL1ptKNx" \
-                        "GU2aAaEIXhNd81ArVetcHDZmG41rODCAuLmUm5aZN8EKXO4FyqlP9zaFb8JNjSZ_U0KbBUymWrx_KgSyqoue_qEYXa-BCzEq" \
-                        "nFyXHEdpIJYvQ3KB2dAmXTpPQtdAls7D0g6oKhGJYAwwMSr_bkKRecn1y6ctetiKno2CE_OrGikU7LPgijj4G-71d_cT7jRM" \
-                        "FrA7VOUdTJ1CmrWTRT22b8RSlqCVePUmOyQ9Zg-2na0gn39WR1hmUpXQQrqPpdyIxuc4lmZT3oR21qDT0CENJxdVmROWb5aH4cFLiXw"
-
-            kube_creds = {
-                'user': {
-                    'token': gke_token if 'gke' in profile.lower() else eks_token,
-                    'issuer_url': 'https://test1.dev2.aws.britive-app.com/api/oidc/test',
-                    'client_id': 'test',
-                    'expiration': '2024-08-09T22:50:09Z',
-                    'expiration_epoch': 1723243809
-                },
-                'environment': {
-                    'cluster': {
-                        'server': exec_data['spec']['cluster']['server'],
-                        'certificate_authority_data': exec_data['spec']['cluster']['certificate-authority-data']
-                    },
-                    'name': 'environ_name'
-                }
-            }
+            mode = 'kube-exec'  # set for downstream processes if we are basing this only on the env var being present
+            from .helpers.k8s_exec_credential_builder import KubernetesExecCredentialProcessor
+            k8s_processor = KubernetesExecCredentialProcessor()
 
         # these 2 modes implicitly say that console access should be checked out without having to provide
         # the --console flag
@@ -577,7 +525,7 @@ class BritiveCli:
                 else:
                     cached_credentials_found = True
 
-        parts = self._split_profile_into_parts(profile) if not kube_creds else {'profile': profile, 'env': 'env', 'app': 'app'}
+        parts = self._split_profile_into_parts(profile)
 
         # create this params once so we can use it multiple places
         params = {
@@ -591,9 +539,9 @@ class BritiveCli:
         }
 
         if not cached_credentials_found:  # nothing found in cache, cache is expired, or not a cachable mode
-            response = kube_creds or self._checkout(**params)
-            app_type = kube_creds or self._get_app_type(response['appContainerId'])
-            credentials = kube_creds or response['credentials']
+            response = self._checkout(**params)
+            app_type = self._get_app_type(response['appContainerId'])
+            credentials = response['credentials']
 
         # this handles the --force-renew flag
         # lets check to see if we should checkin this profile first and check it out again
@@ -627,7 +575,7 @@ class BritiveCli:
             credentials,
             aws_credentials_file,
             gcloud_key_file,
-            kube_exec_api_version
+            k8s_processor
         ).print()
 
     def import_existing_npm_config(self):
