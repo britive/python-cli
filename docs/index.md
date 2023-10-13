@@ -236,7 +236,10 @@ Example:
 * Profile: Admin
 
 As we construct the checkout command it would generally be `AWS/Dev/Test/Admin` but since the environment has a `/`
-in it, we need to escape that to be `AWS/Dev\/Test/Admin` so the CLI can properly parse out the 3 required parts of the string .
+in it, we need to escape that to be `AWS/Dev\/Test/Admin` so the CLI can properly parse out the 3 required parts of the string.
+
+This holds true for names of secrets and any other free form text that may be submitted via the CLI. Ensure you are
+escaping all required characters based on the shell you are using.
 
 ## `api` Command - Use the Britive Python SDK via the CLI
 

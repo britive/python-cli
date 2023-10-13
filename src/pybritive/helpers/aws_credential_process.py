@@ -1,12 +1,13 @@
 def get_args():
     from getopt import getopt  # lazy load
     from sys import argv  # lazy load
-    options = getopt(argv[1:], 't:T:p:f:P:hv', [
+    options = getopt(argv[1:], 't:T:p:f:P:F:hv', [
         'tenant=',
         'token=',
         'passphrase=',
         'force-renew=',
         'profile=',
+        'federation-provider='
         'help',
         'version'
     ])[0]
@@ -16,7 +17,8 @@ def get_args():
         'token': None,
         'passphrase': None,
         'force_renew': None,
-        'profile': None
+        'profile': None,
+        'federation_provider': None
     }
 
     for opt, arg in options:
@@ -30,6 +32,8 @@ def get_args():
             args['force_renew'] = int(arg)
         if opt in ('-P', '--profile'):
             args['profile'] = arg
+        if opt in ('-F', '--federation-provider'):
+            args['federation_provider'] = arg
         if opt in ('-h', '--help'):
             usage()
         if opt in ('-v', '--version'):
@@ -46,7 +50,10 @@ def get_args():
 
 def usage():
     from sys import argv  # lazy load
-    print(f'Usage : {argv[0]} --profile <profile> [-t/--tenant, -T/--token, -t/--passphrase, -f/--force-renew]')
+    print(
+        f'Usage : {argv[0]} --profile <profile> [-t/--tenant, -T/--token, -p/--passphrase, -f/--force-renew, '
+        f'-F/--federation-provider]'
+    )
     raise SystemExit()
 
 
@@ -66,7 +73,7 @@ def main():
             now = datetime.utcnow()
             if now > expiration:  # creds have expired so set to none so new one get checked out
                 creds = None
-            else:
+            else:  # not importing json library on purpose to keep imports down for speed
                 json = '{'
                 json += f'"AccessKeyId": "{creds["accessKeyID"]}",'
                 json += f'"SecretAccessKey": "{creds["secretAccessKey"]}",'
@@ -78,7 +85,13 @@ def main():
     if not creds:
         from ..britive_cli import BritiveCli  # lazy load for performance purposes
 
-        b = BritiveCli(tenant_name=args['tenant'], token=args['token'], passphrase=args['passphrase'], silent=True)
+        b = BritiveCli(
+            tenant_name=args['tenant'],
+            token=args['token'],
+            passphrase=args['passphrase'],
+            federation_provider=args['federation_provider'],
+            silent=True
+        )
         b.config.get_tenant()  # have to load the config here as that work is generally done
         b.checkout(
             alias=None,
