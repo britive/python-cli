@@ -19,6 +19,5 @@ six==1.16.0
 tabulate==0.8.10
 toml==0.10.2
 twine~=4.0.1
-urllib3>=1.26.17
 urllib3>=1.26.17; urllib3 == 1
 urllib3>=2.0.6; urllib3 == 2
