@@ -17,6 +17,7 @@
 
 #### Other
 * Updates to the documentation calling out the requirement to properly escape input based on the shell you are using
+* Resolve dependabot issue https://github.com/britive/python-cli/security/dependabot/6
 
 ## v1.5.0rc2 [2023-09-18]
 #### What's New
