@@ -7,10 +7,11 @@ sys.tracebacklimit = 0
 def get_args():
     from getopt import getopt  # lazy load
     from sys import argv  # lazy load
-    options, non_options = getopt(argv[1:], 't:T:p:f:P:hv', [
+    options, non_options = getopt(argv[1:], 't:T:p:F:hv', [
         'tenant=',
         'token=',
         'passphrase=',
+        'federation-provider=',
         'help',
         'version'
     ])
@@ -18,7 +19,8 @@ def get_args():
     args = {
         'tenant': None,
         'token': None,
-        'passphrase': None
+        'passphrase': None,
+        'federation_provider': None
     }
 
     for opt, arg in options:
@@ -28,6 +30,8 @@ def get_args():
             args['token'] = arg
         if opt in ('-p', '--passphrase'):
             args['passphrase'] = arg
+        if opt in ('-F', '--federation-provider'):
+            args['federation_provider'] = arg
         if opt in ('-h', '--help'):
             usage()
         if opt in ('-v', '--version'):
@@ -44,7 +48,7 @@ def get_args():
 
 def usage():
     from sys import argv  # lazy load
-    print("Usage : %s [-t/--tenant, -T/--token, -t/--passphrase, -f/--force-renew]" % (argv[0]))
+    print(f"Usage : {argv[0]} [-t/--tenant, -T/--token, -t/--passphrase, -F/--federation-provider]")
     exit()
 
 
@@ -73,7 +77,13 @@ def process():
     if not creds:
         from ..britive_cli import BritiveCli  # lazy load for performance purposes
 
-        b = BritiveCli(tenant_name=args['tenant'], token=args['token'], passphrase=args['passphrase'], silent=True)
+        b = BritiveCli(
+            tenant_name=args['tenant'],
+            token=args['token'],
+            passphrase=args['passphrase'],
+            federation_provider=args['federation_provider'],
+            silent=True
+        )
         b.config.get_tenant()  # have to load the config here as that work is generally done elsewhere
         b.checkout(
             alias=None,
