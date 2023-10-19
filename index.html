@@ -67,6 +67,8 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#home-directory">Home Directory</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="#browser">Browser</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="#escaping">Escaping</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#api-command-use-the-britive-python-sdk-via-the-cli">api Command - Use the Britive Python SDK via the CLI</a>
@@ -330,9 +332,16 @@ via flag <code>--passphrase/-p</code> or via environment variable <code>PYBRITIV
 provided <code>pybritive</code> will use an internally generated passphrase unique to the machine on which the application is running.</p>
 <h2 id="home-directory">Home Directory</h2>
 <p>By default, files that <code>pybritive</code> requires will be persisted to <code>~/.britive/</code>. </p>
-<p>This can be overwritten by specifying environment variable <code>PYBRITIVE_HOME_DIR</code>. This should be a path to where
+<p>This can be overwritten by specifying environment variable <code>PYBRITIVE_HOME_DIR</code>. This can be either one of the following choices to where
 the end user wants to persist the <code>.britive</code> directory. Note that <code>.britive</code> will still be created so do not specify
 that as part of the path.</p>
+<h2 id="browser">Browser</h2>
+<p>By default, <code>pybritive</code> will use the OS defined default for any actions that have browser interaction(s).</p>
+<p>This can be overwritten by specifying environment variable <code>PYBRITIVE_BROWSER</code>. This can either be a one of the choices listed for commands
+that have the <code>--browser</code> option/flag, or can be set to an open command for browsers not provided by the Python3 <code>webbrowser</code> module.</p>
+<p>Example:</p>
+<pre><code class="language-bash">export PYBRITIVE_BROWSER=&quot;open -a /Applications/Firefox\ Developer\ Edition.app %s&quot;
+</code></pre>
 <h2 id="escaping">Escaping</h2>
 <p>If the name of an application, environment, or profile contains a <code>/</code> then that character must be properly escaped with a <code>\</code>.</p>
 <p>Example:
@@ -340,7 +349,9 @@ that as part of the path.</p>
 * Environment: Dev/Test
 * Profile: Admin</p>
 <p>As we construct the checkout command it would generally be <code>AWS/Dev/Test/Admin</code> but since the environment has a <code>/</code>
-in it, we need to escape that to be <code>AWS/Dev\/Test/Admin</code> so the CLI can properly parse out the 3 required parts of the string .</p>
+in it, we need to escape that to be <code>AWS/Dev\/Test/Admin</code> so the CLI can properly parse out the 3 required parts of the string.</p>
+<p>This holds true for names of secrets and any other free form text that may be submitted via the CLI. Ensure you are
+escaping all required characters based on the shell you are using.</p>
 <h2 id="api-command-use-the-britive-python-sdk-via-the-cli"><code>api</code> Command - Use the Britive Python SDK via the CLI</h2>
 <p>As of v0.11.0 a new command called <code>api</code> has been introduced. This command exposes the full capability of the Britive Python SDK
 to users of the <code>pybritive</code> CLI.</p>
@@ -796,8 +807,8 @@ meant for administrative functionality.</p>
 </tr>
 <tr>
 <td><code>--browser</code></td>
-<td>choice (<code>defaultmozilla</code> &#x7C; <code>firefox</code> &#x7C; <code>windows-default</code> &#x7C; <code>macosx</code> &#x7C; <code>safari</code> &#x7C; <code>chrome</code> &#x7C; <code>chromium</code>)</td>
-<td>The browser to use when opening a URL from the PyBritive CLI. Defaults to None which indicates the standard webbrowser selection process should be used.</td>
+<td>choice (<code>mozilla</code> &#x7C; <code>firefox</code> &#x7C; <code>windows-default</code> &#x7C; <code>macosx</code> &#x7C; <code>safari</code> &#x7C; <code>chrome</code> &#x7C; <code>chromium</code>)</td>
+<td>The browser to use when opening a URL from the PyBritive CLI. Defaults to None which indicates the standard webbrowser selection process should be used. Can also source from PYBRITIVE_BROWSER.</td>
 <td>None</td>
 </tr>
 <tr>
@@ -934,6 +945,12 @@ that should be checked in. Format is <code>application name/environment name/pro
 </thead>
 <tbody>
 <tr>
+<td><code>--console</code>, <code>-c</code></td>
+<td>boolean</td>
+<td>Checkout/checkin the console access for the profile instead of programmatic access.</td>
+<td><code>False</code></td>
+</tr>
+<tr>
 <td><code>-t</code>, <code>--tenant</code></td>
 <td>text</td>
 <td>Name of tenant.</td>
@@ -1004,7 +1021,7 @@ that should be checked out. Format is <code>application name/environment name/pr
 <tr>
 <td><code>--console</code>, <code>-c</code></td>
 <td>boolean</td>
-<td>Checkout the console access for the profile instead of programmatic access.</td>
+<td>Checkout/checkin the console access for the profile instead of programmatic access.</td>
 <td><code>False</code></td>
 </tr>
 <tr>
@@ -1441,6 +1458,12 @@ that should be checked out. Format is <code>application name/environment name/pr
 <td><code>--federation-provider</code>, <code>-P</code></td>
 <td>text</td>
 <td>Use a federation provider available in the Britive Python SDK for auto token creation. Valid values are <code>aws[-profile]</code>, <code>github[-audience], and</code>bitbucket<code>. Optionally for the AWS provider a duration in seconds can be provided via</code>aws[-profile]_durationseconds` after which point the auto-generatedcredentials will expire.</td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>--browser</code></td>
+<td>choice (<code>mozilla</code> &#x7C; <code>firefox</code> &#x7C; <code>windows-default</code> &#x7C; <code>macosx</code> &#x7C; <code>safari</code> &#x7C; <code>chrome</code> &#x7C; <code>chromium</code>)</td>
+<td>The browser to use when opening a URL from the PyBritive CLI. Defaults to None which indicates the standard webbrowser selection process should be used. Can also source from PYBRITIVE_BROWSER.</td>
 <td>None</td>
 </tr>
 <tr>
@@ -2661,5 +2684,5 @@ Ensure the leading <code>/</code> is provided.</p>
 
 <!--
 MkDocs version : 1.3.1
-Build Date UTC : 2023-07-25 18:24:50.355693+00:00
+Build Date UTC : 2023-10-19 19:53:05.294313+00:00
 -->
