@@ -29,4 +29,3 @@ mode_choices = click.Choice(
     ],
     case_sensitive=False
 )
-

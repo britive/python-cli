@@ -4,7 +4,7 @@ from pathlib import Path
 
 
 def read_config():
-    with open(f'{conftest.home()}/.britive/pybritive.config', 'r') as f:
+    with open(f'{conftest.home()}/.britive/pybritive.config', 'r', encoding='utf-8') as f:
         return f.read()
 
 
@@ -31,7 +31,7 @@ def write_npm_config(simple=True):
                 f'testalias = "{alias}"'
             ]
 
-        path.write_text('\n'.join(contents))
+        path.write_text('\n'.join(contents), encoding='utf-8')
 
 
 def common_asserts(result, substring=None, exit_code=0):

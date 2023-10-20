@@ -211,10 +211,21 @@ provided `pybritive` will use an internally generated passphrase unique to the m
 ## Home Directory
 By default, files that `pybritive` requires will be persisted to `~/.britive/`. 
 
-This can be overwritten by specifying environment variable `PYBRITIVE_HOME_DIR`. This should be a path to where
+This can be overwritten by specifying environment variable `PYBRITIVE_HOME_DIR`. This can be either one of the following choices to where
 the end user wants to persist the `.britive` directory. Note that `.britive` will still be created so do not specify
 that as part of the path.
 
+
+## Browser
+By default, `pybritive` will use the OS defined default for any actions that have browser interaction(s).
+
+This can be overwritten by specifying environment variable `PYBRITIVE_BROWSER`. This can either be a one of the choices listed for commands
+that have the `--browser` option/flag, or can be set to an open command for browsers not provided by the Python3 `webbrowser` module.
+
+Example:
+~~~bash
+export PYBRITIVE_BROWSER="open -a /Applications/Firefox\ Developer\ Edition.app %s"
+~~~
 
 ## Escaping
 If the name of an application, environment, or profile contains a `/` then that character must be properly escaped with a `\`.
@@ -225,7 +236,10 @@ Example:
 * Profile: Admin
 
 As we construct the checkout command it would generally be `AWS/Dev/Test/Admin` but since the environment has a `/`
-in it, we need to escape that to be `AWS/Dev\/Test/Admin` so the CLI can properly parse out the 3 required parts of the string .
+in it, we need to escape that to be `AWS/Dev\/Test/Admin` so the CLI can properly parse out the 3 required parts of the string.
+
+This holds true for names of secrets and any other free form text that may be submitted via the CLI. Ensure you are
+escaping all required characters based on the shell you are using.
 
 ## `api` Command - Use the Britive Python SDK via the CLI
 

@@ -1,6 +1,7 @@
-import re
-from click.shell_completion import add_completion_class, BashComplete
 from gettext import gettext as _
+import re
+
+from click.shell_completion import add_completion_class, BashComplete
 
 
 # inspired by https://github.com/pallets-eco/click-bash4.2-completion
@@ -49,7 +50,7 @@ class _PatchedBashComplete(BashComplete):
         import subprocess
 
         output = subprocess.run(
-            ["bash", "-c", "echo ${BASH_VERSION}"], stdout=subprocess.PIPE
+            ["bash", "-c", "echo ${BASH_VERSION}"], stdout=subprocess.PIPE, check=False
         )
         match = re.search(r"^(\d+)\.(\d+)\.\d+", output.stdout.decode())
 

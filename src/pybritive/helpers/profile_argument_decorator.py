@@ -36,5 +36,3 @@ def click_smart_profile_argument(func):
         **kwargs
     )
     return dec(func)
-
-

@@ -11,5 +11,3 @@ option = click.option(
     show_default=True,
     help='The source of the SSH key used to authenticate to the remove server.'
 )
-
-

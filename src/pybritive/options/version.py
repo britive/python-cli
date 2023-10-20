@@ -1,5 +1,6 @@
-import click
 import platform
+
+import click
 import pkg_resources
 
 

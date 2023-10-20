@@ -1,6 +1,6 @@
-from pathlib import Path
 import json
 import os
+from pathlib import Path
 from .encryption import StringEncryption, InvalidPassphraseException
 
 
@@ -25,9 +25,9 @@ class Cache:
             cache = {
                 'profiles': []
             }
-            path.write_text(json.dumps(cache, indent=2, default=str))
+            path.write_text(json.dumps(cache, indent=2, default=str), encoding='utf-8')
 
-        with open(str(self.path), 'r') as f:
+        with open(str(self.path), 'r', encoding='utf-8') as f:
             try:
                 self.cache = json.loads(f.read())
             except json.decoder.JSONDecodeError:
@@ -37,7 +37,7 @@ class Cache:
 
     def write(self):
         # write the new cache file
-        with open(str(self.path), 'w') as f:
+        with open(str(self.path), 'w', encoding='utf-8') as f:
             f.write(json.dumps(self.cache, indent=2, default=str))
 
     def get_profiles(self):

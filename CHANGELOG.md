@@ -2,7 +2,66 @@
 
 * As of v1.4.0 release candidates will be published in an effort to get new features out faster while still allowing time for full QA testing before moving the release candidate to a full release.
 
-## v1.5.0rc1 [2023-09-XX]
+## v1.5.0 [2023-10-20]
+#### What's New
+* None
+
+#### Enhancements
+* Enrich shell completion results for the `api` command
+* Support `browser` option for `login` command
+* Support environment variable `PYBRITIVE_BROWSER` to allow a user to specify a default browser option, as well as use non-standard `webbrowser` options.
+
+#### Bug Fixes
+* Fixes an issue with interactive login when randomly generated tokens include `--` which the WAF sometimes sees as a SQL injection attack
+* Fixes an issue with `ssh-add` and temporary keys filling up the `ssh-agent` due to the order of command flags
+* Fixes and issue with `checkin` checking in the wrong profile type (programmatic vs console)
+* Fixes bug which did not always honor the specified browser.
+
+#### Dependencies
+* `britive>=2.22.0`
+
+#### Other
+* Various linting
+* Updates to the documentation calling out the requirement to properly escape input based on the shell you are using
+* Resolve dependabot issue https://github.com/britive/python-cli/security/dependabot/6
+* Documentation updates
+
+
+## v1.5.0rc3 [2023-10-13]
+#### What's New
+* None
+
+#### Enhancements
+* None
+
+#### Bug Fixes
+* None
+
+#### Dependencies
+* `britive>=2.22.0`
+
+#### Other
+* Updates to the documentation calling out the requirement to properly escape input based on the shell you are using
+* Resolve dependabot issue https://github.com/britive/python-cli/security/dependabot/6
+
+## v1.5.0rc2 [2023-09-18]
+#### What's New
+* None
+
+#### Enhancements
+* Support `browser` option for `login` command
+* Support environment variable `PYBRITIVE_BROWSER` to allow a user to specify a default browser option, as well as use non-standard `webbrowser` options.
+
+#### Bug Fixes
+* Fixes bug which did not always honor the specified browser.
+
+#### Dependencies
+* None
+
+#### Other
+* Various linting
+
+## v1.5.0rc1 [2023-09-18]
 #### What's New
 * None
 
@@ -10,10 +69,12 @@
 * Enrich shell completion results for the `api` command
 
 #### Bug Fixes
-* Fix issue with interactive login when randomly generated tokens include `--` which the WAF sometimes sees as a SQL injection attack
+* Fixes an issue with interactive login when randomly generated tokens include `--` which the WAF sometimes sees as a SQL injection attack
+* Fixes an issue with `ssh-add` and temporary keys filling up the `ssh-agent` due to the order of command flags
+* Fixes and issue with `checkin` checking in the wrong profile type (programmatic vs console)
 
 #### Dependencies
-* None
+* `britive>=2.21.0`
 
 #### Other
 * None
