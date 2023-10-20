@@ -44,6 +44,16 @@ class BritiveCli:
         self.credential_manager = None
         self.verbose_checkout = False
         self.checkout_progress_previous_message = None
+        self.cachable_modes = {
+            'awscredentialprocess': {
+                'app_type': 'AWS',
+                'expiration_jmespath': 'expirationTime'
+            },
+            'kube-exec': {
+                'app_type': 'Kubernetes',
+                'expiration_jmespath': 'expirationTime'
+            }
+        }
         self.browser = None
 
     def set_output_format(self, output_format: str):
@@ -342,7 +352,7 @@ class BritiveCli:
         raise click.ClickException(f'Application {application_id} not found')
 
     def __get_cloud_credential_printer(self, app_type, console, mode, profile, silent, credentials,
-                                       aws_credentials_file, gcloud_key_file):
+                                       aws_credentials_file, gcloud_key_file, k8s_processor):
         if app_type in ['AWS', 'AWS Standalone']:
             return printer.AwsCloudCredentialPrinter(
                 console=console,
@@ -372,14 +382,25 @@ class BritiveCli:
                 cli=self,
                 gcloud_key_file=gcloud_key_file
             )
-        return printer.GenericCloudCredentialPrinter(
-            console=console,
-            mode=mode,
-            profile=profile,
-            credentials=credentials,
-            silent=silent,
-            cli=self
-        )
+        elif app_type in ['Kubernetes']:
+            return printer.KubernetesCredentialPrinter(
+                console=console,
+                mode=mode,
+                profile=profile,
+                credentials=credentials,
+                silent=silent,
+                cli=self,
+                k8s_processor=k8s_processor
+            )
+        else:
+            return printer.GenericCloudCredentialPrinter(
+                console=console,
+                mode=mode,
+                profile=profile,
+                credentials=credentials,
+                silent=silent,
+                cli=self
+            )
 
     def checkin(self, profile, console):
         self.login()
@@ -474,8 +495,17 @@ class BritiveCli:
                  force_renew, aws_credentials_file, gcloud_key_file, verbose):
         credentials = None
         app_type = None
-        credential_process_creds_found = False
+        cached_credentials_found = False
+        k8s_processor = None
         self.verbose_checkout = verbose
+
+        # handle kube-exec since the profile is actually going to be passed in via another method
+        # and perform some basic validation so we don't waste time performing a checkout when we
+        # will not be able to return a response back to kubectl via the exec command
+        if mode == 'kube-exec' or 'KUBERNETES_EXEC_INFO' in os.environ:
+            mode = 'kube-exec'  # set for downstream processes if we are basing this only on the env var being present
+            from .helpers.k8s_exec_credential_builder import KubernetesExecCredentialProcessor
+            k8s_processor = KubernetesExecCredentialProcessor()
 
         # these 2 modes implicitly say that console access should be checked out without having to provide
         # the --console flag
@@ -488,22 +518,23 @@ class BritiveCli:
 
         self._validate_justification(justification)
 
-        if mode == 'awscredentialprocess':
-            self.silent = True  # the aws credential process CANNOT output anything other than the expected JSON
-            # we need to check the credential process cache for the credentials first
-            # then check to see if they are expired
-            # if not simply return those credentials
-            # if they are expired
-            app_type = 'AWS'  # just hardcode as we know for sure this is for AWS
-            credentials = Cache(passphrase=passphrase).get_awscredentialprocess(profile_name=alias or profile)
+        if mode in self.cachable_modes:
+            self.silent = True  # CANNOT output anything other than the expected JSON
+            # we need to check the cache for the credentials first and then check to see if they are expired
+            # if not simply return those credentials, if they are expired, continue to do an actual checkout
+            app_type = self.cachable_modes[mode]['app_type']
+            credentials = Cache(passphrase=passphrase).get_credentials(profile_name=alias or profile, mode=mode)
             if credentials:
-                expiration_timestamp_str = credentials['expirationTime'].replace('Z', '')
+                expiration_timestamp_str = jmespath.search(
+                    expression=self.cachable_modes[mode]['expiration_jmespath'],
+                    data=credentials
+                ).replace('Z', '')
                 expires = datetime.fromisoformat(expiration_timestamp_str)
                 now = datetime.utcnow()
                 if now >= expires:  # check to ensure the credentials are still valid, if not, set to None and get new
                     credentials = None
                 else:
-                    credential_process_creds_found = True
+                    cached_credentials_found = True
 
         parts = self._split_profile_into_parts(profile)
 
@@ -518,7 +549,7 @@ class BritiveCli:
             'justification': justification
         }
 
-        if not credential_process_creds_found:  # nothing found via aws cred process or not aws cred process mode
+        if not cached_credentials_found:  # nothing found in cache, cache is expired, or not a cachable mode
             response = self._checkout(**params)
             app_type = self._get_app_type(response['appContainerId'])
             credentials = response['credentials']
@@ -533,16 +564,17 @@ class BritiveCli:
                 self.print('checking in the profile to get renewed credentials....standby')
                 self.checkin(profile=profile)
                 response = self._checkout(**params)
-                credential_process_creds_found = False  # need to write new creds to cache
+                cached_credentials_found = False  # need to write new creds to cache
                 credentials = response['credentials']
 
         if alias:  # do this down here, so we know that the profile is valid and a checkout was successful
             self.config.save_profile_alias(alias=alias, profile=profile)
 
-        if mode == 'awscredentialprocess' and not credential_process_creds_found:
-            Cache(passphrase=passphrase).save_awscredentialprocess(
+        if mode in self.cachable_modes and not cached_credentials_found:
+            Cache(passphrase=passphrase).save_credentials(
                 profile_name=alias or profile,
-                credentials=credentials
+                credentials=credentials,
+                mode=mode
             )
 
         self.__get_cloud_credential_printer(
@@ -553,7 +585,8 @@ class BritiveCli:
             self.silent,
             credentials,
             aws_credentials_file,
-            gcloud_key_file
+            gcloud_key_file,
+            k8s_processor
         ).print()
 
     def import_existing_npm_config(self):

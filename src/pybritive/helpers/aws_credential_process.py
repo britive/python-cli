@@ -66,7 +66,10 @@ def main():
     creds = None
     if not args['force_renew']:  # if force renew let's defer to that the full package vs. this helper
         from .cache import Cache  # lazy load
-        creds = Cache(passphrase=args['passphrase']).get_awscredentialprocess(profile_name=args['profile'])
+        creds = Cache(passphrase=args['passphrase']).get_credentials(
+            profile_name=args['profile'],
+            mode='awscredentialprocess'
+        )
         if creds:
             from datetime import datetime  # lazy load
             expiration = datetime.fromisoformat(creds['expirationTime'].replace('Z', ''))
