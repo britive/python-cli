@@ -530,8 +530,7 @@ class BritiveCli:
         # handle kube-exec since the profile is actually going to be passed in via another method
         # and perform some basic validation so we don't waste time performing a checkout when we
         # will not be able to return a response back to kubectl via the exec command
-        if mode == 'kube-exec' or 'KUBERNETES_EXEC_INFO' in os.environ:
-            mode = 'kube-exec'  # set for downstream processes if we are basing this only on the env var being present
+        if mode == 'kube-exec':
             from .helpers.k8s_exec_credential_builder import KubernetesExecCredentialProcessor
             k8s_processor = KubernetesExecCredentialProcessor()
 
