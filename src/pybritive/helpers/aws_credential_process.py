@@ -93,7 +93,8 @@ def main():
             token=args['token'],
             passphrase=args['passphrase'],
             federation_provider=args['federation_provider'],
-            silent=True
+            silent=True,
+            from_helper_console_script=True
         )
         b.config.get_tenant()  # have to load the config here as that work is generally done
         b.checkout(

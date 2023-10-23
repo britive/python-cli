@@ -46,7 +46,8 @@ global_fields = [
     'default_tenant',
     'output_format',
     'credential_backend',
-    'auto-refresh-profile-cache'
+    'auto-refresh-profile-cache',
+    'auto-refresh-kube-config'
 ]
 
 tenant_fields = [
@@ -64,7 +65,8 @@ class ConfigManager:
     def __init__(self, cli: object, tenant_name: str = None):
         self.tenant_name = tenant_name
         self.home = os.getenv('PYBRITIVE_HOME_DIR', str(Path.home()))
-        self.path = str(Path(self.home) / '.britive' / 'pybritive.config')  # handle os specific separators properly
+        self.base_path = str(Path(self.home) / '.britive')
+        self.path = str(Path(self.base_path) / 'pybritive.config')
         self.config = None
         self.alias = None
         self.default_tenant = None
@@ -177,6 +179,14 @@ class ConfigManager:
             self.config['global']['credential_backend'] = backend
         self.save()
 
+    def get_profile_aliases(self, reverse_keys: bool = False):
+        self.load()
+        aliases = self.config.get('profile-aliases', {})
+        if reverse_keys:
+            return {v: k for k, v in aliases.items()}
+        else:
+            return aliases
+
     def save_profile_alias(self, alias, profile):
         self.profile_aliases[alias] = profile
         self.config['profile-aliases'] = self.profile_aliases
@@ -267,6 +277,9 @@ class ConfigManager:
             if field == 'auto-refresh-profile-cache' and value not in ['true', 'false']:
                 error = f'Invalid {section} field {field} value {value} provided. Invalid value choice.'
                 self.validation_error_messages.append(error)
+            if field == 'auto-refresh-kube-config' and value not in ['true', 'false']:
+                error = f'Invalid {section} field {field} value {value} provided. Invalid value choice.'
+                self.validation_error_messages.append(error)
             if field == 'default_tenant':
                 tenant_aliases_from_sections = [
                     extract_tenant(t) for t in self.config if t.startswith('tenant-')
@@ -306,6 +319,13 @@ class ConfigManager:
     def auto_refresh_profile_cache(self):
         self.load()
         value = self.config.get('global', {}).get('auto-refresh-profile-cache', 'false')
+        if value == 'true':
+            return True
+        return False
+
+    def auto_refresh_kube_config(self):
+        self.load()
+        value = self.config.get('global', {}).get('auto-refresh-kube-config', 'false')
         if value == 'true':
             return True
         return False

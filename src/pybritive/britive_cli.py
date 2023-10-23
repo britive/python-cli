@@ -10,7 +10,6 @@ from pathlib import Path
 import sys
 import uuid
 import yaml
-
 import click
 import jmespath
 from britive.britive import Britive
@@ -28,9 +27,10 @@ debug_enabled = os.getenv('PYBRITIVE_DEBUG')
 
 
 class BritiveCli:
-    def __init__(self, tenant_name: str = None, token: str = None, silent: bool = False,
-                 passphrase: str = None, federation_provider: str = None):
+    def __init__(self, tenant_name: str = None, token: str = None, silent: bool = False,passphrase: str = None,
+                 federation_provider: str = None, from_helper_console_script: bool = False):
         self.silent = silent
+        self.from_helper_console_script = from_helper_console_script
         self.output_format = None
         self.tenant_name = None
         self.tenant_alias = None
@@ -112,10 +112,10 @@ class BritiveCli:
                 except exceptions.UnauthorizedRequest:
                     self._cleanup_credentials()
 
-        # if user called `pybritive login` and we should refresh the profile cache...do so
-        if explicit and self.config.auto_refresh_profile_cache():
-            self._set_available_profiles()
-            self.cache_profiles()
+        # if user called `pybritive login` and we should get profiles...do so
+        should_get_profiles = any([self.config.auto_refresh_profile_cache(), self.config.auto_refresh_kube_config()])
+        if explicit and should_get_profiles:
+            self._set_available_profiles()  # will handle calling cache_profiles() and construct_kube_config()
 
     def _cleanup_credentials(self):
         self.set_credential_manager()
@@ -337,12 +337,40 @@ class BritiveCli:
                             'profile_allows_console': profile['consoleAccess'],
                             'profile_allows_programmatic': profile['programmaticAccess'],
                             'profile_description': profile['profileDescription'],
-                            '2_part_profile_format_allowed': app['requiresHierarchicalModel']
+                            '2_part_profile_format_allowed': app['requiresHierarchicalModel'],
+                            'env_properties': env.get('profileEnvironmentProperties', {})
                         }
                         data.append(row)
             self.available_profiles = data
         if self.config.auto_refresh_profile_cache():
-            self.cache_profiles(load=False)
+            self.cache_profiles()
+        if self.config.auto_refresh_kube_config():
+            self.construct_kube_config()
+
+    def construct_kube_config(self, from_cache_command=False):
+        if self.from_helper_console_script:
+            return
+
+        if from_cache_command:
+            self.login()
+            self._set_available_profiles()
+
+        profiles = []
+        for p in self.available_profiles:
+            if p['app_type'].lower() == 'kubernetes':
+                props = p['env_properties']
+                url = props.get('apiServerUrl')
+                cert = props.get('certificateAuthorityData')
+                if props and all([url, cert]):
+                    profiles.append({
+                        'app': p['app_name'],
+                        'env': p['env_name'],
+                        'profile': p['profile_name'],
+                        'url': url,
+                        'cert': cert,
+                    })
+        from .helpers.kube_config_builder import build_kube_config  # lazy import as not everyone will want this
+        build_kube_config(profiles=profiles, config=self.config, username=self.b.my_access.whoami()['username'])
 
     def _get_app_type(self, application_id):
         self._set_available_profiles()
@@ -692,11 +720,15 @@ class BritiveCli:
             f.write(content)
         self.print(f'wrote contents of secret file to {path}')
 
-    def cache_profiles(self, load=True):
-        if load:
+    def cache_profiles(self, from_cache_command=False):
+        if self.from_helper_console_script:
+            return
+        profiles = []
+
+        if from_cache_command:
             self.login()
             self._set_available_profiles()
-        profiles = []
+
         for p in self.available_profiles:
             profile = self.escape_profile_element(p['app_name'])
             profile += '/'

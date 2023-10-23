@@ -25,7 +25,6 @@ mode_choices = click.Choice(
         'browser-chrome',
         'browser-chromium',
         'kube-exec',                # bake into kubeconfig with oidc exec output and additional caching to make kubectl more performant
-        'kube-config',              # create a kubeconfig file with user oidc credentials and optionally cluster/context in ~/.britive/kubeconfig/
     ],
     case_sensitive=False
 )

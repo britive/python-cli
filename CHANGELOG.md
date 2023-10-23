@@ -2,6 +2,26 @@
 
 * As of v1.4.0 release candidates will be published in an effort to get new features out faster while still allowing time for full QA testing before moving the release candidate to a full release.
 
+## v1.6.0rc1 [2023-10-XX]
+#### What's New
+* Initial support for Kubernetes - this functionality is not yet available publicly on the Britive Platform
+
+#### Enhancements
+* Add command `cache kubeconfig`
+* Add global config flag `auto-refresh-kube-config` set by `configure update global auto-refresh-kube-config true`
+* Add checkout mode `k8s-exec` for use exclusively inside an `exec` command of a kube config file
+* Add console helper script `pybritive-kube-exec` for use exclusively inside an `exec` command of a kube config file
+
+#### Bug Fixes
+* None
+
+#### Dependencies
+* None
+
+#### Other
+* None
+
+
 ## v1.5.0 [2023-10-20]
 #### What's New
 * None

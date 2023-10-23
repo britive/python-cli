@@ -1,20 +1,14 @@
-import sys
-
-
-sys.tracebacklimit = 0
-
-
 def get_args():
     from getopt import getopt  # lazy load
     from sys import argv  # lazy load
-    options, non_options = getopt(argv[1:], 't:T:p:F:hv', [
+    options = getopt(argv[1:], 't:T:p:F:hv', [
         'tenant=',
         'token=',
         'passphrase=',
         'federation-provider=',
         'help',
         'version'
-    ])
+    ])[0]
 
     args = {
         'tenant': None,
@@ -52,7 +46,7 @@ def usage():
     exit()
 
 
-def process():
+def main():
     args = get_args()
 
     from .k8s_exec_credential_builder import KubernetesExecCredentialProcessor
@@ -82,7 +76,8 @@ def process():
             token=args['token'],
             passphrase=args['passphrase'],
             federation_provider=args['federation_provider'],
-            silent=True
+            silent=True,
+            from_helper_console_script=True
         )
         b.config.get_tenant()  # have to load the config here as that work is generally done elsewhere
         b.checkout(
@@ -100,10 +95,6 @@ def process():
             verbose=None
         )
         exit()
-
-
-def main():
-    process()
 
 
 if __name__ == '__main__':
