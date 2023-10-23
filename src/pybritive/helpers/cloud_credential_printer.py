@@ -274,10 +274,5 @@ class KubernetesCredentialPrinter(CloudCredentialPrinter):
     def print_kube(self):
         if self.mode_modifier == 'exec':
             self.cli.print(self.k8s_processor.construct_exec_credential(self.credentials), ignore_silent=True)
-        elif self.mode_modifier == 'config':
-            # write file to ~/.britive/kubeconfig/...
-            # clean up any older config file that are no longer required
-            # print out `export KUBECONFIG=~/.britive/kubeconfig/...`
-            pass
         else:
             raise ValueError(f'--mode modifier {self.mode_modifier} for mode {self.mode} not supported')
