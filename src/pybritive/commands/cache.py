@@ -14,7 +14,15 @@ def cache():
 @britive_options(names='tenant,token,silent,passphrase,federation_provider')
 def profiles(ctx, tenant, token, silent, passphrase, federation_provider):
     """Cache profiles locally to facilitate auto-completion of profile names on checkin/checkout."""
-    ctx.obj.britive.cache_profiles()
+    ctx.obj.britive.cache_profiles(from_cache_command=True)
+
+
+@cache.command()
+@build_britive
+@britive_options(names='tenant,token,silent,passphrase,federation_provider')
+def kubeconfig(ctx, tenant, token, silent, passphrase, federation_provider):
+    """Cache a Britive managed kube config file based on the profiles to which the caller has access."""
+    ctx.obj.britive.construct_kube_config(from_cache_command=True)
 
 
 @cache.command()

@@ -42,7 +42,7 @@ You will need to add this location to your path. The following command will do t
 this command into your `.bashrc, .zshrc, etc.` file, so it will always get executed on new terminal windows.
 
 ~~~
-export PATH=\"`python3 -m site --user-base`/bin:\$PATH\"
+export PATH=`python3 -m site --user-base`/bin:$PATH
 ~~~
 
 ## Tenant Configuration

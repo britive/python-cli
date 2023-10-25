@@ -9,8 +9,8 @@ import pathlib
 from pathlib import Path
 import sys
 import uuid
+import pkg_resources
 import yaml
-
 import click
 import jmespath
 from britive.britive import Britive
@@ -28,9 +28,10 @@ debug_enabled = os.getenv('PYBRITIVE_DEBUG')
 
 
 class BritiveCli:
-    def __init__(self, tenant_name: str = None, token: str = None, silent: bool = False,
-                 passphrase: str = None, federation_provider: str = None):
+    def __init__(self, tenant_name: str = None, token: str = None, silent: bool = False,passphrase: str = None,
+                 federation_provider: str = None, from_helper_console_script: bool = False):
         self.silent = silent
+        self.from_helper_console_script = from_helper_console_script
         self.output_format = None
         self.tenant_name = None
         self.tenant_alias = None
@@ -44,6 +45,16 @@ class BritiveCli:
         self.credential_manager = None
         self.verbose_checkout = False
         self.checkout_progress_previous_message = None
+        self.cachable_modes = {
+            'awscredentialprocess': {
+                'app_type': 'AWS',
+                'expiration_jmespath': 'expirationTime'
+            },
+            'kube-exec': {
+                'app_type': 'Kubernetes',
+                'expiration_jmespath': 'expirationTime'
+            }
+        }
         self.browser = None
 
     def set_output_format(self, output_format: str):
@@ -102,10 +113,25 @@ class BritiveCli:
                 except exceptions.UnauthorizedRequest:
                     self._cleanup_credentials()
 
-        # if user called `pybritive login` and we should refresh the profile cache...do so
-        if explicit and self.config.auto_refresh_profile_cache():
-            self._set_available_profiles()
-            self.cache_profiles()
+        self._update_sdk_user_agent()
+
+        # if user called `pybritive login` and we should get profiles...do so
+        should_get_profiles = any([self.config.auto_refresh_profile_cache(), self.config.auto_refresh_kube_config()])
+        if explicit and should_get_profiles:
+            self._set_available_profiles()  # will handle calling cache_profiles() and construct_kube_config()
+
+    def _update_sdk_user_agent(self):
+        # update the user agent to include the pybritive cli version
+        user_agent = self.b.session.headers.get('User-Agent')
+
+        try:
+            version = pkg_resources.get_distribution('pybritive').version
+        except Exception:
+            version = 'unknown'
+
+        self.b.session.headers.update({
+            'User-Agent': f'pybritive/{version} {user_agent}'
+        })
 
     def _cleanup_credentials(self):
         self.set_credential_manager()
@@ -307,7 +333,7 @@ class BritiveCli:
             data.append(row)
         self.print(data, ignore_silent=True)
 
-    def _set_available_profiles(self):
+    def _set_available_profiles(self, from_cache_command=False):
         if not self.available_profiles:
             data = []
             for app in self.b.my_access.list_profiles():
@@ -327,12 +353,46 @@ class BritiveCli:
                             'profile_allows_console': profile['consoleAccess'],
                             'profile_allows_programmatic': profile['programmaticAccess'],
                             'profile_description': profile['profileDescription'],
-                            '2_part_profile_format_allowed': app['requiresHierarchicalModel']
+                            '2_part_profile_format_allowed': app['requiresHierarchicalModel'],
+                            'env_properties': env.get('profileEnvironmentProperties', {})
                         }
                         data.append(row)
             self.available_profiles = data
-        if self.config.auto_refresh_profile_cache():
-            self.cache_profiles(load=False)
+
+            if not from_cache_command and self.config.auto_refresh_profile_cache():
+                self.cache_profiles()
+            if not from_cache_command and self.config.auto_refresh_kube_config():
+                self.construct_kube_config()
+
+    def construct_kube_config(self, from_cache_command=False):
+        if self.from_helper_console_script:
+            return
+
+        if from_cache_command:
+            self.login()
+            self._set_available_profiles(from_cache_command=from_cache_command)
+
+        profiles = []
+        for p in self.available_profiles:
+            if p['app_type'].lower() == 'kubernetes':
+                props = p['env_properties']
+                url = props.get('apiServerUrl')
+                cert = props.get('certificateAuthorityData')
+                if props and all([url, cert]):
+                    profiles.append({
+                        'app': p['app_name'],
+                        'env': p['env_name'],
+                        'profile': p['profile_name'],
+                        'url': url,
+                        'cert': cert,
+                    })
+        from .helpers.kube_config_builder import build_kube_config  # lazy import as not everyone will want this
+        build_kube_config(
+            profiles=profiles,
+            config=self.config,
+            username=self.b.my_access.whoami()['username'],
+            cli=self
+        )
 
     def _get_app_type(self, application_id):
         self._set_available_profiles()
@@ -342,7 +402,7 @@ class BritiveCli:
         raise click.ClickException(f'Application {application_id} not found')
 
     def __get_cloud_credential_printer(self, app_type, console, mode, profile, silent, credentials,
-                                       aws_credentials_file, gcloud_key_file):
+                                       aws_credentials_file, gcloud_key_file, k8s_processor):
         if app_type in ['AWS', 'AWS Standalone']:
             return printer.AwsCloudCredentialPrinter(
                 console=console,
@@ -372,14 +432,25 @@ class BritiveCli:
                 cli=self,
                 gcloud_key_file=gcloud_key_file
             )
-        return printer.GenericCloudCredentialPrinter(
-            console=console,
-            mode=mode,
-            profile=profile,
-            credentials=credentials,
-            silent=silent,
-            cli=self
-        )
+        elif app_type in ['Kubernetes']:
+            return printer.KubernetesCredentialPrinter(
+                console=console,
+                mode=mode,
+                profile=profile,
+                credentials=credentials,
+                silent=silent,
+                cli=self,
+                k8s_processor=k8s_processor
+            )
+        else:
+            return printer.GenericCloudCredentialPrinter(
+                console=console,
+                mode=mode,
+                profile=profile,
+                credentials=credentials,
+                silent=silent,
+                cli=self
+            )
 
     def checkin(self, profile, console):
         self.login()
@@ -474,8 +545,16 @@ class BritiveCli:
                  force_renew, aws_credentials_file, gcloud_key_file, verbose):
         credentials = None
         app_type = None
-        credential_process_creds_found = False
+        cached_credentials_found = False
+        k8s_processor = None
         self.verbose_checkout = verbose
+
+        # handle kube-exec since the profile is actually going to be passed in via another method
+        # and perform some basic validation so we don't waste time performing a checkout when we
+        # will not be able to return a response back to kubectl via the exec command
+        if mode == 'kube-exec':
+            from .helpers.k8s_exec_credential_builder import KubernetesExecCredentialProcessor
+            k8s_processor = KubernetesExecCredentialProcessor()
 
         # these 2 modes implicitly say that console access should be checked out without having to provide
         # the --console flag
@@ -488,22 +567,23 @@ class BritiveCli:
 
         self._validate_justification(justification)
 
-        if mode == 'awscredentialprocess':
-            self.silent = True  # the aws credential process CANNOT output anything other than the expected JSON
-            # we need to check the credential process cache for the credentials first
-            # then check to see if they are expired
-            # if not simply return those credentials
-            # if they are expired
-            app_type = 'AWS'  # just hardcode as we know for sure this is for AWS
-            credentials = Cache(passphrase=passphrase).get_awscredentialprocess(profile_name=alias or profile)
+        if mode in self.cachable_modes:
+            self.silent = True  # CANNOT output anything other than the expected JSON
+            # we need to check the cache for the credentials first and then check to see if they are expired
+            # if not simply return those credentials, if they are expired, continue to do an actual checkout
+            app_type = self.cachable_modes[mode]['app_type']
+            credentials = Cache(passphrase=passphrase).get_credentials(profile_name=alias or profile, mode=mode)
             if credentials:
-                expiration_timestamp_str = credentials['expirationTime'].replace('Z', '')
+                expiration_timestamp_str = jmespath.search(
+                    expression=self.cachable_modes[mode]['expiration_jmespath'],
+                    data=credentials
+                ).replace('Z', '')
                 expires = datetime.fromisoformat(expiration_timestamp_str)
                 now = datetime.utcnow()
                 if now >= expires:  # check to ensure the credentials are still valid, if not, set to None and get new
                     credentials = None
                 else:
-                    credential_process_creds_found = True
+                    cached_credentials_found = True
 
         parts = self._split_profile_into_parts(profile)
 
@@ -518,7 +598,7 @@ class BritiveCli:
             'justification': justification
         }
 
-        if not credential_process_creds_found:  # nothing found via aws cred process or not aws cred process mode
+        if not cached_credentials_found:  # nothing found in cache, cache is expired, or not a cachable mode
             response = self._checkout(**params)
             app_type = self._get_app_type(response['appContainerId'])
             credentials = response['credentials']
@@ -533,16 +613,17 @@ class BritiveCli:
                 self.print('checking in the profile to get renewed credentials....standby')
                 self.checkin(profile=profile)
                 response = self._checkout(**params)
-                credential_process_creds_found = False  # need to write new creds to cache
+                cached_credentials_found = False  # need to write new creds to cache
                 credentials = response['credentials']
 
         if alias:  # do this down here, so we know that the profile is valid and a checkout was successful
             self.config.save_profile_alias(alias=alias, profile=profile)
 
-        if mode == 'awscredentialprocess' and not credential_process_creds_found:
-            Cache(passphrase=passphrase).save_awscredentialprocess(
+        if mode in self.cachable_modes and not cached_credentials_found:
+            Cache(passphrase=passphrase).save_credentials(
                 profile_name=alias or profile,
-                credentials=credentials
+                credentials=credentials,
+                mode=mode
             )
 
         self.__get_cloud_credential_printer(
@@ -553,7 +634,8 @@ class BritiveCli:
             self.silent,
             credentials,
             aws_credentials_file,
-            gcloud_key_file
+            gcloud_key_file,
+            k8s_processor
         ).print()
 
     def import_existing_npm_config(self):
@@ -659,11 +741,15 @@ class BritiveCli:
             f.write(content)
         self.print(f'wrote contents of secret file to {path}')
 
-    def cache_profiles(self, load=True):
-        if load:
-            self.login()
-            self._set_available_profiles()
+    def cache_profiles(self, from_cache_command=False):
+        if self.from_helper_console_script:
+            return
         profiles = []
+
+        if from_cache_command:
+            self.login()
+            self._set_available_profiles(from_cache_command=from_cache_command)
+
         for p in self.available_profiles:
             profile = self.escape_profile_element(p['app_name'])
             profile += '/'

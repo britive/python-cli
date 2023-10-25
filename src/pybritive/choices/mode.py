@@ -23,7 +23,8 @@ mode_choices = click.Choice(
         'browser-macosx',
         'browser-safari',
         'browser-chrome',
-        'browser-chromium'
+        'browser-chromium',
+        'kube-exec',                # bake into kubeconfig with oidc exec output and additional caching to make kubectl more performant
     ],
     case_sensitive=False
 )
