@@ -9,6 +9,7 @@ import pathlib
 from pathlib import Path
 import sys
 import uuid
+import pkg_resources
 import yaml
 import click
 import jmespath
@@ -112,10 +113,25 @@ class BritiveCli:
                 except exceptions.UnauthorizedRequest:
                     self._cleanup_credentials()
 
+        self._update_sdk_user_agent()
+
         # if user called `pybritive login` and we should get profiles...do so
         should_get_profiles = any([self.config.auto_refresh_profile_cache(), self.config.auto_refresh_kube_config()])
         if explicit and should_get_profiles:
             self._set_available_profiles()  # will handle calling cache_profiles() and construct_kube_config()
+
+    def _update_sdk_user_agent(self):
+        # update the user agent to include the pybritive cli version
+        user_agent = self.b.session.headers.get('User-Agent')
+
+        try:
+            version = pkg_resources.get_distribution('pybritive').version
+        except Exception:
+            version = 'unknown'
+
+        self.b.session.headers.update({
+            'User-Agent': f'pybritive/{version} {user_agent}'
+        })
 
     def _cleanup_credentials(self):
         self.set_credential_manager()
@@ -317,7 +333,7 @@ class BritiveCli:
             data.append(row)
         self.print(data, ignore_silent=True)
 
-    def _set_available_profiles(self):
+    def _set_available_profiles(self, from_cache_command=False):
         if not self.available_profiles:
             data = []
             for app in self.b.my_access.list_profiles():
@@ -342,10 +358,11 @@ class BritiveCli:
                         }
                         data.append(row)
             self.available_profiles = data
-        if self.config.auto_refresh_profile_cache():
-            self.cache_profiles()
-        if self.config.auto_refresh_kube_config():
-            self.construct_kube_config()
+
+            if not from_cache_command and self.config.auto_refresh_profile_cache():
+                self.cache_profiles()
+            if not from_cache_command and self.config.auto_refresh_kube_config():
+                self.construct_kube_config()
 
     def construct_kube_config(self, from_cache_command=False):
         if self.from_helper_console_script:
@@ -353,7 +370,7 @@ class BritiveCli:
 
         if from_cache_command:
             self.login()
-            self._set_available_profiles()
+            self._set_available_profiles(from_cache_command=from_cache_command)
 
         profiles = []
         for p in self.available_profiles:
@@ -370,7 +387,12 @@ class BritiveCli:
                         'cert': cert,
                     })
         from .helpers.kube_config_builder import build_kube_config  # lazy import as not everyone will want this
-        build_kube_config(profiles=profiles, config=self.config, username=self.b.my_access.whoami()['username'])
+        build_kube_config(
+            profiles=profiles,
+            config=self.config,
+            username=self.b.my_access.whoami()['username'],
+            cli=self
+        )
 
     def _get_app_type(self, application_id):
         self._set_available_profiles()
@@ -726,7 +748,7 @@ class BritiveCli:
 
         if from_cache_command:
             self.login()
-            self._set_available_profiles()
+            self._set_available_profiles(from_cache_command=from_cache_command)
 
         for p in self.available_profiles:
             profile = self.escape_profile_element(p['app_name'])

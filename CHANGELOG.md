@@ -4,13 +4,15 @@
 
 ## v1.6.0rc1 [2023-10-XX]
 #### What's New
-* Initial support for Kubernetes - this functionality is not yet available publicly on the Britive Platform
+* Initial support for Kubernetes - this functionality is not yet available publicly on the Britive Platform - this is a beta feature for internal use only
 
 #### Enhancements
 * Add command `cache kubeconfig`
+* Update command `cache clear` to delete the kube config file if it exists
 * Add global config flag `auto-refresh-kube-config` set by `configure update global auto-refresh-kube-config true`
 * Add checkout mode `k8s-exec` for use exclusively inside an `exec` command of a kube config file
 * Add console helper script `pybritive-kube-exec` for use exclusively inside an `exec` command of a kube config file
+* Add the `pybritive` package version into the `User-Agent` string used by the Britive Python SDK (`britive` package)
 
 #### Bug Fixes
 * None
@@ -19,7 +21,7 @@
 * None
 
 #### Other
-* None
+* Documentation update on bash command to add the python `bin` path to your `PATH` environment variable.
 
 
 ## v1.5.0 [2023-10-20]

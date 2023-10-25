@@ -9,7 +9,8 @@ class Cache:
         self.passphrase = passphrase
         self.string_encryptor = StringEncryption(passphrase=self.passphrase)
         home = os.getenv('PYBRITIVE_HOME_DIR', str(Path.home()))
-        self.path = str(Path(home) / '.britive' / 'pybritive.cache')  # handle os specific separators properly
+        self.base_path = str(Path(home) / '.britive')
+        self.path = str(Path(self.base_path) / 'pybritive.cache')  # handle os specific separators properly
         self.cache = {}
         self.default_key_values = {
             'profiles': [],
@@ -50,8 +51,13 @@ class Cache:
         self.write()
 
     def clear(self):
+        # write empty cache file
         self.cache = self.default_key_values
         self.write()
+
+        # delete kube config if it exists
+        kubeconfig = Path(self.base_path) / 'kube' / 'config'
+        kubeconfig.unlink(missing_ok=True)
 
     def get_credentials(self, profile_name: str, mode: str = 'awscredentialprocess'):
         try:
