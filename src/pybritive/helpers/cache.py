@@ -1,7 +1,6 @@
 import json
 import os
 from pathlib import Path
-
 from .encryption import StringEncryption, InvalidPassphraseException
 
 
@@ -10,8 +9,14 @@ class Cache:
         self.passphrase = passphrase
         self.string_encryptor = StringEncryption(passphrase=self.passphrase)
         home = os.getenv('PYBRITIVE_HOME_DIR', str(Path.home()))
-        self.path = str(Path(home) / '.britive' / 'pybritive.cache')  # handle os specific separators properly
+        self.base_path = str(Path(home) / '.britive')
+        self.path = str(Path(self.base_path) / 'pybritive.cache')  # handle os specific separators properly
         self.cache = {}
+        self.default_key_values = {
+            'profiles': [],
+            'awscredentialprocess': {},
+            'kube-exec': {}
+        }
         self.load()
 
     def load(self):
@@ -29,10 +34,7 @@ class Cache:
             except json.decoder.JSONDecodeError:
                 self.cache = {}
 
-        if 'profiles' not in self.cache.keys():
-            self.cache['profiles'] = []
-        if 'awscredentialprocess' not in self.cache.keys():
-            self.cache['awscredentialprocess'] = {}
+        self.cache = {**self.default_key_values, **self.cache}
 
     def write(self):
         # write the new cache file
@@ -49,24 +51,28 @@ class Cache:
         self.write()
 
     def clear(self):
-        self.cache['profiles'] = []
-        self.cache['awscredentialprocess'] = {}
+        # write empty cache file
+        self.cache = self.default_key_values
         self.write()
 
-    def get_awscredentialprocess(self, profile_name: str):
+        # delete kube config if it exists
+        kubeconfig = Path(self.base_path) / 'kube' / 'config'
+        kubeconfig.unlink(missing_ok=True)
+
+    def get_credentials(self, profile_name: str, mode: str = 'awscredentialprocess'):
         try:
-            ciphertext = self.cache['awscredentialprocess'].get(profile_name.lower())
+            ciphertext = self.cache[mode].get(profile_name.lower())
             if not ciphertext:
                 return None
             return json.loads(self.string_encryptor.decrypt(ciphertext))
         except InvalidPassphraseException:  # if we cannot decrypt don't error - just make the API call to get the creds
             return None
 
-    def save_awscredentialprocess(self, profile_name: str, credentials: dict):
+    def save_credentials(self, profile_name: str, credentials: dict, mode: str = 'awscredentialprocess'):
         ciphertext = self.string_encryptor.encrypt(json.dumps(credentials, default=str))
-        self.cache['awscredentialprocess'][profile_name.lower()] = ciphertext
+        self.cache[mode][profile_name.lower()] = ciphertext
         self.write()
 
-    def clear_awscredentialprocess(self, profile_name: str):
-        self.cache['awscredentialprocess'].pop(profile_name.lower(), None)
+    def clear_credentials(self, profile_name: str, mode: str = 'awscredentialprocess'):
+        self.cache[mode].pop(profile_name.lower(), None)
         self.write()

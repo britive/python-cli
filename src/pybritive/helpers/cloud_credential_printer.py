@@ -62,6 +62,8 @@ class CloudCredentialPrinter:
             self.print_azps()
         if self.mode == 'gcloudauth':
             self.print_gcloudauth()
+        if self.mode == 'kube':
+            self.print_kube()
 
     def print_console(self):
         url = self.credentials.get('url', self.credentials)
@@ -93,6 +95,9 @@ class CloudCredentialPrinter:
         self._not_implemented()
 
     def print_gcloudauth(self):
+        self._not_implemented()
+
+    def print_kube(self):
         self._not_implemented()
 
     def _not_implemented(self):
@@ -253,3 +258,21 @@ class GcpCloudCredentialPrinter(CloudCredentialPrinter):
             f"gcloud auth activate-service-account {self.credentials['client_email']} --key-file {str(path)}",
             ignore_silent=True
         )
+
+
+class KubernetesCredentialPrinter(CloudCredentialPrinter):
+    def __init__(self, console, mode, profile, silent, credentials, cli, k8s_processor):
+        self.k8s_processor = k8s_processor
+        super().__init__('Kubernetes', console, mode, profile, silent, credentials, cli)
+
+    def print_json(self):
+        try:
+            self.cli.print(json.dumps(self.credentials, indent=2), ignore_silent=True)
+        except json.JSONDecodeError:
+            self.cli.print(self.credentials, ignore_silent=True)
+
+    def print_kube(self):
+        if self.mode_modifier == 'exec':
+            self.cli.print(self.k8s_processor.construct_exec_credential(self.credentials), ignore_silent=True)
+        else:
+            raise ValueError(f'--mode modifier {self.mode_modifier} for mode {self.mode} not supported')
