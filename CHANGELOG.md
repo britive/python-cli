@@ -2,6 +2,24 @@
 
 * As of v1.4.0 release candidates will be published in an effort to get new features out faster while still allowing time for full QA testing before moving the release candidate to a full release.
 
+## v1.6.0rc2 [2023-10-27]
+#### What's New
+* None
+
+#### Enhancements
+* None
+
+#### Bug Fixes
+* Fixed bug with auto generated kube config when no alias existed for a profile.
+
+#### Dependencies
+* None
+
+#### Other
+* None
+
+
+
 ## v1.6.0rc1 [2023-10-25]
 #### What's New
 * Initial support for Kubernetes - this functionality is not yet available publicly on the Britive Platform - this is a beta feature for internal use only

@@ -386,13 +386,17 @@ class BritiveCli:
                         'url': url,
                         'cert': cert,
                     })
-        from .helpers.kube_config_builder import build_kube_config  # lazy import as not everyone will want this
-        build_kube_config(
-            profiles=profiles,
-            config=self.config,
-            username=self.b.my_access.whoami()['username'],
-            cli=self
-        )
+
+        try:
+            from .helpers.kube_config_builder import build_kube_config  # lazy import as not everyone will want this
+            build_kube_config(
+                profiles=profiles,
+                config=self.config,
+                username=self.b.my_access.whoami()['username'],
+                cli=self
+            )
+        except Exception as e:  # do NOT fail the CLI invocation because of this
+            self.print(f'error auto-generating the Britive managed kube config file: {str(e)}')
 
     def _get_app_type(self, application_id):
         self._set_available_profiles()
