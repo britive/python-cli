@@ -28,7 +28,8 @@ def safe_cli():
         part1 = '401 - e0000 - aws access token for subject'
         part2 = 'not authorized by cognito'
         if part1 in str(e).lower() and part2 in str(e).lower():
-            click.echo('You have logged out of Britive via the browser. Please run `pybritive logout` to clear your '
+            click.echo('You have logged out of Britive via the browser. Please run '
+                       '`pybritive logout [-t/--tenant <tenant>]` to clear your '
                        'token and then re-run your command.')
             return
         if debug:
