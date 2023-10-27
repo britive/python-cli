@@ -136,7 +136,7 @@ def build_tenant_config(tenant, cluster_names, username):
                             {
                                 'name': 'client.authentication.k8s.io/exec',
                                 'extension': {
-                                    'britive-profile': details.get('alias', details['escaped_profile'])
+                                    'britive-profile': details.get('alias') or details['escaped_profile']
                                 }
                             }
                         ]
@@ -146,7 +146,7 @@ def build_tenant_config(tenant, cluster_names, username):
 
             contexts.append(
                 {
-                    'name': details.get('alias', f'{tenant}-{name}'),
+                    'name': details.get('alias') or f'{tenant}-{name}',
                     'context': {
                         'cluster': f'{tenant}-{name}',
                         'user': username
