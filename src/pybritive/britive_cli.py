@@ -1168,13 +1168,13 @@ class BritiveCli:
 
     def clear_cached_aws_credentials(self, profile):
         # start with the profile name that was passed in from the command
-        Cache().clear_awscredentialprocess(profile_name=profile)
+        Cache().clear_credentials(profile_name=profile)
 
         # then we can try to split it into parts and clear that version of the
         # profile name as well - it will not hurt anything to try to clear
         # both versions
         parts = self._split_profile_into_parts(profile)
-        Cache().clear_awscredentialprocess(profile_name=f"{parts['app']}/{parts['env']}/{parts['profile']}")
+        Cache().clear_credentials(profile_name=f"{parts['app']}/{parts['env']}/{parts['profile']}")
 
     def ssh_gcp_identity_aware_proxy(self, username, hostname, push_public_key, port_number, key_source):
         self.silent = True
