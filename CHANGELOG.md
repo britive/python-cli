@@ -2,7 +2,7 @@
 
 * As of v1.4.0 release candidates will be published in an effort to get new features out faster while still allowing time for full QA testing before moving the release candidate to a full release.
 
-## v1.6.0rc3 [2023-11-XX]
+## v1.6.0rc3 [2023-10-31]
 #### What's New
 * None
 
@@ -11,6 +11,7 @@
 
 #### Bug Fixes
 * Clarified language in an error message when an authentication token has been invalidated on the server side and the resulting action the user must take to clear the token.
+* More gracefully handle when a Kubernetes `certificate-authority-data` cannot be base64 decoded to a proper certificate - we will skip over that specific cluster.
 
 #### Dependencies
 * None

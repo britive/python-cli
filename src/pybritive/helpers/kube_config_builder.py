@@ -1,8 +1,10 @@
+import click
 import yaml
 from pathlib import Path
 from .config import ConfigManager
 from ..britive_cli import BritiveCli
 import os
+import base64
 
 
 def sanitize(name: str):
@@ -32,7 +34,7 @@ def check_env_var(filename, cli: BritiveCli):
         cli.print(command)
 
 
-def merge_new_with_existing(clusters, contexts, users, filename, tenant, assigned_aliases):
+def merge_new_with_existing(clusters, contexts, users, filename, tenant):
     # get the existing config, so we can pop out all
     # items related to this tenant as we will be replacing
     # them with the above created items
@@ -47,8 +49,8 @@ def merge_new_with_existing(clusters, contexts, users, filename, tenant, assigne
             clusters.append(cluster)
 
     for context in existing_kubeconfig.get('contexts', []):
-        name = context.get('name', '')
-        if not name.startswith(prefix) and name not in assigned_aliases:
+        cluster_name = context.get('context', {}).get('cluster', '')
+        if not cluster_name.startswith(prefix):
             contexts.append(context)
 
     for user in existing_kubeconfig.get('users', []):
@@ -94,7 +96,20 @@ def parse_profiles(profiles, aliases):
     return [cluster_names, assigned_aliases]
 
 
-def build_tenant_config(tenant, cluster_names, username):
+def valid_cert(cert: str, profile: str, cli: BritiveCli):
+    try:
+        decoded_cert = base64.b64decode(cert).decode('utf-8')
+        if not decoded_cert.startswith('-----BEGIN CERTIFICATE-----'):
+            raise ValueError()
+        if not decoded_cert.strip().endswith('-----END CERTIFICATE-----'):
+            raise ValueError()
+        return True
+    except Exception:
+        cli.print(f'could not properly decode certificate authority data for profile {profile} - skipping this cluster')
+        return False
+
+
+def build_tenant_config(tenant, cluster_names, username, cli: BritiveCli):
     users = [
         {
             'name': username,
@@ -124,6 +139,9 @@ def build_tenant_config(tenant, cluster_names, username):
 
         cert = details['cert']
         url = details['url']
+
+        if not valid_cert(cert=cert, profile=details['profile'], cli=cli):
+            continue
 
         for name in names:
             clusters.append(
@@ -173,7 +191,8 @@ def build_kube_config(profiles: list, config: ConfigManager, username: str, cli:
     clusters, contexts, users = build_tenant_config(
         tenant=tenant,
         cluster_names=cluster_names,
-        username=username
+        username=username,
+        cli=cli
     )
 
     # calculate the path for the config
@@ -188,8 +207,7 @@ def build_kube_config(profiles: list, config: ConfigManager, username: str, cli:
         contexts=contexts,
         users=users,
         tenant=tenant,
-        filename=filename,
-        assigned_aliases=assigned_aliases
+        filename=filename
     )
 
     # if required ensure we tell the user they need to modify their KUBECONFIG env var
