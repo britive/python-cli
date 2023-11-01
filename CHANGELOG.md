@@ -2,6 +2,22 @@
 
 * As of v1.4.0 release candidates will be published in an effort to get new features out faster while still allowing time for full QA testing before moving the release candidate to a full release.
 
+## v1.6.0rc4 [2023-11-XX]
+#### What's New
+* None
+
+#### Enhancements
+* None
+
+#### Bug Fixes
+* Fix bug in `configure import` related to the default AWS checkout mode
+
+#### Dependencies
+* None
+
+#### Other
+* None
+
 ## v1.6.0rc3 [2023-10-31]
 #### What's New
 * None

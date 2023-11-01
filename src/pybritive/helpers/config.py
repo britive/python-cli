@@ -228,8 +228,9 @@ class ConfigManager:
         if aws_section:
             checkout_mode = aws_section.get('checkoutMode')
             if checkout_mode:
+                checkout_mode = checkout_mode.lower().replace('display', '')
                 self.cli.print(f'Found aws default checkout mode of {checkout_mode}.')
-                self.config['aws'] = {'default_checkout_mode': checkout_mode.lower()}
+                self.config['aws'] = {'default_checkout_mode': checkout_mode}
 
         self.save()
         self.load(force=True)
