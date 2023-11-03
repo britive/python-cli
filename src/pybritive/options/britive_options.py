@@ -31,6 +31,7 @@ from ..options.ssh_key_source import option as ssh_key_source
 from ..options.aws_profile import option as aws_profile
 from ..options.aws_console_duration import option as aws_console_duration
 from ..options.browser import option as browser
+from ..options.extend import option as extend
 
 options_map = {
     'tenant': tenant,
@@ -65,7 +66,8 @@ options_map = {
     'ssh_key_source': ssh_key_source,
     'aws_profile': aws_profile,
     'aws_console_duration': aws_console_duration,
-    'browser': browser
+    'browser': browser,
+    'extend': extend
 }
 
 

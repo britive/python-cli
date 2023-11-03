@@ -262,13 +262,23 @@ class BritiveCli:
         self.login()
         self._set_available_profiles()
         data = []
-        checked_out_profiles = [
-            f'{p["papId"]}-{p["environmentId"]}'
-            for p in self.b.my_access.list_checked_out_profiles()
-        ] if checked_out else []
+        checked_out_profiles = {}
+        if checked_out:  # only make this call if we have to
+            now = datetime.utcnow()
+            for p in self.b.my_access.list_checked_out_profiles():
+                expiration_str = p['expiration']
+                expiration_timestamp = datetime.fromisoformat(expiration_str.replace('Z', ''))
+                seconds_until_expiration = int((expiration_timestamp - now).total_seconds())
+                key = f'{p["papId"]}-{p["environmentId"]}'
+                checked_out_profiles[key] = {
+                    'expiration': expiration_str,
+                    'expires_in_seconds': seconds_until_expiration
+                }
 
         for profile in self.available_profiles:
-            if not checked_out or f'{profile["profile_id"]}-{profile["env_id"]}' in checked_out_profiles:
+            key = f'{profile["profile_id"]}-{profile["env_id"]}'
+            profile_is_checked_out = key in checked_out_profiles
+            if not checked_out or profile_is_checked_out:
                 row = {
                     'Application': profile['app_name'],
                     'Environment': profile['env_name'],
@@ -276,12 +286,26 @@ class BritiveCli:
                     'Description': profile['profile_description'],
                     'Type': profile['app_type']
                 }
+
+                if profile_is_checked_out:
+                    row['Expiration'] = checked_out_profiles[key]['expiration']
+                    total_seconds = checked_out_profiles[key]['expires_in_seconds']
+
+                    hours, remainder = divmod(total_seconds, 3600)
+                    minutes, seconds = divmod(remainder, 60)
+                    time_format = '{:02d}:{:02d}:{:02d}'.format(hours, minutes, seconds)
+                    row['TimeRemaining'] = time_format
+                    row['TimeRemainingSeconds'] = total_seconds
+
                 if self.output_format == 'list':
                     self.list_separator = '/'
-                    row.pop('Description')
-                    row.pop('Type')
+                    row.pop('Description', None)
+                    row.pop('Type', None)
+                    row.pop('TimeRemaining', None)
+                    row.pop('TimeRemainingSeconds', None)
+                    row.pop('Expiration', None)
                     if profile['2_part_profile_format_allowed']:
-                        row.pop('Environment')
+                        row.pop('Environment', None)
                 data.append(row)
 
         # set special list output if needed
@@ -545,8 +569,24 @@ class BritiveCli:
         }
         return parts_dict
 
+    def _extend_checkout(self, profile, console):
+        self.login()
+        parts = self._split_profile_into_parts(profile)
+        response = self.b.my_access.extend_checkout_by_name(
+            profile_name=parts['profile'],
+            environment_name=parts['env'],
+            application_name=parts['app'],
+            programmatic=not console
+        )
+
     def checkout(self, alias, blocktime, console, justification, mode, maxpolltime, profile, passphrase,
-                 force_renew, aws_credentials_file, gcloud_key_file, verbose):
+                 force_renew, aws_credentials_file, gcloud_key_file, verbose, extend):
+
+        # handle this special use case and quit
+        if extend:
+            self._extend_checkout(profile, console)
+            return
+
         credentials = None
         app_type = None
         cached_credentials_found = False
