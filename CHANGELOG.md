@@ -2,12 +2,13 @@
 
 * As of v1.4.0 release candidates will be published in an effort to get new features out faster while still allowing time for full QA testing before moving the release candidate to a full release.
 
-## v1.6.0rc4 [2023-11-XX]
+## v1.6.0rc4 [2023-11-03]
 #### What's New
 * None
 
 #### Enhancements
-* None
+* For command `ls profiles -c` show the time remaining for the checkout
+* Add new flag `-e/--extend` to command `checkout` which will extend the expiration time of a currently checked out profile (only applicable to specific application types)
 
 #### Bug Fixes
 * Fix bug in `configure import` related to the default AWS checkout mode
