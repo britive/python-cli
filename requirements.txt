@@ -1,5 +1,5 @@
 boto3
-britive>=2.22.0
+britive==2.23.0rc1
 certifi>=2022.12.7
 charset-normalizer==2.1.0
 click~=8.1.3
