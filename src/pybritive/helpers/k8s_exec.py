@@ -92,7 +92,8 @@ def main():
             force_renew=None,
             aws_credentials_file=None,
             gcloud_key_file=None,
-            verbose=None
+            verbose=None,
+            extend=False
         )
         exit()
 

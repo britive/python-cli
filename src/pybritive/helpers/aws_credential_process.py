@@ -109,7 +109,8 @@ def main():
             force_renew=args['force_renew'],
             aws_credentials_file=None,
             gcloud_key_file=None,
-            verbose=None
+            verbose=None,
+            extend=False
         )
         raise SystemExit()
 
