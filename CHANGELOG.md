@@ -2,6 +2,23 @@
 
 * As of v1.4.0 release candidates will be published in an effort to get new features out faster while still allowing time for full QA testing before moving the release candidate to a full release.
 
+## v1.6.0rc4 [2023-11-06]
+#### What's New
+* None
+
+#### Enhancements
+* None
+
+#### Bug Fixes
+* Fix bug in `pybritive-kube-exec` and `pybritive-aws-cred-process` for handling the `--extend` flag of a `checkout` command
+
+#### Dependencies
+* None
+
+#### Other
+* None
+
+
 ## v1.6.0rc4 [2023-11-03]
 #### What's New
 * None
