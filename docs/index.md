@@ -227,6 +227,9 @@ Example:
 export PYBRITIVE_BROWSER="open -a /Applications/Firefox\ Developer\ Edition.app %s"
 ~~~
 
+Note that as of Britive release `2023.11.01` the CLI authentication flow will NOT prompt to login if the user is already authenticated in the browser.
+However, this is only true if the browser launched by `pybritive` is the same browser where the user is already authenticated.
+
 ## Escaping
 If the name of an application, environment, or profile contains a `/` then that character must be properly escaped with a `\`.
 

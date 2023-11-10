@@ -2,7 +2,33 @@
 
 * As of v1.4.0 release candidates will be published in an effort to get new features out faster while still allowing time for full QA testing before moving the release candidate to a full release.
 
-## v1.6.0rc4 [2023-11-06]
+## v1.6.0 [2023-11-08]
+#### What's New
+* Initial support for Kubernetes - this functionality is not yet available publicly on the Britive Platform - this is a beta feature for internal use only
+
+#### Enhancements
+* Add command `cache kubeconfig`
+* Update command `cache clear` to delete the kube config file if it exists
+* Add global config flag `auto-refresh-kube-config` set by `configure update global auto-refresh-kube-config true`
+* Add checkout mode `k8s-exec` for use exclusively inside an `exec` command of a kube config file
+* Add console helper script `pybritive-kube-exec` for use exclusively inside an `exec` command of a kube config file
+* Add the `pybritive` package version into the `User-Agent` string used by the Britive Python SDK (`britive` package)
+* For command `ls profiles -c` show the time remaining for the checkout
+* Add new flag `-e/--extend` to command `checkout` which will extend the expiration time of a currently checked out profile (only applicable to specific application types)
+
+
+#### Bug Fixes
+* Clarified language in an error message when an authentication token has been invalidated on the server side and the resulting action the user must take to clear the token
+* Fix bug in `configure import` related to the default AWS checkout mode
+
+#### Dependencies
+* `britive>=2.23.0`
+
+#### Other
+* Documentation update to reflect that auto-login via browser will only work if the browser launched by `pybritive` is the same as the browser where the user is already authenticated to Britive.
+
+
+## v1.6.0rc5 [2023-11-06]
 #### What's New
 * None
 
@@ -35,6 +61,7 @@
 
 #### Other
 * None
+
 
 ## v1.6.0rc3 [2023-10-31]
 #### What's New
@@ -69,7 +96,6 @@
 
 #### Other
 * None
-
 
 
 ## v1.6.0rc1 [2023-10-25]
