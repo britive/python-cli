@@ -2,6 +2,24 @@
 
 * As of v1.4.0 release candidates will be published in an effort to get new features out faster while still allowing time for full QA testing before moving the release candidate to a full release.
 
+
+## v1.6.1rc1 [2023-12-07]
+#### What's New
+* None
+
+#### Enhancements
+* None
+
+#### Bug Fixes
+* Fixes issue when and authentication token has been invalidated on the server side by auto-logging out the user from the CLI and re-authenticating
+
+#### Dependencies
+* None
+
+#### Other
+* None
+
+
 ## v1.6.0 [2023-11-08]
 #### What's New
 * Initial support for Kubernetes - this functionality is not yet available publicly on the Britive Platform - this is a beta feature for internal use only
