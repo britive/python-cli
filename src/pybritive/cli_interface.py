@@ -25,11 +25,6 @@ def safe_cli():
             sys.tracebacklimit = 0
         cli()
     except Exception as e:
-        if '401 - e0000' in str(e).lower():
-            click.echo('You have logged out of Britive via the browser. Please run '
-                       '`pybritive logout [-t/--tenant <tenant>]` to clear your '
-                       'token and then re-run your command.')
-            return
         if debug:
             raise e
         raise e from None

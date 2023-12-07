@@ -37,6 +37,7 @@ class BritiveCli:
         self.tenant_alias = None
         self.token = token
         self.b = None
+        self.user = None
         self.available_profiles = None
         self.config = ConfigManager(tenant_name=tenant_name, cli=self)
         self.list_separator = '|'
@@ -85,12 +86,15 @@ class BritiveCli:
             raise click.ClickException(f'invalid credential backend {backend}.')
 
     def login(self, explicit: bool = False, browser: str = None):
+        # explicit means the user called pybritive login, otherwise it is being implicitly called by something else
+
         self.browser = browser
         self.tenant_name = self.config.get_tenant()['name']
         self.tenant_alias = self.config.alias
         if explicit and self.token:
             raise click.ClickException('Interactive login unavailable when an API token is provided.')
 
+        # taking a very straightforward approach here...if user provided a token and it doesn't work just exit
         if self.token:
             try:
                 self.b = Britive(
@@ -98,10 +102,22 @@ class BritiveCli:
                     token=self.token,
                     query_features=False
                 )
+                self.user = self.b.my_access.whoami()  # this is what may cause UnauthorizedRequest
             except exceptions.UnauthorizedRequest as e:
                 raise click.ClickException('Invalid API token provided.') from e
+            except exceptions.InvalidRequest as e:
+                if '400 - e1000 - bad request' in str(e).lower():  # this is for SCIM token
+                    self.user = {}  # not sure what else to set this to?
+                else:
+                    raise e
         else:
-            while True:  # will break after we successfully get logged in
+            counter = 0
+            while True:  # will break after we successfully get logged in or 3 attempts have occurred
+                # protect against infinite loop
+                if counter > 2:
+                    raise Exception('could not login after 3 attempts')
+
+                # attempt login and making an api call to ensure the credentials we have are valid
                 try:
                     self.set_credential_manager()
                     self.b = Britive(
@@ -109,9 +125,15 @@ class BritiveCli:
                         token=self.credential_manager.get_token(),
                         query_features=False
                     )
+                    self.user = self.b.my_access.whoami()  # this is what may cause UnauthorizedRequest
                     break
-                except exceptions.UnauthorizedRequest:
-                    self._cleanup_credentials()
+                except exceptions.UnauthorizedRequest as e:
+                    if '401 - e0000' in str(e).lower():
+                        self.logout()
+                    else:
+                        raise e
+                finally:
+                    counter += 1
 
         self._update_sdk_user_agent()
 
@@ -150,13 +172,14 @@ class BritiveCli:
         # if we do we need to invalidate them at the tenant and clean them up on the client side
         # if we don't have valid credentials for the tenant then there is no need to logout
         if self.credential_manager.has_valid_credentials():
-
-            self.b = Britive(
+            # keep it as local variable, so we don't mess up anything that may be happening in login
+            # if this method is called due to a 401 E0000 error
+            b = Britive(
                 tenant=self.tenant_name,
                 token=self.credential_manager.get_token(),
                 query_features=False
             )
-            self.b.delete(f'https://{Britive.parse_tenant(self.tenant_name)}/api/auth')
+            b.delete(f'https://{Britive.parse_tenant(self.tenant_name)}/api/auth')
             self._cleanup_credentials()
 
     def debug(self, data: object, ignore_silent: bool = False):
