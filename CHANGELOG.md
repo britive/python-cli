@@ -11,7 +11,7 @@
 * None
 
 #### Bug Fixes
-* None
+* Fixes issue when and authentication token has been invalidated on the server side by auto-logging out the user from the CLI and re-authenticating
 
 #### Dependencies
 * None
