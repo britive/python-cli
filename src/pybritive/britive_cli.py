@@ -37,7 +37,6 @@ class BritiveCli:
         self.tenant_alias = None
         self.token = token
         self.b = None
-        self.user = None
         self.available_profiles = None
         self.config = ConfigManager(tenant_name=tenant_name, cli=self)
         self.list_separator = '|'
@@ -102,19 +101,18 @@ class BritiveCli:
                     token=self.token,
                     query_features=False
                 )
-                self.user = self.b.my_access.whoami()  # this is what may cause UnauthorizedRequest
             except exceptions.UnauthorizedRequest as e:
                 raise click.ClickException('Invalid API token provided.') from e
             except exceptions.InvalidRequest as e:
                 if '400 - e1000 - bad request' in str(e).lower():  # this is for SCIM token
-                    self.user = {}  # not sure what else to set this to?
+                    pass
                 else:
                     raise e
         else:
-            counter = 0
+            counter = 1
             while True:  # will break after we successfully get logged in or 3 attempts have occurred
                 # protect against infinite loop
-                if counter > 2:
+                if counter > 3:
                     raise Exception('could not login after 3 attempts')
 
                 # attempt login and making an api call to ensure the credentials we have are valid
@@ -125,10 +123,10 @@ class BritiveCli:
                         token=self.credential_manager.get_token(),
                         query_features=False
                     )
-                    self.user = self.b.my_access.whoami()  # this is what may cause UnauthorizedRequest
                     break
                 except exceptions.UnauthorizedRequest as e:
                     if '401 - e0000' in str(e).lower():
+                        self.print(f'attempt {counter} of 3 - login failed')
                         self.logout()
                     else:
                         raise e
@@ -159,6 +157,27 @@ class BritiveCli:
         self.set_credential_manager()
         self.credential_manager.delete()
 
+    @staticmethod
+    def _is_saml_user(token):
+        import jwt  # lazy load as this will not happen often
+
+        try:
+            username = jwt.decode(
+                token,
+                # validation of the token will occur on the Britive backend
+                # so not verifying everything here is okay since we are just
+                # trying to extract the username to determine if they are a
+                # SAML user or not
+                options={
+                    'verify_signature': False,
+                    'verify_aud': False
+                }
+            ).get('username', '')
+
+            return username.startswith('SAML')
+        except:
+            return False
+
     def logout(self):
         # if dealing with a token there is no concept of logout
         if self.token:
@@ -172,14 +191,21 @@ class BritiveCli:
         # if we do we need to invalidate them at the tenant and clean them up on the client side
         # if we don't have valid credentials for the tenant then there is no need to logout
         if self.credential_manager.has_valid_credentials():
+            token = self.credential_manager.get_token()
+
             # keep it as local variable, so we don't mess up anything that may be happening in login
             # if this method is called due to a 401 E0000 error
             b = Britive(
                 tenant=self.tenant_name,
-                token=self.credential_manager.get_token(),
+                token=token,
                 query_features=False
             )
-            b.delete(f'https://{Britive.parse_tenant(self.tenant_name)}/api/auth')
+
+            params = {}
+            if self._is_saml_user(token):
+                params['type'] = 'sso'
+
+            b.delete(f'https://{Britive.parse_tenant(self.tenant_name)}/api/auth', params=params)
             self._cleanup_credentials()
 
     def debug(self, data: object, ignore_silent: bool = False):
