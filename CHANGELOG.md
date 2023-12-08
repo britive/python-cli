@@ -2,6 +2,21 @@
 
 * As of v1.4.0 release candidates will be published in an effort to get new features out faster while still allowing time for full QA testing before moving the release candidate to a full release.
 
+## v1.6.1rc2 [2023-12-08]
+#### What's New
+* None
+
+#### Enhancements
+* Send proper logout type based on the type of user (local or SAML)
+
+#### Bug Fixes
+* Fixes issue with `user` command
+
+#### Dependencies
+* None
+
+#### Other
+* Additional logging when entering a login/logout loop
 
 ## v1.6.1rc1 [2023-12-07]
 #### What's New
