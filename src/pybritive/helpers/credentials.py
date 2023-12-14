@@ -33,7 +33,7 @@ interactive_login_fields_to_pop = [
 # the credentials should expire sooner than the true expiration date
 # in case we need to do things like polling for credentials during
 # an approval process
-credential_expiration_safe_zone_minutes = 10
+credential_expiration_safe_zone_minutes = 0
 federation_provider_default_expiration_seconds = 900
 
 
