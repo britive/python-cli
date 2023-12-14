@@ -2,6 +2,23 @@
 
 * As of v1.4.0 release candidates will be published in an effort to get new features out faster while still allowing time for full QA testing before moving the release candidate to a full release.
 
+## v1.6.1rc3 [2023-12-14]
+#### What's New
+* None
+
+#### Enhancements
+* None
+
+#### Bug Fixes
+* Continuing to troubleshoot the `401 - EOOOO` login issue.
+
+#### Dependencies
+* None
+
+#### Other
+* None
+
+
 ## v1.6.1rc2 [2023-12-08]
 #### What's New
 * None

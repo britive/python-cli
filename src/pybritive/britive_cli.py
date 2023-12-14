@@ -101,6 +101,7 @@ class BritiveCli:
                     token=self.token,
                     query_features=False
                 )
+                self.b.my_access.whoami()  # this is what may cause UnauthorizedRequest
             except exceptions.UnauthorizedRequest as e:
                 raise click.ClickException('Invalid API token provided.') from e
             except exceptions.InvalidRequest as e:
@@ -123,6 +124,7 @@ class BritiveCli:
                         token=self.credential_manager.get_token(),
                         query_features=False
                     )
+                    self.b.my_access.whoami()  # this is what may cause UnauthorizedRequest
                     break
                 except exceptions.UnauthorizedRequest as e:
                     if '401 - e0000' in str(e).lower():
