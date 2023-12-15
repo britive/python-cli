@@ -30,10 +30,6 @@ interactive_login_fields_to_pop = [
 ]
 
 
-# the credentials should expire sooner than the true expiration date
-# in case we need to do things like polling for credentials during
-# an approval process
-credential_expiration_safe_zone_minutes = 0
 federation_provider_default_expiration_seconds = 900
 
 
@@ -43,6 +39,10 @@ class InteractiveLoginTimeout(Exception):
 
 def b64_encode_url_safe(value: bytes):
     return base64.urlsafe_b64encode(value).decode('utf-8').replace('=', '')
+
+
+class CouldNotExtractExpirationTimeFromJwtException(Exception):
+    pass
 
 
 # this base class expects self.credentials to be a dict - so sub classes need to convert to dict
@@ -119,11 +119,23 @@ class CredentialManager:
             else:
                 credentials = response.json()['authenticationResult']
 
-                # calculate a safe expiration time
-                auth_time = int(credentials.get('authTime', 0))
-                session_time = int(credentials.get('maxSessionTimeout', 0))
-                creds_expire_after = auth_time + session_time - (credential_expiration_safe_zone_minutes * 60 * 1000)
-                credentials['safeExpirationTime'] = creds_expire_after
+                try:
+                    # attempt to pull the expiration time from the jwt
+                    expiration_time_ms = self._extract_exp_from_jwt(
+                        token=credentials['accessToken'],
+                        verify=False,
+                        convert_to_ms=True
+                    )
+                    self.cli.debug(f'found expiration time {expiration_time_ms} from jwt')
+                except CouldNotExtractExpirationTimeFromJwtException:
+                    # calculate from other fields in the authentication result
+                    self.cli.debug('could not extract token expiration time from jwt - dropping to use other fields')
+                    auth_time = int(credentials.get('authTime', 0))
+                    session_time = int(credentials.get('maxSessionTimeout', 0))
+                    expiration_time_ms = auth_time + session_time
+                    self.cli.debug(f'found expiration time {expiration_time_ms} from authTime + maxSessionTimeout')
+
+                credentials['safeExpirationTime'] = expiration_time_ms
 
                 # drop a bunch of unnecessary fields
                 for field in interactive_login_fields_to_pop:
@@ -132,6 +144,24 @@ class CredentialManager:
                 self.save(credentials)
                 self.cli.print(f'Authenticated to tenant {self.tenant} via interactive login.')
                 break
+
+    @staticmethod
+    def _extract_exp_from_jwt(token: str, verify: bool = False, convert_to_ms: bool = False):
+        try:
+            expiration_time = jwt.decode(
+                token,
+                # validation of the token will occur on the Britive backend
+                # so not verifying everything here is okay since we are just
+                # trying to extract the token expiration time so we can store
+                # it in the ~/.britive/pybritive.credentials[.encrypted] file
+                options={
+                    'verify_signature': verify,
+                    'verify_aud': verify
+                }
+            )['exp']
+            return expiration_time * (1000 if convert_to_ms else 1)
+        except Exception:
+            raise CouldNotExtractExpirationTimeFromJwtException
 
     def perform_federation_provider_authentication(self):
         self.cli.print(f'Performing {self.federation_provider} federation provider authentication '
@@ -168,17 +198,11 @@ class CredentialManager:
                 token_expires = json.loads(token)['iam_request_headers']['x-britive-expires']
                 expiration_time = int(parser.parse(token_expires).timestamp() * 1000)
             if provider == 'oidc':
-                expiration_time = jwt.decode(
-                    token,
-                    # validation of the token will occur on the Britive backend
-                    # so not verifying everything here is okay since we are just
-                    # trying to extract the token expiration time so we can store
-                    # it in the ~/.britive/pybritive.credentials[.encrypted] file
-                    options={
-                        'verify_signature': False,
-                        'verify_aud': False
-                    }
-                )['exp'] * 1000
+                expiration_time = self._extract_exp_from_jwt(
+                    token=token,
+                    verify=False,
+                    convert_to_ms=True
+                )
         except Exception:
             self.cli.print(f'Cannot obtain token expiration time for {self.federation_provider}. Defaulting to '
                            f'{federation_provider_default_expiration_seconds} seconds.')
