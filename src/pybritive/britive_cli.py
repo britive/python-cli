@@ -129,6 +129,7 @@ class BritiveCli:
                 except exceptions.UnauthorizedRequest as e:
                     if '401 - e0000' in str(e).lower():
                         self.print(f'attempt {counter} of 3 - login failed')
+                        self.debug(f'login error message was {str(e)}')
                         self.logout()
                     else:
                         raise e
