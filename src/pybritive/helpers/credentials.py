@@ -146,6 +146,23 @@ class CredentialManager:
                 break
 
     @staticmethod
+    def extract_field_from_jwt(token: str, field: str, verify: bool = False):
+        try:
+            return jwt.decode(
+                token,
+                # validation of the token will occur on the Britive backend
+                # so not verifying everything here is okay since we are just
+                # trying to extract the token expiration time so we can store
+                # it in the ~/.britive/pybritive.credentials[.encrypted] file
+                options={
+                    'verify_signature': verify,
+                    'verify_aud': verify
+                }
+            )[field]
+        except Exception:
+            return None
+
+    @staticmethod
     def _extract_exp_from_jwt(token: str, verify: bool = False, convert_to_ms: bool = False):
         try:
             expiration_time = jwt.decode(
@@ -247,20 +264,22 @@ class CredentialManager:
 
     def get_token(self):
         if not self.has_valid_credentials():  # no credentials or expired creds for the tenant so do interactive login
-
+            self.cli.debug('has_valid_credentials = False')
             # both methods below write the credentials out and update self.credentials as needed
             if self.federation_provider:
                 self.perform_federation_provider_authentication()
             else:
                 self.perform_interactive_login()
 
-        return self._get_token()
+        token = self._get_token()
+        return token
 
     def has_valid_credentials(self):
         if not self.credentials or self.credentials == {}:
             self.cli.print(f'Credentials for tenant {self.tenant} not found.')
             return False
         if int(time.time() * 1000) <= int(self.credentials.get('safeExpirationTime', 0)):
+            self.cli.debug('credentials.py::has_valid_credentials - credentials exist and are not expired so are valid')
             return True
         self.cli.print(f'Credentials for tenant {self.tenant} have expired.')
         return False
@@ -292,8 +311,11 @@ class FileCredentialManager(CredentialManager):
         full_credentials = self.load(full=True)
         if credentials is None:
             full_credentials.pop(self.alias, None)
+            self.credentials = None
         else:
             full_credentials[self.alias] = credentials
+            # effectively a deep copy
+            self.credentials = json.loads(json.dumps(credentials))
 
         config = configparser.ConfigParser()
         config.optionxform = str  # maintain key case
@@ -302,7 +324,13 @@ class FileCredentialManager(CredentialManager):
         # write the new credentials file
         with open(str(self.path), 'w', encoding='utf-8') as f:
             config.write(f, space_around_delimiters=False)
-        self.credentials = credentials
+
+        jti = self.extract_field_from_jwt(
+            token=(self.credentials or {}).get('accessToken'),
+            verify=False,
+            field='jti'
+        )
+        self.cli.debug(f'credentials.py::FileCredentialManager::save - set credentials to jwt id {jti}')
 
     def delete(self):
         self.save(None)
@@ -353,6 +381,7 @@ class EncryptedFileCredentialManager(CredentialManager):
         full_credentials = self.load(full=True)
         if credentials is None:
             full_credentials.pop(self.alias, None)
+            self.credentials = None
         else:
             credentials['accessToken'] = self.encrypt(credentials['accessToken'])
             full_credentials[self.alias] = credentials
@@ -366,6 +395,13 @@ class EncryptedFileCredentialManager(CredentialManager):
         # write the new credentials file
         with open(str(self.path), 'w', encoding='utf-8') as f:
             config.write(f, space_around_delimiters=False)
+
+        jti = self.extract_field_from_jwt(
+            token=(self.credentials or {}).get('accessToken'),
+            verify=False,
+            field='jti'
+        )
+        self.cli.debug(f'credentials.py::FileCredentialManager::save - set credentials to jwt id {jti}')
 
     def delete(self):
         self.save(None)
