@@ -2,6 +2,43 @@
 
 * As of v1.4.0 release candidates will be published in an effort to get new features out faster while still allowing time for full QA testing before moving the release candidate to a full release.
 
+## v1.6.1 [2023-12-18]
+#### What's New
+* None
+
+#### Enhancements
+* None
+
+#### Bug Fixes
+* Fixes issue when an authentication token has been invalidated on the server side by discarding local credentials and re-authenticating
+* Send proper logout type based on the type of user (local or SAML)
+
+#### Dependencies
+* None
+
+#### Other
+* Additional debug logging related to the authentication process
+* Remove logic for "safe token expiration" now that CLI and Browser tokens are shared
+* Switch to extracting expiration time from the JWT instead of calculating based on auth time + session duration
+
+
+## v1.6.1rc6 [2023-12-18]
+#### What's New
+* None
+
+#### Enhancements
+* None
+
+#### Bug Fixes
+* None
+
+#### Dependencies
+* None
+
+#### Other
+* Additional debug logging related to the authentication process
+
+
 ## v1.6.1rc5 [2023-12-15]
 #### What's New
 * None
@@ -17,6 +54,7 @@
 
 #### Other
 * Additional debug logging related to the authentication process
+
 
 ## v1.6.1rc4 [2023-12-14]
 #### What's New
@@ -68,6 +106,7 @@
 #### Other
 * Additional logging when entering a login/logout loop
 
+
 ## v1.6.1rc1 [2023-12-07]
 #### What's New
 * None
@@ -76,7 +115,7 @@
 * None
 
 #### Bug Fixes
-* Fixes issue when and authentication token has been invalidated on the server side by auto-logging out the user from the CLI and re-authenticating
+* Fixes issue when an authentication token has been invalidated on the server side by auto-logging out the user from the CLI and re-authenticating
 
 #### Dependencies
 * None
