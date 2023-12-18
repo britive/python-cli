@@ -21,6 +21,7 @@ from .helpers.credentials import FileCredentialManager, EncryptedFileCredentialM
 from .helpers.split import profile_split
 from .helpers import cloud_credential_printer as printer
 from .helpers.cache import Cache
+import jwt
 
 
 default_table_format = 'fancy_grid'
@@ -84,6 +85,23 @@ class BritiveCli:
         else:
             raise click.ClickException(f'invalid credential backend {backend}.')
 
+    @staticmethod
+    def _extract_field_from_jwt(token: str, field: str, verify: bool = False):
+        try:
+            return jwt.decode(
+                token,
+                # validation of the token will occur on the Britive backend
+                # so not verifying everything here is okay since we are just
+                # trying to extract the token expiration time so we can store
+                # it in the ~/.britive/pybritive.credentials[.encrypted] file
+                options={
+                    'verify_signature': verify,
+                    'verify_aud': verify
+                }
+            )[field]
+        except Exception:
+            return None
+
     def login(self, explicit: bool = False, browser: str = None):
         # explicit means the user called pybritive login, otherwise it is being implicitly called by something else
 
@@ -94,7 +112,7 @@ class BritiveCli:
             raise click.ClickException('Interactive login unavailable when an API token is provided.')
 
         # taking a very straightforward approach here...if user provided a token and it doesn't work just exit
-        if self.token:
+        if self.token:  # static token provided or BRITIVE_API_TOKEN set
             try:
                 self.b = Britive(
                     tenant=self.tenant_name,
@@ -109,7 +127,7 @@ class BritiveCli:
                     pass
                 else:
                     raise e
-        else:
+        else:  # user is asking for an interactive login or using token stored from an interactive login
             counter = 1
             while True:  # will break after we successfully get logged in or 3 attempts have occurred
                 # protect against infinite loop
@@ -119,18 +137,25 @@ class BritiveCli:
                 # attempt login and making an api call to ensure the credentials we have are valid
                 try:
                     self.set_credential_manager()
+                    token = self.credential_manager.get_token()
+                    jti = self._extract_field_from_jwt(token=token, field='jti')
+                    self.debug(f'got token jti of {jti} from credential manager')
                     self.b = Britive(
                         tenant=self.tenant_name,
-                        token=self.credential_manager.get_token(),
+                        token=token,
                         query_features=False
                     )
                     self.b.my_access.whoami()  # this is what may cause UnauthorizedRequest
                     break
                 except exceptions.UnauthorizedRequest as e:
                     if '401 - e0000' in str(e).lower():
-                        self.print(f'attempt {counter} of 3 - login failed')
+                        self.debug(f'attempt {counter} of 3 - login failed')
                         self.debug(f'login error message was {str(e)}')
-                        self.logout()
+
+                        # we know the token is invalid since we got that API response
+                        # so we don't need to actually logout, just clear the token from
+                        # the credentials manager
+                        self._cleanup_credentials()
                     else:
                         raise e
                 finally:
