@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 import shutil
 import toml
-
+import hashlib
 from britive.britive import Britive
 import click
 from ..choices.backend import backend_choices
@@ -60,7 +60,6 @@ aws_fields = [
     'default_checkout_mode'
 ]
 
-
 class ConfigManager:
     def __init__(self, cli: object, tenant_name: str = None):
         self.tenant_name = tenant_name
@@ -74,13 +73,19 @@ class ConfigManager:
         self.tenants_by_name = None
         self.aliases_and_names = None
         self.profile_aliases = {}
-        self.cli = cli
+        self.cli: object = cli
         self.loaded = False
         self.validation_error_messages = []
+        self.gcloud_key_file_path: str = str(Path(self.path).parent / 'pybritive-gcloud-key-files')
 
-    def clear_gcloud_auth_key_files(self):
-        path = Path(self.path).parent / 'pybritive-gcloud-key-files'
-        shutil.rmtree(str(path), ignore_errors=True)
+    def clear_gcloud_auth_key_files(self, profile=None):
+        path = Path(self.gcloud_key_file_path)
+        if profile:  # if we are given a specific profile we should clear just that key file
+            key_file = self.cli.build_gcloud_key_file_for_gcloudauthexec(profile=profile)
+            path = path / key_file
+            path.unlink(missing_ok=True)
+        else:  # otherwise we can remove all items in the directory and the directory itself
+            shutil.rmtree(str(path), ignore_errors=True)
 
     def get_output_format(self, output_format: str = None):
         return coalesce(

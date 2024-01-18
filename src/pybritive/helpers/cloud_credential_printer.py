@@ -1,11 +1,13 @@
 import configparser
 import json
 import os
+import subprocess
 from pathlib import Path
 import platform
 import uuid
 import webbrowser
 import click
+import hashlib
 
 
 # trailing spaces matter as some options do not have the trailing space
@@ -64,6 +66,8 @@ class CloudCredentialPrinter:
             self.print_gcloudauth()
         if self.mode == 'kube':
             self.print_kube()
+        if self.mode == 'gcloudauthexec':
+            self.exec_gcloudauthexec()
 
     def print_console(self):
         url = self.credentials.get('url', self.credentials)
@@ -95,6 +99,9 @@ class CloudCredentialPrinter:
         self._not_implemented()
 
     def print_gcloudauth(self):
+        self._not_implemented()
+
+    def exec_gcloudautoauth(self):
         self._not_implemented()
 
     def print_kube(self):
@@ -246,7 +253,7 @@ class GcpCloudCredentialPrinter(CloudCredentialPrinter):
     def print_gcloudauth(self):
         # get path to gcloud key file
         if not self.gcloud_key_file:  # if --gcloud-key-file not provided
-            path = Path(self.cli.config.path).parent / 'pybritive-gcloud-key-files' / f'{uuid.uuid4().hex}.json'
+            path = Path(self.cli.config.gcloud_key_file_path) / f'{uuid.uuid4().hex}.json'
         else:  # we need to parse out/sanitize what was provided
             path = Path(self.gcloud_key_file).expanduser().absolute()
 
@@ -258,6 +265,29 @@ class GcpCloudCredentialPrinter(CloudCredentialPrinter):
             f"gcloud auth activate-service-account {self.credentials['client_email']} --key-file {str(path)}",
             ignore_silent=True
         )
+
+    def exec_gcloudauthexec(self):
+        key_file = self.cli.build_gcloud_key_file_for_gcloudauthexec(profile=self.profile)
+        path = Path(self.cli.config.gcloud_key_file_path) / key_file
+
+        # key file does not yet exist so write to it
+        path.parent.mkdir(exist_ok=True, parents=True)
+        path.write_text(json.dumps(self.credentials, indent=2), encoding='utf-8')
+
+        try:
+            commands = [
+                'gcloud',
+                'auth',
+                'activate-service-account',
+                self.credentials['client_email'],
+                '--key-file',
+                str(path),
+                '--verbosity=error'
+            ]
+
+            subprocess.run(commands, check=True)
+        except Exception as e:
+            self.cli.print(f'error running `gcloud auth activate-service-account ...`: {str(e)}')
 
 
 class KubernetesCredentialPrinter(CloudCredentialPrinter):

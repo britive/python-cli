@@ -1,4 +1,5 @@
 import csv
+import hashlib
 from datetime import datetime
 from datetime import timezone
 from datetime import timedelta
@@ -29,7 +30,7 @@ debug_enabled = os.getenv('PYBRITIVE_DEBUG')
 
 
 class BritiveCli:
-    def __init__(self, tenant_name: str = None, token: str = None, silent: bool = False,passphrase: str = None,
+    def __init__(self, tenant_name: str = None, token: str = None, silent: bool = False, passphrase: str = None,
                  federation_provider: str = None, from_helper_console_script: bool = False):
         self.silent = silent
         self.from_helper_console_script = from_helper_console_script
@@ -593,8 +594,10 @@ class BritiveCli:
             transaction_id=transaction_id
         )
 
-        if application_type in ('aws', 'aws standalone'):
+        if application_type in ['aws', 'aws standalone']:
             self.clear_cached_aws_credentials(profile)
+        if application_type in ['gcp']:
+            self.clear_gcloud_auth_key_files(profile=profile)
 
     def _checkout(self, profile_name, env_name, app_name, programmatic, blocktime, maxpolltime, justification):
         try:
@@ -927,8 +930,33 @@ class BritiveCli:
             environment_id=ids['environment_id']
         )
 
-    def clear_gcloud_auth_key_files(self):
-        self.config.clear_gcloud_auth_key_files()
+    @staticmethod
+    def build_gcloud_key_file_for_gcloudauthexec(profile: str):
+        profile_hash = hashlib.sha256(string=profile.encode('utf-8')).hexdigest()
+        return f'gcloudauthexec-{profile_hash}.json'
+
+    def clear_gcloud_auth_key_files(self, profile: str = None):
+        if profile:  # we want to attempt a gcloud cli command
+            import subprocess  # lazy load as this will not always be needed
+
+            # build the path to the key file in question
+            key_file = self.build_gcloud_key_file_for_gcloudauthexec(profile=profile)
+            path = Path(self.config.gcloud_key_file_path) / key_file
+            if path.exists():
+                try:
+                    with open(str(path), 'r') as f:
+                        credentials = json.loads(f.read())
+                    commands = [
+                        'gcloud',
+                        'auth',
+                        'revoke',
+                        credentials['client_email'],
+                        '--verbosity=error'
+                    ]
+                    subprocess.run(commands, check=True)
+                except Exception as e:
+                    self.print(f'could not run `gcloud auth revoke ...` due to issue: {str(e)}')
+        self.config.clear_gcloud_auth_key_files(profile=profile)
 
     def api(self, method, parameters: dict, query=None):
         self.login()
