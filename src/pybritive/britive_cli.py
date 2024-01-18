@@ -1,5 +1,6 @@
 import csv
 import hashlib
+import time
 from datetime import datetime
 from datetime import timezone
 from datetime import timedelta
@@ -958,7 +959,8 @@ class BritiveCli:
             # build the path to the key file in question
             key_file = self.build_gcloud_key_file_for_gcloudauthexec(profile=profile)
             path = Path(self.config.gcloud_key_file_path) / key_file
-            if path.exists():
+
+            if path.exists():  # we have a valid gcloudauthexec key file, so we know there was a checkout with this mode
                 try:
                     with open(str(path), 'r') as f:
                         credentials = json.loads(f.read())
@@ -969,18 +971,21 @@ class BritiveCli:
                         credentials['client_email'],
                         '--verbosity=error'
                     ]
+                    self.debug(' '.join(commands))
                     subprocess.run(commands, check=True)
 
                     gcloud_default_account = self.config.gcloud_default_account()
+
                     if gcloud_default_account:
                         commands = [
                             'gcloud',
                             'config',
                             'set',
                             'account',
-                            f'"{gcloud_default_account}"',
+                            gcloud_default_account,  # no need for "" here as subprocess will properly escape
                             '--verbosity=error'
                         ]
+                        self.debug(' '.join(commands))
                         subprocess.run(commands, check=True)
                 except Exception as e:
                     self.print(f'could not reset gcloud CLI active account due to issue: {str(e)}')
