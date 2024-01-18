@@ -4,7 +4,7 @@
 
 ## v1.7.0rc1 [2024-01-XX]
 #### What's New
-* Display System Announcement/Banner if one is present for the tenant
+* Display system announcement/banner if one is present for the tenant
 
 #### Enhancements
 * New checkout mode of `gcloudauthexec` which will invoke, via sub-shell, the `gcloud auth activate-service-account` command to switch credentials for `gcloud`. Additionally, a `checkin` will reset this configuration.

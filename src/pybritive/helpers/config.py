@@ -39,7 +39,8 @@ def coalesce(*arg):
 non_tenant_sections = [
     'global',
     'profile-aliases',
-    'aws'
+    'aws',
+    'gcp'
 ]
 
 global_fields = [
@@ -59,6 +60,11 @@ tenant_fields = [
 aws_fields = [
     'default_checkout_mode'
 ]
+
+gcp_fields = [
+    'gcloud_default_account'
+]
+
 
 class ConfigManager:
     def __init__(self, cli: object, tenant_name: str = None):
@@ -250,6 +256,10 @@ class ConfigManager:
         self.load()
         return self.config.get('aws', {}).get('default_checkout_mode', None)
 
+    def gcloud_default_account(self):
+        self.load()
+        return self.config.get('gcp', {}).get('gcloud_default_account', None)
+
     def update(self, section, field, value):
         self.load()
         if section not in self.config:
@@ -271,6 +281,8 @@ class ConfigManager:
                 self.validate_profile_aliases(section, fields)
             if section == 'aws':
                 self.validate_aws(section, fields)
+            if section == 'gcp':
+                self.validate_gcp(section, fields)
             if section.startswith('tenant-'):
                 self.validate_tenant(section, fields)
 
@@ -317,6 +329,11 @@ class ConfigManager:
             if field == 'default_checkout_mode' and value not in mode_choices.choices:
                 error = f'Invalid {section} field {field} value {value} provided. Invalid value choice.'
                 self.validation_error_messages.append(error)
+
+    def validate_gcp(self, section, fields):
+        for field, value in fields.items():
+            if field not in gcp_fields:
+                self.validation_error_messages.append(f'Invalid {section} field {field} provided.')
 
     def validate_tenant(self, section, fields):
         for field, value in fields.items():

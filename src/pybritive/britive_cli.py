@@ -169,6 +169,22 @@ class BritiveCli:
         if explicit and should_get_profiles:
             self._set_available_profiles()  # will handle calling cache_profiles() and construct_kube_config()
 
+        # handle printing the banner
+        self._display_banner()
+
+    def _display_banner(self):
+        if self.silent:
+            return
+
+        if not Cache().banner_expired(tenant=self.tenant_name):  # if banner is not expired yet then nothing to do
+            return
+
+        # if we get here then we need to at least grab the banner and see if it has changed
+        banner = self.b.banner()
+        banner_changed = Cache().save_banner(tenant=self.tenant_name, banner=banner)
+        if banner and banner_changed:
+            self.print(f'*** {banner.get("messageType", "UNKNOWN")}: {banner.get("message", "<no message>")} ***')
+
     def _update_sdk_user_agent(self):
         # update the user agent to include the pybritive cli version
         user_agent = self.b.session.headers.get('User-Agent')
@@ -652,7 +668,7 @@ class BritiveCli:
     def _extend_checkout(self, profile, console):
         self.login()
         parts = self._split_profile_into_parts(profile)
-        response = self.b.my_access.extend_checkout_by_name(
+        self.b.my_access.extend_checkout_by_name(
             profile_name=parts['profile'],
             environment_name=parts['env'],
             application_name=parts['app'],
@@ -954,8 +970,20 @@ class BritiveCli:
                         '--verbosity=error'
                     ]
                     subprocess.run(commands, check=True)
+
+                    gcloud_default_account = self.config.gcloud_default_account()
+                    if gcloud_default_account:
+                        commands = [
+                            'gcloud',
+                            'config',
+                            'set',
+                            'account',
+                            f'"{gcloud_default_account}"',
+                            '--verbosity=error'
+                        ]
+                        subprocess.run(commands, check=True)
                 except Exception as e:
-                    self.print(f'could not run `gcloud auth revoke ...` due to issue: {str(e)}')
+                    self.print(f'could not reset gcloud CLI active account due to issue: {str(e)}')
         self.config.clear_gcloud_auth_key_files(profile=profile)
 
     def api(self, method, parameters: dict, query=None):
