@@ -107,4 +107,3 @@ class Cache:
 
         # return True if the hashes have changed, False is they are equal
         return cached_hash != new_hash
-
