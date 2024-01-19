@@ -4,7 +4,6 @@ import os
 from pathlib import Path
 import shutil
 import toml
-import hashlib
 from britive.britive import Britive
 import click
 from ..choices.backend import backend_choices

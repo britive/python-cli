@@ -1,6 +1,5 @@
 import csv
 import hashlib
-import time
 from datetime import datetime
 from datetime import timezone
 from datetime import timedelta
