@@ -2,6 +2,22 @@
 
 * As of v1.4.0 release candidates will be published in an effort to get new features out faster while still allowing time for full QA testing before moving the release candidate to a full release.
 
+## v1.7.0rc1 [2024-01-19]
+#### What's New
+* Display system announcement/banner if one is present for the tenant
+
+#### Enhancements
+* New checkout mode of `gcloudauthexec` which will invoke, via sub-shell, the `gcloud auth activate-service-account` command to switch credentials for `gcloud`. Additionally, a `checkin` will reset this configuration.
+
+#### Bug Fixes
+* Fix issue related to the `cache` and `clear` commands when no global default tenant is set
+
+#### Dependencies
+* `britive>=2.24.0rc1`
+
+#### Other
+* None
+
 ## v1.6.1 [2023-12-18]
 #### What's New
 * None

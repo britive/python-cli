@@ -25,6 +25,7 @@ mode_choices = click.Choice(
         'browser-chrome',
         'browser-chromium',
         'kube-exec',                # bake into kubeconfig with oidc exec output and additional caching to make kubectl more performant
+        'gcloudauthexec',           # will effectively execute results of gcloudauth in a sub-shell
     ],
     case_sensitive=False
 )
