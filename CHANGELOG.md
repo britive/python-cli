@@ -2,7 +2,7 @@
 
 * As of v1.4.0 release candidates will be published in an effort to get new features out faster while still allowing time for full QA testing before moving the release candidate to a full release.
 
-## v1.7.0rc1 [2024-01-XX]
+## v1.7.0rc1 [2024-01-19]
 #### What's New
 * Display system announcement/banner if one is present for the tenant
 
