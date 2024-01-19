@@ -1,7 +1,9 @@
+import hashlib
 import json
 import os
 from pathlib import Path
 from .encryption import StringEncryption, InvalidPassphraseException
+import time
 
 
 class Cache:
@@ -15,7 +17,8 @@ class Cache:
         self.default_key_values = {
             'profiles': [],
             'awscredentialprocess': {},
-            'kube-exec': {}
+            'kube-exec': {},
+            'banners': {}
         }
         self.load()
 
@@ -76,3 +79,31 @@ class Cache:
     def clear_credentials(self, profile_name: str, mode: str = 'awscredentialprocess'):
         self.cache[mode].pop(profile_name.lower(), None)
         self.write()
+
+    @staticmethod
+    def hash_banner(banner: dict) -> str:
+        return hashlib.sha512(string=json.dumps(banner, default=str)).hexdigest()
+
+    def banner_expired(self, tenant: str) -> bool:
+        cached_banner_data = self.cache.get('banners', {}).get(tenant)
+        expires = 0
+        if cached_banner_data is not None:
+            expires = cached_banner_data.get('expires', 0)
+        return expires < int(time.time())
+
+    def save_banner(self, tenant: str, banner: dict) -> bool:
+        # if someone called this then we simply save the banner
+        # regardless of whether the cached record has expired yet
+        # as we assume the caller knows what they are doing
+
+        cached_banner_data = self.cache.get('banners', {}).get(tenant, {})
+        cached_hash = cached_banner_data.get('hash', '')
+        new_hash = hashlib.sha512(string=json.dumps(banner, default=str, sort_keys=True).encode('utf-8')).hexdigest()
+        self.cache['banners'][tenant] = {
+            'hash': new_hash,
+            'expires': int(time.time()) + (5 * 60)
+        }
+        self.write()
+
+        # return True if the hashes have changed, False is they are equal
+        return cached_hash != new_hash

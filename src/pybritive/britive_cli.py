@@ -1,4 +1,5 @@
 import csv
+import hashlib
 from datetime import datetime
 from datetime import timezone
 from datetime import timedelta
@@ -29,7 +30,7 @@ debug_enabled = os.getenv('PYBRITIVE_DEBUG')
 
 
 class BritiveCli:
-    def __init__(self, tenant_name: str = None, token: str = None, silent: bool = False,passphrase: str = None,
+    def __init__(self, tenant_name: str = None, token: str = None, silent: bool = False, passphrase: str = None,
                  federation_provider: str = None, from_helper_console_script: bool = False):
         self.silent = silent
         self.from_helper_console_script = from_helper_console_script
@@ -167,6 +168,22 @@ class BritiveCli:
         should_get_profiles = any([self.config.auto_refresh_profile_cache(), self.config.auto_refresh_kube_config()])
         if explicit and should_get_profiles:
             self._set_available_profiles()  # will handle calling cache_profiles() and construct_kube_config()
+
+        # handle printing the banner
+        self._display_banner()
+
+    def _display_banner(self):
+        if self.silent:
+            return
+
+        if not Cache().banner_expired(tenant=self.tenant_name):  # if banner is not expired yet then nothing to do
+            return
+
+        # if we get here then we need to at least grab the banner and see if it has changed
+        banner = self.b.banner()
+        banner_changed = Cache().save_banner(tenant=self.tenant_name, banner=banner)
+        if banner and banner_changed:
+            self.print(f'*** {banner.get("messageType", "UNKNOWN")}: {banner.get("message", "<no message>")} ***')
 
     def _update_sdk_user_agent(self):
         # update the user agent to include the pybritive cli version
@@ -593,8 +610,10 @@ class BritiveCli:
             transaction_id=transaction_id
         )
 
-        if application_type in ('aws', 'aws standalone'):
+        if application_type in ['aws', 'aws standalone']:
             self.clear_cached_aws_credentials(profile)
+        if application_type in ['gcp']:
+            self.clear_gcloud_auth_key_files(profile=profile)
 
     def _checkout(self, profile_name, env_name, app_name, programmatic, blocktime, maxpolltime, justification):
         try:
@@ -649,7 +668,7 @@ class BritiveCli:
     def _extend_checkout(self, profile, console):
         self.login()
         parts = self._split_profile_into_parts(profile)
-        response = self.b.my_access.extend_checkout_by_name(
+        self.b.my_access.extend_checkout_by_name(
             profile_name=parts['profile'],
             environment_name=parts['env'],
             application_name=parts['app'],
@@ -927,8 +946,49 @@ class BritiveCli:
             environment_id=ids['environment_id']
         )
 
-    def clear_gcloud_auth_key_files(self):
-        self.config.clear_gcloud_auth_key_files()
+    @staticmethod
+    def build_gcloud_key_file_for_gcloudauthexec(profile: str):
+        profile_hash = hashlib.sha256(string=profile.encode('utf-8')).hexdigest()
+        return f'gcloudauthexec-{profile_hash}.json'
+
+    def clear_gcloud_auth_key_files(self, profile: str = None):
+        if profile:  # we want to attempt a gcloud cli command
+            import subprocess  # lazy load as this will not always be needed
+
+            # build the path to the key file in question
+            key_file = self.build_gcloud_key_file_for_gcloudauthexec(profile=profile)
+            path = Path(self.config.gcloud_key_file_path) / key_file
+
+            if path.exists():  # we have a valid gcloudauthexec key file, so we know there was a checkout with this mode
+                try:
+                    with open(str(path), 'r') as f:
+                        credentials = json.loads(f.read())
+                    commands = [
+                        'gcloud',
+                        'auth',
+                        'revoke',
+                        credentials['client_email'],
+                        '--verbosity=error'
+                    ]
+                    self.debug(' '.join(commands))
+                    subprocess.run(commands, check=True)
+
+                    gcloud_default_account = self.config.gcloud_default_account()
+
+                    if gcloud_default_account:
+                        commands = [
+                            'gcloud',
+                            'config',
+                            'set',
+                            'account',
+                            gcloud_default_account,  # no need for "" here as subprocess will properly escape
+                            '--verbosity=error'
+                        ]
+                        self.debug(' '.join(commands))
+                        subprocess.run(commands, check=True)
+                except Exception as e:
+                    self.print(f'could not reset gcloud CLI active account due to issue: {str(e)}')
+        self.config.clear_gcloud_auth_key_files(profile=profile)
 
     def api(self, method, parameters: dict, query=None):
         self.login()

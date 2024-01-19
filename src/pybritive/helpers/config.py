@@ -4,7 +4,6 @@ import os
 from pathlib import Path
 import shutil
 import toml
-
 from britive.britive import Britive
 import click
 from ..choices.backend import backend_choices
@@ -39,7 +38,8 @@ def coalesce(*arg):
 non_tenant_sections = [
     'global',
     'profile-aliases',
-    'aws'
+    'aws',
+    'gcp'
 ]
 
 global_fields = [
@@ -60,6 +60,10 @@ aws_fields = [
     'default_checkout_mode'
 ]
 
+gcp_fields = [
+    'gcloud_default_account'
+]
+
 
 class ConfigManager:
     def __init__(self, cli: object, tenant_name: str = None):
@@ -74,13 +78,19 @@ class ConfigManager:
         self.tenants_by_name = None
         self.aliases_and_names = None
         self.profile_aliases = {}
-        self.cli = cli
+        self.cli: object = cli
         self.loaded = False
         self.validation_error_messages = []
+        self.gcloud_key_file_path: str = str(Path(self.path).parent / 'pybritive-gcloud-key-files')
 
-    def clear_gcloud_auth_key_files(self):
-        path = Path(self.path).parent / 'pybritive-gcloud-key-files'
-        shutil.rmtree(str(path), ignore_errors=True)
+    def clear_gcloud_auth_key_files(self, profile=None):
+        path = Path(self.gcloud_key_file_path)
+        if profile:  # if we are given a specific profile we should clear just that key file
+            key_file = self.cli.build_gcloud_key_file_for_gcloudauthexec(profile=profile)
+            path = path / key_file
+            path.unlink(missing_ok=True)
+        else:  # otherwise we can remove all items in the directory and the directory itself
+            shutil.rmtree(str(path), ignore_errors=True)
 
     def get_output_format(self, output_format: str = None):
         return coalesce(
@@ -245,6 +255,10 @@ class ConfigManager:
         self.load()
         return self.config.get('aws', {}).get('default_checkout_mode', None)
 
+    def gcloud_default_account(self):
+        self.load()
+        return self.config.get('gcp', {}).get('gcloud_default_account', None)
+
     def update(self, section, field, value):
         self.load()
         if section not in self.config:
@@ -266,6 +280,8 @@ class ConfigManager:
                 self.validate_profile_aliases(section, fields)
             if section == 'aws':
                 self.validate_aws(section, fields)
+            if section == 'gcp':
+                self.validate_gcp(section, fields)
             if section.startswith('tenant-'):
                 self.validate_tenant(section, fields)
 
@@ -312,6 +328,11 @@ class ConfigManager:
             if field == 'default_checkout_mode' and value not in mode_choices.choices:
                 error = f'Invalid {section} field {field} value {value} provided. Invalid value choice.'
                 self.validation_error_messages.append(error)
+
+    def validate_gcp(self, section, fields):
+        for field, value in fields.items():
+            if field not in gcp_fields:
+                self.validation_error_messages.append(f'Invalid {section} field {field} provided.')
 
     def validate_tenant(self, section, fields):
         for field, value in fields.items():
