@@ -169,8 +169,8 @@ class BritiveCli:
         if explicit and should_get_profiles:
             self._set_available_profiles()  # will handle calling cache_profiles() and construct_kube_config()
 
-        # handle printing the banner
-        self._display_banner()
+        # handle printing the banner - commenting out until the banner api is released into production
+        # self._display_banner()
 
     def _display_banner(self):
         if self.silent:
