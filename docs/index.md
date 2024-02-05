@@ -146,6 +146,7 @@ At feature launch the following types of identity providers are supported for wo
 * Bitbucket
 * Azure System Assigned Managed Identities
 * Azure User Assigned Managed Identities
+* Spacelift.io
 
 For more information on Azure Managed Identities reference the below link.
 
@@ -175,6 +176,9 @@ pybritive checkout "profile" --federation-provider aws_expirationseconds  # use 
 
 # bitbucket (note that no additional options are available for bitbucket)
 pybritive checkout "profile" --federation-provider bitbucket
+
+# spacelift.io (note that no additional options are available for spacelift.io)
+pybritive checkout "profile" --federation-provider spacelift
 
 # azure system assigned managed identities
 pybritive checkout "profile" --federation-provider azuresmi # use system assigned managed identities with the default OIDC audience

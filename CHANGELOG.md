@@ -2,6 +2,23 @@
 
 * As of v1.4.0 release candidates will be published in an effort to get new features out faster while still allowing time for full QA testing before moving the release candidate to a full release.
 
+## v1.7.0rc3 [2024-02-XX]
+#### What's New
+* None
+
+#### Enhancements
+* None
+* 
+#### Bug Fixes
+* Fixes issue with `--force-renew` on `checkout` not providing the `--console` flag properly to `checkin`
+
+#### Dependencies
+* `britive>=2.24.0rc2`
+
+#### Other
+* Documentation updates for `--federation-provider` and `spacelift`
+
+
 ## v1.7.0rc2 [2024-01-19]
 #### What's New
 * None

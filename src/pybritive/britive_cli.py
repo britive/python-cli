@@ -751,7 +751,7 @@ class BritiveCli:
             diff = (expiration - now).total_seconds() / 60.0
             if diff < force_renew:  # time to checkin the profile so we can refresh creds
                 self.print('checking in the profile to get renewed credentials....standby')
-                self.checkin(profile=profile)
+                self.checkin(profile=profile, console=console)
                 response = self._checkout(**params)
                 cached_credentials_found = False  # need to write new creds to cache
                 credentials = response['credentials']
