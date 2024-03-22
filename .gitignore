@@ -12,6 +12,9 @@ site/
 lock-test.py
 test.py
 
+# IDE
+.vscode/
+
 # C extensions
 *.so
 
