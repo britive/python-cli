@@ -18,6 +18,7 @@
 
 #### Other
 * Documentation updates for `--federation-provider` and `spacelift`
+* Documentation update for Azure Managed Identitieds
 
 
 ## v1.7.0rc2 [2024-01-19]
