@@ -148,9 +148,7 @@ At feature launch the following types of identity providers are supported for wo
 * Azure User Assigned Managed Identities
 * Spacelift.io
 
-For more information on Azure Managed Identities reference the below link.
-
-https://learn.microsoft.com/en-us/azure/active-directory/managed-identities-azure-resources/overview
+For more information on [Azure Managed Identities reference](https://learn.microsoft.com/en-us/azure/active-directory/managed-identities-azure-resources/overview 'Link to Microsoft Documentaion') 
 
 It is possible to source an identity token from a different OIDC provider and explicitly set it via the `--token\-T` flag.
 However, if you are using one of the above providers, a shortcut is provided to abstract away the complexity of sourcing these tokens.
