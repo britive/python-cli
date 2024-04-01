@@ -400,6 +400,9 @@ class BritiveCli:
                     row.pop('Expiration', None)
                     if profile['2_part_profile_format_allowed']:
                         row.pop('Environment', None)
+                elif self.output_format == 'json':
+                    row['Name'] = f"{row['Application']}/{row['Environment']}/{row['Profile']}"
+
                 data.append(row)
 
         # set special list output if needed
