@@ -10,7 +10,6 @@ import pathlib
 from pathlib import Path
 import sys
 import uuid
-import pkg_resources
 import yaml
 import click
 import jmespath
@@ -169,8 +168,7 @@ class BritiveCli:
         if explicit and should_get_profiles:
             self._set_available_profiles()  # will handle calling cache_profiles() and construct_kube_config()
 
-        # handle printing the banner - commenting out until the banner api is released into production
-        # self._display_banner()
+        self._display_banner()
 
     def _display_banner(self):
         if self.silent:
@@ -190,7 +188,8 @@ class BritiveCli:
         user_agent = self.b.session.headers.get('User-Agent')
 
         try:
-            version = pkg_resources.get_distribution('pybritive').version
+            import pybritive
+            version = pybritive.__version__
         except Exception:
             version = 'unknown'
 
@@ -567,6 +566,15 @@ class BritiveCli:
                 cli=self,
                 k8s_processor=k8s_processor
             )
+        elif app_type in ['OpenShift']:
+            return printer.OpenShiftCredentialPrinter(
+                console=console,
+                mode=mode,
+                profile=profile,
+                credentials=credentials,
+                silent=silent,
+                cli=self
+            )
         else:
             return printer.GenericCloudCredentialPrinter(
                 console=console,
@@ -699,9 +707,9 @@ class BritiveCli:
             from .helpers.k8s_exec_credential_builder import KubernetesExecCredentialProcessor
             k8s_processor = KubernetesExecCredentialProcessor()
 
-        # these 2 modes implicitly say that console access should be checked out without having to provide
+        # these 3 modes implicitly say that console access should be checked out without having to provide
         # the --console flag
-        if mode and (mode == 'console' or mode.startswith('browser')):
+        if mode and (mode == 'console' or mode.startswith('browser') or mode.startswith('os-')):
             console = True
             if mode.startswith('browser'):
                 self.browser = mode.replace('browser-', '')
@@ -1228,12 +1236,15 @@ class BritiveCli:
         }
 
     @staticmethod
+    def build_import_exception_message(extras: str):
+        return f'required packages not found. run `pip3 install pybritive[{extras}]`'
+
+    @staticmethod
     def _ssh_aws_push_key(aws_profile, aws_region, instance_id, username, key_pair):
         try:
             import boto3
         except ImportError as e:
-            message = 'boto3 package is required. Please ensure the package is installed.'
-            raise click.ClickException(message) from e
+            raise click.ClickException(BritiveCli.build_import_exception_message('aws')) from e
 
         # we know we will be pushing the key to the instance so establish the
         # boto3 clients which are required to perform those actions
@@ -1291,8 +1302,7 @@ class BritiveCli:
         try:
             import boto3
         except ImportError as e:
-            message = 'boto3 package is required. Please ensure the package is installed.'
-            raise click.ClickException(message) from e
+            raise click.ClickException(BritiveCli.build_import_exception_message('aws')) from e
 
         creds = boto3.Session(profile_name=profile).get_credentials()
         session_id = creds.access_key
