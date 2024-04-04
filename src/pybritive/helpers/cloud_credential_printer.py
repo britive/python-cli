@@ -328,6 +328,7 @@ class OpenShiftCredentialPrinter(CloudCredentialPrinter):
         try:
             import requests
             from requests.adapters import HTTPAdapter
+            from urllib.parse import urlparse
 
             try:
                 from bs4 import BeautifulSoup
@@ -345,9 +346,10 @@ class OpenShiftCredentialPrinter(CloudCredentialPrinter):
 
             sdk_headers = self.cli.b.session.headers
             tenant_fqdn = self.cli.b.tenant
-            console_url = self.credentials['url']
-            console_url = console_url[:-1] if console_url.endswith('/') else console_url
-            console_url = console_url.replace('console-openshift-console', 'oauth-openshift')
+            temp_url = self.credentials['url']
+            temp_url = temp_url.replace('console-openshift-console', 'oauth-openshift')
+            parsed_url = urlparse(temp_url)
+            base_url = parsed_url.scheme + "://" + parsed_url.netloc
             idp = self.credentials['idpName']
 
             session = requests.session()
@@ -363,7 +365,7 @@ class OpenShiftCredentialPrinter(CloudCredentialPrinter):
             adapter = BritiveCustomHeaderAdapter(headers={'Authorization': sdk_headers['Authorization']})
             session.mount(f'https://{tenant_fqdn}/', adapter)
 
-            token_request_url = f'{console_url}/oauth/token/request'
+            token_request_url = f'{base_url}/oauth/token/request'
             idp_selection_url = session.get(token_request_url, allow_redirects=False).headers['Location']
             idp_selected_url = f'{idp_selection_url}&idp={idp}'
             response = session.get(idp_selected_url, allow_redirects=True)
@@ -379,7 +381,9 @@ class OpenShiftCredentialPrinter(CloudCredentialPrinter):
                     input_values[name] = value
 
             form_action = form['action']
-            response = session.post(f'{console_url}{form_action}', data=input_values)
+            if form_action.startswith('/'):
+                form_action = form_action[1:]
+            response = session.post(f'{base_url}/{form_action}', data=input_values)
 
             # and we get more html content we need to parse now
             soup = BeautifulSoup(response.content, 'html.parser')
