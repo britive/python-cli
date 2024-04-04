@@ -7,7 +7,6 @@ import platform
 import uuid
 import webbrowser
 import click
-import hashlib
 
 
 # trailing spaces matter as some options do not have the trailing space
@@ -33,6 +32,7 @@ class CloudCredentialPrinter:
         self.profile = profile
         self.console = console
         mode = mode or 'json'  # set a default if nothing is provided via flag --mode/-m
+        self.full_mode = mode
         helper = mode.split('-')
         self.mode = helper[0]
         self.mode_modifier = safe_list_get(mode.split('-', maxsplit=1), 1, None)
@@ -43,9 +43,10 @@ class CloudCredentialPrinter:
             else:
                 self.on_windows = platform.system().lower() == 'windows'
                 self.env_command = env_options['wincmd'] if self.on_windows else env_options['nix']
+        self.modes_to_skip_console_printing = ['os-oclogin', 'os-ocloginexec']
 
     def print(self):
-        if self.console:
+        if self.console and self.full_mode not in self.modes_to_skip_console_printing:
             self.print_console()
             return
         if self.mode == 'text':
@@ -66,8 +67,10 @@ class CloudCredentialPrinter:
             self.print_gcloudauth()
         if self.mode == 'kube':
             self.print_kube()
+        if self.mode == 'os':
+            self.print_os()
         if self.mode == 'gcloudauthexec':
-            self.exec_gcloudauthexec()
+            self.print_gcloudauthexec()
 
     def print_console(self):
         url = self.credentials.get('url', self.credentials)
@@ -101,10 +104,13 @@ class CloudCredentialPrinter:
     def print_gcloudauth(self):
         self._not_implemented()
 
-    def exec_gcloudautoauth(self):
+    def print_kube(self):
         self._not_implemented()
 
-    def print_kube(self):
+    def print_gcloudauthexec(self):
+        self._not_implemented()
+
+    def print_os(self):
         self._not_implemented()
 
     def _not_implemented(self):
@@ -266,7 +272,7 @@ class GcpCloudCredentialPrinter(CloudCredentialPrinter):
             ignore_silent=True
         )
 
-    def exec_gcloudauthexec(self):
+    def print_gcloudauthexec(self):
         key_file = self.cli.build_gcloud_key_file_for_gcloudauthexec(profile=self.profile)
         path = Path(self.cli.config.gcloud_key_file_path) / key_file
 
@@ -304,5 +310,106 @@ class KubernetesCredentialPrinter(CloudCredentialPrinter):
     def print_kube(self):
         if self.mode_modifier == 'exec':
             self.cli.print(self.k8s_processor.construct_exec_credential(self.credentials), ignore_silent=True)
+        else:
+            raise ValueError(f'--mode modifier {self.mode_modifier} for mode {self.mode} not supported')
+
+
+class OpenShiftCredentialPrinter(CloudCredentialPrinter):
+    def __init__(self, console, mode, profile, silent, credentials, cli):
+        super().__init__('OpenShift', console, mode, profile, silent, credentials, cli)
+
+    def print_json(self):
+        try:
+            self.cli.print(json.dumps(self.credentials, indent=2), ignore_silent=True)
+        except json.JSONDecodeError:
+            self.cli.print(self.credentials, ignore_silent=True)
+
+    def _perform_oidc_auth_code_grant_flow(self):
+        try:
+            import requests
+            from requests.adapters import HTTPAdapter
+            from urllib.parse import urlparse
+
+            try:
+                from bs4 import BeautifulSoup
+            except ImportError as e:
+                raise click.ClickException(self.cli.build_import_exception_message('openshift')) from e
+
+            class BritiveCustomHeaderAdapter(HTTPAdapter):
+                def __init__(self, headers=None, *args, **kwargs):
+                    self.headers = headers or {}
+                    super().__init__(*args, **kwargs)
+
+                def add_headers(self, request, **kwargs):
+                    for h, v in self.headers.items():
+                        request.headers.setdefault(h, v)
+
+            sdk_headers = self.cli.b.session.headers
+            tenant_fqdn = self.cli.b.tenant
+            temp_url = self.credentials['url']
+            temp_url = temp_url.replace('console-openshift-console', 'oauth-openshift')
+            parsed_url = urlparse(temp_url)
+            base_url = parsed_url.scheme + "://" + parsed_url.netloc
+            idp = self.credentials['idpName']
+
+            session = requests.session()
+
+            # set a reasonable user agent, so we can identify traffic more easily
+            session.headers.update({
+                'User-Agent': sdk_headers['User-Agent']
+            })
+
+            # create a custom adapter for the tenants fqdn and mount it
+            # this will include the authorization header, so we can "auto"
+            # authenticate to the tenant
+            adapter = BritiveCustomHeaderAdapter(headers={'Authorization': sdk_headers['Authorization']})
+            session.mount(f'https://{tenant_fqdn}/', adapter)
+
+            token_request_url = f'{base_url}/oauth/token/request'
+            idp_selection_url = session.get(token_request_url, allow_redirects=False).headers['Location']
+            idp_selected_url = f'{idp_selection_url}&idp={idp}'
+            response = session.get(idp_selected_url, allow_redirects=True)
+            # we now have a html file that we need to extract some things from
+            soup = BeautifulSoup(response.content, 'html.parser')
+            input_values = {}
+            form = soup.find('form')
+            inputs = form.find_all('input')
+            for inp in inputs:
+                name = inp.get('name')
+                value = inp.get('value')
+                if name:
+                    input_values[name] = value
+
+            form_action = form['action']
+            if form_action.startswith('/'):
+                form_action = form_action[1:]
+            response = session.post(f'{base_url}/{form_action}', data=input_values)
+
+            # and we get more html content we need to parse now
+            soup = BeautifulSoup(response.content, 'html.parser')
+
+            command = None
+            for line in soup.get_text().split('\n'):
+                if line.startswith('oc login'):
+                    command = line
+                    break
+
+            if command:
+                return command
+            else:
+                raise Exception(f'error: no `oc login` command found')
+        except Exception as e:
+            self.cli.print(f'error when attempting to perform oidc auth code grant flow: {str(e)}', ignore_silent=True)
+
+    def print_os(self):
+        if self.mode_modifier == 'oclogin':
+            command = self._perform_oidc_auth_code_grant_flow()
+            self.cli.print(command, ignore_silent=True)
+        elif self.mode_modifier == 'ocloginexec':
+            command = self._perform_oidc_auth_code_grant_flow()
+            try:
+                subprocess.run(command.split(' '), check=True)
+            except Exception as e:
+                self.cli.print(f'error running `gcloud auth activate-service-account ...`: {str(e)}')
         else:
             raise ValueError(f'--mode modifier {self.mode_modifier} for mode {self.mode} not supported')

@@ -26,6 +26,8 @@ mode_choices = click.Choice(
         'browser-chromium',
         'kube-exec',                # bake into kubeconfig with oidc exec output and additional caching to make kubectl more performant
         'gcloudauthexec',           # will effectively execute results of gcloudauth in a sub-shell
+        'os-oclogin',               # will attempt an oidc authorization code grant flow for generating the `oc login ...` command for OpenShift
+        'os-ocloginexec',           # will attempt an oidc authorization code grant flow for generating the `oc login ...` command for OpenShift and exec the result in a subshell
     ],
     case_sensitive=False
 )

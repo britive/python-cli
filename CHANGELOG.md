@@ -2,12 +2,34 @@
 
 * As of v1.4.0 release candidates will be published in an effort to get new features out faster while still allowing time for full QA testing before moving the release candidate to a full release.
 
+## v1.7.0rc3 [2024-04-03]
+#### What's New
+* Support for OpenShift checkout modes `os-oclogin` and `os-ocloginexec`. These checkout modes will perform the OIDC authorization code grant flow and extraction of the `oc login` command in code vs. having to use the browser. It is a "best effort" approach as the OpenShift login pages and programmatic access pages could change over time.
+
+#### Enhancements
+* Adds 3 part profile name for command `ls profiles -f json` - [#141](https://github.com/britive/python-cli/issues/141)
+
+#### Bug Fixes
+* Fixes issue with `--force-renew` on `checkout` not providing the `--console` flag properly to `checkin`
+* Flag `-p` was being used by `--maxpolltime` and `--passphrase` for command `checkout`. Switched `--maxpolltime` to `-x`.
+
+#### Dependencies
+* `britive>=2.24.0rc5`
+* Removal of `pkg_resources` dependency
+
+#### Other
+* Documentation updates for `--federation-provider` and `spacelift`
+* Documentation update for Azure Managed Identities
+* Introduction of `__version__` in `__init.py__`
+* Re-enabling the system banner/announcement logic
+
 ## v1.7.0rc2 [2024-01-19]
 #### What's New
 * None
 
 #### Enhancements
 * None
+
 #### Bug Fixes
 * Remove the banner logic as the banner api is not yet available in production
 
