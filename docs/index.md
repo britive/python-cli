@@ -75,7 +75,6 @@ order of operations for determining the tenant.
 4. If none of the above are available then check for configured tenants in `~/.britive/pybritive.config` and if there is only 1 tenant configured use it
 5. If all the above fail then error
 
-
 ## Credential Selection Logic
 
 There are numerous ways to provide the CLI with the Britive credentials that should be used to authenticate to the
@@ -124,7 +123,6 @@ Any of the above values in the `Environment Name` position will be accepted.
 
 When running `ls profiles -f list` and `cache profiles`, the `environmentName` field will be shown.
 
-
 ## Workload Federation Providers
 
 *NOTE*: Before any of the below will work there is required setup and configuration within your Britive tenant 
@@ -146,10 +144,9 @@ At feature launch the following types of identity providers are supported for wo
 * Bitbucket
 * Azure System Assigned Managed Identities
 * Azure User Assigned Managed Identities
+* Spacelift.io
 
-For more information on Azure Managed Identities reference the below link.
-
-https://learn.microsoft.com/en-us/azure/active-directory/managed-identities-azure-resources/overview
+For more information on [Azure Managed Identities reference](https://learn.microsoft.com/en-us/azure/active-directory/managed-identities-azure-resources/overview 'Link to Microsoft Documentaion') 
 
 It is possible to source an identity token from a different OIDC provider and explicitly set it via the `--token\-T` flag.
 However, if you are using one of the above providers, a shortcut is provided to abstract away the complexity of sourcing these tokens.
@@ -175,6 +172,9 @@ pybritive checkout "profile" --federation-provider aws_expirationseconds  # use 
 
 # bitbucket (note that no additional options are available for bitbucket)
 pybritive checkout "profile" --federation-provider bitbucket
+
+# spacelift.io (note that no additional options are available for spacelift.io)
+pybritive checkout "profile" --federation-provider spacelift
 
 # azure system assigned managed identities
 pybritive checkout "profile" --federation-provider azuresmi # use system assigned managed identities with the default OIDC audience
@@ -207,14 +207,12 @@ The user will be prompted for a passphrase to use to encrypt the file. The user 
 via flag `--passphrase/-p` or via environment variable `PYBRITIVE_ENCRYPTED_CREDENTIAL_PASSPHRASE`. If no passphrase is
 provided `pybritive` will use an internally generated passphrase unique to the machine on which the application is running.
 
-
 ## Home Directory
 By default, files that `pybritive` requires will be persisted to `~/.britive/`. 
 
 This can be overwritten by specifying environment variable `PYBRITIVE_HOME_DIR`. This can be either one of the following choices to where
 the end user wants to persist the `.britive` directory. Note that `.britive` will still be created so do not specify
 that as part of the path.
-
 
 ## Browser
 By default, `pybritive` will use the OS defined default for any actions that have browser interaction(s).
