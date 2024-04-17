@@ -198,7 +198,7 @@ not. The easiest way to see where executables get installed via <code>pip instal
 </code></pre>
 <p>You will need to add this location to your path. The following command will do that but it is recommended to add
 this command into your <code>.bashrc, .zshrc, etc.</code> file, so it will always get executed on new terminal windows.</p>
-<pre><code>export PATH=\&quot;`python3 -m site --user-base`/bin:\$PATH\&quot;
+<pre><code>export PATH=`python3 -m site --user-base`/bin:$PATH
 </code></pre>
 <h2 id="tenant-configuration">Tenant Configuration</h2>
 <p>Before <code>pybritive</code> can connect to a Britive tenant, it needs to know some details about that tenant.
@@ -282,9 +282,9 @@ to interact with Britive. These tokens are mapped to service identities within y
 <li>Bitbucket</li>
 <li>Azure System Assigned Managed Identities</li>
 <li>Azure User Assigned Managed Identities</li>
+<li>Spacelift.io</li>
 </ul>
-<p>For more information on Azure Managed Identities reference the below link.</p>
-<p>https://learn.microsoft.com/en-us/azure/active-directory/managed-identities-azure-resources/overview</p>
+<p>For more information on <a href="https://learn.microsoft.com/en-us/azure/active-directory/managed-identities-azure-resources/overview" title="Link to Microsoft Documentaion">Azure Managed Identities reference</a> </p>
 <p>It is possible to source an identity token from a different OIDC provider and explicitly set it via the <code>--token\-T</code> flag.
 However, if you are using one of the above providers, a shortcut is provided to abstract away the complexity of sourcing these tokens.
 Over time this list will grow. Reach out to your customer success manager if you have an identity provider you would like added to
@@ -306,6 +306,9 @@ pybritive checkout &quot;profile&quot; --federation-provider aws_expirationsecon
 
 # bitbucket (note that no additional options are available for bitbucket)
 pybritive checkout &quot;profile&quot; --federation-provider bitbucket
+
+# spacelift.io (note that no additional options are available for spacelift.io)
+pybritive checkout &quot;profile&quot; --federation-provider spacelift
 
 # azure system assigned managed identities
 pybritive checkout &quot;profile&quot; --federation-provider azuresmi # use system assigned managed identities with the default OIDC audience
@@ -342,6 +345,8 @@ that have the <code>--browser</code> option/flag, or can be set to an open comma
 <p>Example:</p>
 <pre><code class="language-bash">export PYBRITIVE_BROWSER=&quot;open -a /Applications/Firefox\ Developer\ Edition.app %s&quot;
 </code></pre>
+<p>Note that as of Britive release <code>2023.11.01</code> the CLI authentication flow will NOT prompt to login if the user is already authenticated in the browser.
+However, this is only true if the browser launched by <code>pybritive</code> is the same browser where the user is already authenticated.</p>
 <h2 id="escaping">Escaping</h2>
 <p>If the name of an application, environment, or profile contains a <code>/</code> then that character must be properly escaped with a <code>\</code>.</p>
 <p>Example:
@@ -738,7 +743,7 @@ meant for administrative functionality.</p>
 <tr>
 <td><code>--federation-provider</code>, <code>-P</code></td>
 <td>text</td>
-<td>Use a federation provider available in the Britive Python SDK for auto token creation. Valid values are <code>aws[-profile]</code>, <code>github[-audience], and</code>bitbucket<code>. Optionally for the AWS provider a duration in seconds can be provided via</code>aws[-profile]_durationseconds` after which point the auto-generatedcredentials will expire.</td>
+<td>Use a federation provider available in the Britive Python SDK for auto token creation. See CLI documentation at https://britive.github.io/python-cli/ for acceptable values.</td>
 <td>None</td>
 </tr>
 <tr>
@@ -846,6 +851,7 @@ meant for administrative functionality.</p>
 <p><strong>Subcommands</strong></p>
 <ul>
 <li><em><a href="#pybritive-cache-clear">clear</a></em>: Clears the local cache.</li>
+<li><em><a href="#pybritive-cache-kubeconfig">kubeconfig</a></em>: Cache a Britive managed kube config file based on the profiles to which the caller has access.</li>
 <li><em><a href="#pybritive-cache-profiles">profiles</a></em>: Cache profiles locally to facilitate auto-completion of profile names on checkin/checkout.</li>
 </ul>
 <h5 id="pybritive-cache-clear">pybritive cache clear</h5>
@@ -864,6 +870,60 @@ meant for administrative functionality.</p>
 </tr>
 </thead>
 <tbody>
+<tr>
+<td><code>--help</code></td>
+<td>boolean</td>
+<td>Show this message and exit.</td>
+<td><code>False</code></td>
+</tr>
+</tbody>
+</table>
+<h5 id="pybritive-cache-kubeconfig">pybritive cache kubeconfig</h5>
+<p>Cache a Britive managed kube config file based on the profiles to which the caller has access.</p>
+<p><strong>Usage:</strong></p>
+<pre><code>pybritive cache kubeconfig [OPTIONS]
+</code></pre>
+<p><strong>Options:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>-t</code>, <code>--tenant</code></td>
+<td>text</td>
+<td>Name of tenant.</td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>-T</code>, <code>--token</code></td>
+<td>text</td>
+<td>API token.</td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>--silent</code>, <code>-s</code></td>
+<td>boolean</td>
+<td>Enable silent mode.</td>
+<td><code>False</code></td>
+</tr>
+<tr>
+<td><code>--passphrase</code>, <code>-p</code></td>
+<td>text</td>
+<td>The passphrase to use for encrypting credentials.</td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>--federation-provider</code>, <code>-P</code></td>
+<td>text</td>
+<td>Use a federation provider available in the Britive Python SDK for auto token creation. See CLI documentation at https://britive.github.io/python-cli/ for acceptable values.</td>
+<td>None</td>
+</tr>
 <tr>
 <td><code>--help</code></td>
 <td>boolean</td>
@@ -915,7 +975,7 @@ meant for administrative functionality.</p>
 <tr>
 <td><code>--federation-provider</code>, <code>-P</code></td>
 <td>text</td>
-<td>Use a federation provider available in the Britive Python SDK for auto token creation. Valid values are <code>aws[-profile]</code>, <code>github[-audience], and</code>bitbucket<code>. Optionally for the AWS provider a duration in seconds can be provided via</code>aws[-profile]_durationseconds` after which point the auto-generatedcredentials will expire.</td>
+<td>Use a federation provider available in the Britive Python SDK for auto token creation. See CLI documentation at https://britive.github.io/python-cli/ for acceptable values.</td>
 <td>None</td>
 </tr>
 <tr>
@@ -977,7 +1037,7 @@ that should be checked in. Format is <code>application name/environment name/pro
 <tr>
 <td><code>--federation-provider</code>, <code>-P</code></td>
 <td>text</td>
-<td>Use a federation provider available in the Britive Python SDK for auto token creation. Valid values are <code>aws[-profile]</code>, <code>github[-audience], and</code>bitbucket<code>. Optionally for the AWS provider a duration in seconds can be provided via</code>aws[-profile]_durationseconds` after which point the auto-generatedcredentials will expire.</td>
+<td>Use a federation provider available in the Britive Python SDK for auto token creation. See CLI documentation at https://britive.github.io/python-cli/ for acceptable values.</td>
 <td>None</td>
 </tr>
 <tr>
@@ -1032,12 +1092,12 @@ that should be checked out. Format is <code>application name/environment name/pr
 </tr>
 <tr>
 <td><code>--mode</code>, <code>-m</code></td>
-<td>choice (<code>text</code> &#x7C; <code>json</code> &#x7C; <code>env</code> &#x7C; <code>integrate</code> &#x7C; <code>env-nix</code> &#x7C; <code>env-wincmd</code> &#x7C; <code>env-winps</code> &#x7C; <code>awscredentialprocess</code> &#x7C; <code>azlogin</code> &#x7C; <code>azps</code> &#x7C; <code>browser</code> &#x7C; <code>gcloudauth</code> &#x7C; <code>console</code> &#x7C; <code>browser-mozilla</code> &#x7C; <code>browser-firefox</code> &#x7C; <code>browser-windows-default</code> &#x7C; <code>browser-macosx</code> &#x7C; <code>browser-safari</code> &#x7C; <code>browser-chrome</code> &#x7C; <code>browser-chromium</code>)</td>
+<td>choice (<code>text</code> &#x7C; <code>json</code> &#x7C; <code>env</code> &#x7C; <code>integrate</code> &#x7C; <code>env-nix</code> &#x7C; <code>env-wincmd</code> &#x7C; <code>env-winps</code> &#x7C; <code>awscredentialprocess</code> &#x7C; <code>azlogin</code> &#x7C; <code>azps</code> &#x7C; <code>browser</code> &#x7C; <code>gcloudauth</code> &#x7C; <code>console</code> &#x7C; <code>browser-mozilla</code> &#x7C; <code>browser-firefox</code> &#x7C; <code>browser-windows-default</code> &#x7C; <code>browser-macosx</code> &#x7C; <code>browser-safari</code> &#x7C; <code>browser-chrome</code> &#x7C; <code>browser-chromium</code> &#x7C; <code>kube-exec</code> &#x7C; <code>gcloudauthexec</code> &#x7C; <code>os-oclogin</code> &#x7C; <code>os-ocloginexec</code>)</td>
 <td>The way in which the checked out credentials are presented. <code>integrate</code> will place the credentials into the cloud providers local credential file (AWS only). Value <code>env</code> can optionally include terminal specific options for setting environment variables (example: env-nix for Linux/Mac, env-wincmd for Windows Command Prompt, env-winps for Windows PowerShell).<code>gcloudauth</code> will save the generated key file/credentials to the pybritive config directory and generate a gcloud auth command which can be directly evaluated. Will default to <code>json</code> if not provided.</td>
 <td>None</td>
 </tr>
 <tr>
-<td><code>--maxpolltime</code>, <code>-p</code></td>
+<td><code>--maxpolltime</code>, <code>-x</code></td>
 <td>integer</td>
 <td>Maximum seconds to poll before exiting.</td>
 <td><code>600</code></td>
@@ -1063,13 +1123,19 @@ that should be checked out. Format is <code>application name/environment name/pr
 <tr>
 <td><code>--gcloud-key-file</code></td>
 <td>text</td>
-<td>GCP Programmatic Only - When mode is <code>gcloudauth</code> specify a non-default location for storing the key file.</td>
+<td>GCP Programmatic Only - When mode is <code>gcloudauth</code> specify a non-default location for storing the key file. Ignored for mode <code>gcloudauthexec</code>.</td>
 <td>None</td>
 </tr>
 <tr>
 <td><code>--verbose</code>, <code>-v</code></td>
 <td>boolean</td>
 <td>Enable verbose checkout mode.</td>
+<td><code>False</code></td>
+</tr>
+<tr>
+<td><code>--extend</code>, <code>-e</code></td>
+<td>boolean</td>
+<td>Extend the expiration time for a currently checked out profile.</td>
 <td><code>False</code></td>
 </tr>
 <tr>
@@ -1093,7 +1159,7 @@ that should be checked out. Format is <code>application name/environment name/pr
 <tr>
 <td><code>--federation-provider</code>, <code>-P</code></td>
 <td>text</td>
-<td>Use a federation provider available in the Britive Python SDK for auto token creation. Valid values are <code>aws[-profile]</code>, <code>github[-audience], and</code>bitbucket<code>. Optionally for the AWS provider a duration in seconds can be provided via</code>aws[-profile]_durationseconds` after which point the auto-generatedcredentials will expire.</td>
+<td>Use a federation provider available in the Britive Python SDK for auto token creation. See CLI documentation at https://britive.github.io/python-cli/ for acceptable values.</td>
 <td>None</td>
 </tr>
 <tr>
@@ -1317,7 +1383,7 @@ that should be checked out. Format is <code>application name/environment name/pr
 <tr>
 <td><code>--federation-provider</code>, <code>-P</code></td>
 <td>text</td>
-<td>Use a federation provider available in the Britive Python SDK for auto token creation. Valid values are <code>aws[-profile]</code>, <code>github[-audience], and</code>bitbucket<code>. Optionally for the AWS provider a duration in seconds can be provided via</code>aws[-profile]_durationseconds` after which point the auto-generatedcredentials will expire.</td>
+<td>Use a federation provider available in the Britive Python SDK for auto token creation. See CLI documentation at https://britive.github.io/python-cli/ for acceptable values.</td>
 <td>None</td>
 </tr>
 <tr>
@@ -1457,7 +1523,7 @@ that should be checked out. Format is <code>application name/environment name/pr
 <tr>
 <td><code>--federation-provider</code>, <code>-P</code></td>
 <td>text</td>
-<td>Use a federation provider available in the Britive Python SDK for auto token creation. Valid values are <code>aws[-profile]</code>, <code>github[-audience], and</code>bitbucket<code>. Optionally for the AWS provider a duration in seconds can be provided via</code>aws[-profile]_durationseconds` after which point the auto-generatedcredentials will expire.</td>
+<td>Use a federation provider available in the Britive Python SDK for auto token creation. See CLI documentation at https://britive.github.io/python-cli/ for acceptable values.</td>
 <td>None</td>
 </tr>
 <tr>
@@ -1599,7 +1665,7 @@ that should be checked out. Format is <code>application name/environment name/pr
 <tr>
 <td><code>--federation-provider</code>, <code>-P</code></td>
 <td>text</td>
-<td>Use a federation provider available in the Britive Python SDK for auto token creation. Valid values are <code>aws[-profile]</code>, <code>github[-audience], and</code>bitbucket<code>. Optionally for the AWS provider a duration in seconds can be provided via</code>aws[-profile]_durationseconds` after which point the auto-generatedcredentials will expire.</td>
+<td>Use a federation provider available in the Britive Python SDK for auto token creation. See CLI documentation at https://britive.github.io/python-cli/ for acceptable values.</td>
 <td>None</td>
 </tr>
 <tr>
@@ -1659,7 +1725,7 @@ that should be checked out. Format is <code>application name/environment name/pr
 <tr>
 <td><code>--federation-provider</code>, <code>-P</code></td>
 <td>text</td>
-<td>Use a federation provider available in the Britive Python SDK for auto token creation. Valid values are <code>aws[-profile]</code>, <code>github[-audience], and</code>bitbucket<code>. Optionally for the AWS provider a duration in seconds can be provided via</code>aws[-profile]_durationseconds` after which point the auto-generatedcredentials will expire.</td>
+<td>Use a federation provider available in the Britive Python SDK for auto token creation. See CLI documentation at https://britive.github.io/python-cli/ for acceptable values.</td>
 <td>None</td>
 </tr>
 <tr>
@@ -1719,7 +1785,7 @@ that should be checked out. Format is <code>application name/environment name/pr
 <tr>
 <td><code>--federation-provider</code>, <code>-P</code></td>
 <td>text</td>
-<td>Use a federation provider available in the Britive Python SDK for auto token creation. Valid values are <code>aws[-profile]</code>, <code>github[-audience], and</code>bitbucket<code>. Optionally for the AWS provider a duration in seconds can be provided via</code>aws[-profile]_durationseconds` after which point the auto-generatedcredentials will expire.</td>
+<td>Use a federation provider available in the Britive Python SDK for auto token creation. See CLI documentation at https://britive.github.io/python-cli/ for acceptable values.</td>
 <td>None</td>
 </tr>
 <tr>
@@ -1785,7 +1851,7 @@ that should be checked out. Format is <code>application name/environment name/pr
 <tr>
 <td><code>--federation-provider</code>, <code>-P</code></td>
 <td>text</td>
-<td>Use a federation provider available in the Britive Python SDK for auto token creation. Valid values are <code>aws[-profile]</code>, <code>github[-audience], and</code>bitbucket<code>. Optionally for the AWS provider a duration in seconds can be provided via</code>aws[-profile]_durationseconds` after which point the auto-generatedcredentials will expire.</td>
+<td>Use a federation provider available in the Britive Python SDK for auto token creation. See CLI documentation at https://britive.github.io/python-cli/ for acceptable values.</td>
 <td>None</td>
 </tr>
 <tr>
@@ -1845,7 +1911,7 @@ that should be checked out. Format is <code>application name/environment name/pr
 <tr>
 <td><code>--federation-provider</code>, <code>-P</code></td>
 <td>text</td>
-<td>Use a federation provider available in the Britive Python SDK for auto token creation. Valid values are <code>aws[-profile]</code>, <code>github[-audience], and</code>bitbucket<code>. Optionally for the AWS provider a duration in seconds can be provided via</code>aws[-profile]_durationseconds` after which point the auto-generatedcredentials will expire.</td>
+<td>Use a federation provider available in the Britive Python SDK for auto token creation. See CLI documentation at https://britive.github.io/python-cli/ for acceptable values.</td>
 <td>None</td>
 </tr>
 <tr>
@@ -1931,7 +1997,7 @@ that should be checked out. Format is <code>application name/environment name/pr
 <tr>
 <td><code>--federation-provider</code>, <code>-P</code></td>
 <td>text</td>
-<td>Use a federation provider available in the Britive Python SDK for auto token creation. Valid values are <code>aws[-profile]</code>, <code>github[-audience], and</code>bitbucket<code>. Optionally for the AWS provider a duration in seconds can be provided via</code>aws[-profile]_durationseconds` after which point the auto-generatedcredentials will expire.</td>
+<td>Use a federation provider available in the Britive Python SDK for auto token creation. See CLI documentation at https://britive.github.io/python-cli/ for acceptable values.</td>
 <td>None</td>
 </tr>
 <tr>
@@ -1986,7 +2052,7 @@ that should be checked out. Format is <code>application name/environment name/pr
 <tr>
 <td><code>--federation-provider</code>, <code>-P</code></td>
 <td>text</td>
-<td>Use a federation provider available in the Britive Python SDK for auto token creation. Valid values are <code>aws[-profile]</code>, <code>github[-audience], and</code>bitbucket<code>. Optionally for the AWS provider a duration in seconds can be provided via</code>aws[-profile]_durationseconds` after which point the auto-generatedcredentials will expire.</td>
+<td>Use a federation provider available in the Britive Python SDK for auto token creation. See CLI documentation at https://britive.github.io/python-cli/ for acceptable values.</td>
 <td>None</td>
 </tr>
 <tr>
@@ -2051,7 +2117,7 @@ that should be checked out. Format is <code>application name/environment name/pr
 <tr>
 <td><code>--federation-provider</code>, <code>-P</code></td>
 <td>text</td>
-<td>Use a federation provider available in the Britive Python SDK for auto token creation. Valid values are <code>aws[-profile]</code>, <code>github[-audience], and</code>bitbucket<code>. Optionally for the AWS provider a duration in seconds can be provided via</code>aws[-profile]_durationseconds` after which point the auto-generatedcredentials will expire.</td>
+<td>Use a federation provider available in the Britive Python SDK for auto token creation. See CLI documentation at https://britive.github.io/python-cli/ for acceptable values.</td>
 <td>None</td>
 </tr>
 <tr>
@@ -2108,7 +2174,7 @@ that should be checked out. Format is <code>application name/environment name/pr
 <tr>
 <td><code>--federation-provider</code>, <code>-P</code></td>
 <td>text</td>
-<td>Use a federation provider available in the Britive Python SDK for auto token creation. Valid values are <code>aws[-profile]</code>, <code>github[-audience], and</code>bitbucket<code>. Optionally for the AWS provider a duration in seconds can be provided via</code>aws[-profile]_durationseconds` after which point the auto-generatedcredentials will expire.</td>
+<td>Use a federation provider available in the Britive Python SDK for auto token creation. See CLI documentation at https://britive.github.io/python-cli/ for acceptable values.</td>
 <td>None</td>
 </tr>
 <tr>
@@ -2185,7 +2251,7 @@ Ensure the leading <code>/</code> is provided.</p>
 <td>None</td>
 </tr>
 <tr>
-<td><code>--maxpolltime</code>, <code>-p</code></td>
+<td><code>--maxpolltime</code>, <code>-x</code></td>
 <td>integer</td>
 <td>Maximum seconds to poll before exiting.</td>
 <td><code>600</code></td>
@@ -2223,7 +2289,7 @@ Ensure the leading <code>/</code> is provided.</p>
 <tr>
 <td><code>--federation-provider</code>, <code>-P</code></td>
 <td>text</td>
-<td>Use a federation provider available in the Britive Python SDK for auto token creation. Valid values are <code>aws[-profile]</code>, <code>github[-audience], and</code>bitbucket<code>. Optionally for the AWS provider a duration in seconds can be provided via</code>aws[-profile]_durationseconds` after which point the auto-generatedcredentials will expire.</td>
+<td>Use a federation provider available in the Britive Python SDK for auto token creation. See CLI documentation at https://britive.github.io/python-cli/ for acceptable values.</td>
 <td>None</td>
 </tr>
 <tr>
@@ -2265,7 +2331,7 @@ Ensure the leading <code>/</code> is provided.</p>
 <td>None</td>
 </tr>
 <tr>
-<td><code>--maxpolltime</code>, <code>-p</code></td>
+<td><code>--maxpolltime</code>, <code>-x</code></td>
 <td>integer</td>
 <td>Maximum seconds to poll before exiting.</td>
 <td><code>600</code></td>
@@ -2303,7 +2369,7 @@ Ensure the leading <code>/</code> is provided.</p>
 <tr>
 <td><code>--federation-provider</code>, <code>-P</code></td>
 <td>text</td>
-<td>Use a federation provider available in the Britive Python SDK for auto token creation. Valid values are <code>aws[-profile]</code>, <code>github[-audience], and</code>bitbucket<code>. Optionally for the AWS provider a duration in seconds can be provided via</code>aws[-profile]_durationseconds` after which point the auto-generatedcredentials will expire.</td>
+<td>Use a federation provider available in the Britive Python SDK for auto token creation. See CLI documentation at https://britive.github.io/python-cli/ for acceptable values.</td>
 <td>None</td>
 </tr>
 <tr>
@@ -2626,7 +2692,7 @@ Ensure the leading <code>/</code> is provided.</p>
 <tr>
 <td><code>--federation-provider</code>, <code>-P</code></td>
 <td>text</td>
-<td>Use a federation provider available in the Britive Python SDK for auto token creation. Valid values are <code>aws[-profile]</code>, <code>github[-audience], and</code>bitbucket<code>. Optionally for the AWS provider a duration in seconds can be provided via</code>aws[-profile]_durationseconds` after which point the auto-generatedcredentials will expire.</td>
+<td>Use a federation provider available in the Britive Python SDK for auto token creation. See CLI documentation at https://britive.github.io/python-cli/ for acceptable values.</td>
 <td>None</td>
 </tr>
 <tr>
@@ -2684,5 +2750,5 @@ Ensure the leading <code>/</code> is provided.</p>
 
 <!--
 MkDocs version : 1.3.1
-Build Date UTC : 2023-10-19 19:53:05.294313+00:00
+Build Date UTC : 2024-04-17 19:34:51.866032+00:00
 -->
