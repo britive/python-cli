@@ -34,6 +34,7 @@ from ..options.aws_console_duration import option as aws_console_duration
 from ..options.browser import option as browser
 from ..options.extend import option as extend
 
+
 options_map = {
     'tenant': tenant,
     'token': token,
