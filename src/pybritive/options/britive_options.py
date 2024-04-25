@@ -11,6 +11,7 @@ from ..options.configure_tenant import option as configure_tenant
 from ..options.configure_alias import option as configure_alias
 from ..options.configure_prompt import option as configure_prompt
 from ..options.justification import option as justification
+from ..options.otp import option as otp
 from ..options.silent import option as silent
 from ..options.console import option as console
 from ..options.checked_out import option as checked_out
@@ -33,6 +34,7 @@ from ..options.aws_console_duration import option as aws_console_duration
 from ..options.browser import option as browser
 from ..options.extend import option as extend
 
+
 options_map = {
     'tenant': tenant,
     'token': token,
@@ -47,6 +49,7 @@ options_map = {
     'configure_alias': configure_alias,
     'configure_prompt': configure_prompt,
     'justification': justification,
+    'otp': otp,
     'silent': silent,
     'console': console,
     'checked_out': checked_out,

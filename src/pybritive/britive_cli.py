@@ -626,7 +626,7 @@ class BritiveCli:
         if application_type in ['gcp']:
             self.clear_gcloud_auth_key_files(profile=profile)
 
-    def _checkout(self, profile_name, env_name, app_name, programmatic, blocktime, maxpolltime, justification):
+    def _checkout(self, profile_name, env_name, app_name, programmatic, blocktime, maxpolltime, justification, otp):
         try:
             self.login()
 
