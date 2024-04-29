@@ -615,7 +615,7 @@ class BritiveCli:
         if application_type in ['gcp']:
             self.clear_gcloud_auth_key_files(profile=profile)
 
-    def _checkout(self, profile_name, env_name, app_name, programmatic, blocktime, maxpolltime, justification):
+    def _checkout(self, profile_name, env_name, app_name, programmatic, blocktime, maxpolltime, justification, otp):
         try:
             self.login()
 
@@ -633,6 +633,7 @@ class BritiveCli:
                 wait_time=blocktime,
                 max_wait_time=maxpolltime,
                 justification=justification,
+                otp=otp,
                 progress_func=self.checkout_callback_printer  # callback will handle silent, isatty, etc.
             )
         except exceptions.ApprovalRequiredButNoJustificationProvided as e:
@@ -675,7 +676,7 @@ class BritiveCli:
             programmatic=not console
         )
 
-    def checkout(self, alias, blocktime, console, justification, mode, maxpolltime, profile, passphrase,
+    def checkout(self, alias, blocktime, console, justification, otp, mode, maxpolltime, profile, passphrase,
                  force_renew, aws_credentials_file, gcloud_key_file, verbose, extend):
 
         # handle this special use case and quit
@@ -735,7 +736,8 @@ class BritiveCli:
             'programmatic': not console,
             'blocktime': blocktime,
             'maxpolltime': maxpolltime,
-            'justification': justification
+            'justification': justification,
+            'otp': otp
         }
 
         if not cached_credentials_found:  # nothing found in cache, cache is expired, or not a cachable mode
