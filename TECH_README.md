@@ -6,7 +6,7 @@ pip install --editable .
 
 ## Build
 
-* Update version in `setup.cfg` and `src/pybritive/__init__.py` (TODO: create some pre-build script that will update one of these automatically)
+* Update version in `src/pybritive/__init__.py`
 * Push code to GitHub
 * Cut a new PR and merge when appropriate
 * Run below commands
