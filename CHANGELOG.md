@@ -15,7 +15,8 @@ __Enhancements:__
 
 __Bug Fixes:__
 
-* None
+* Fixed `python3.7` compatibility issues.
+* Removed unexpected keyword argument from `hashlib.sha512` calls.
 
 __Dependencies:__
 
@@ -26,6 +27,8 @@ __Other:__
 
 * Documentation linting/conformity updates.
 * Python linting changes.
+* Resolve dependabot issue [dependabot/7](https://github.com/britive/python-cli/security/dependabot/7).
+* Testing updates for `python3.7` compatability and warn when API token is present instead of fail.
 
 ## v1.7.0 [2024-04-17]
 
