@@ -644,7 +644,8 @@ class BritiveCli:
                 wait_time=blocktime,
                 max_wait_time=maxpolltime,
                 justification=justification,
-                progress_func=self.checkout_callback_printer  # callback will handle silent, isatty, etc.
+                otp=otp,
+                progress_func=self.checkout_callback_printer,  # callback will handle silent, isatty, etc.
             )
         except exceptions.ApprovalRequiredButNoJustificationProvided as e:
             raise click.ClickException('approval required and no justification provided.') from e
@@ -686,9 +687,23 @@ class BritiveCli:
             programmatic=not console
         )
 
-    def checkout(self, alias, blocktime, console, justification, mode, maxpolltime, profile, passphrase,
-                 force_renew, aws_credentials_file, gcloud_key_file, verbose, extend):
-
+    def checkout(
+        self,
+        alias,
+        blocktime,
+        console,
+        justification,
+        otp,
+        mode,
+        maxpolltime,
+        profile,
+        passphrase,
+        force_renew,
+        aws_credentials_file,
+        gcloud_key_file,
+        verbose,
+        extend,
+    ):
         # handle this special use case and quit
         if extend:
             self._extend_checkout(profile, console)
@@ -746,7 +761,8 @@ class BritiveCli:
             'programmatic': not console,
             'blocktime': blocktime,
             'maxpolltime': maxpolltime,
-            'justification': justification
+            'justification': justification,
+            'otp': otp,
         }
 
         if not cached_credentials_found:  # nothing found in cache, cache is expired, or not a cachable mode
