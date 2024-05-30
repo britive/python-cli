@@ -49,6 +49,59 @@ this command into your `.bashrc, .zshrc, etc.` file, so it will always get execu
 export PATH=`python3 -m site --user-base`/bin:$PATH
 ```
 
+### Proxies
+
+Under the covers, python [`requests`](https://github.com/psf/requests) is being used to communicate with the Britive API.
+As such, any functionality of `requests` can be used, including setting an HTTP proxy.
+
+* HTTP proxies will be set via environment variables.
+  * `HTTP_PROXY`
+  * `HTTPS_PROXY`
+  * `NO_PROXY`
+  * `http_proxy`
+  * `https_proxy`
+  * `no_proxy`
+
+> _Standard HTTP proxy URLs should be utilized._
+>
+> _Examples:_
+>
+> * _Unauthenticated Proxy: `http://internalproxy.domain.com:8080`_
+> * _Authenticated Proxy: `http://user:pass@internalproxy.domain.com:8080`_
+
+### Custom TLS Certificates
+
+Setting custom TLS certificates functionality of `requests` can also be used.
+
+* Certificate bundles will be set via environment variables.
+  * `REQUESTS_CA_BUNDLE`
+  * `CURL_CA_BUNDLE` _(used as a fallback)_
+
+> _The values of these environment variables must be a path to a directory of certificates or a specific certificate._
+>
+> _Example:_
+> _`/path/to/certfile`_
+
+#### Examples
+
+__linux/macos:__
+
+```sh
+export REQUESTS_CA_BUNDLE="/usr/local/corp-proxy/cacert.pem"
+```
+
+__windows (powershell):__
+
+```pwsh
+$env:REQUESTS_CA_BUNDLE = "C:\Users\User\AppData\Local\corp-proxy\cacert.pem"
+```
+
+__windows (cmd):__
+
+```bat
+set REQUESTS_CA_BUNDLE="C:\Users\User\AppData\Local\corp-proxy\cacert.pem"
+```
+
 ## Tenant Configuration
 
 Before `pybritive` can connect to a Britive tenant, it needs to know some details about that tenant.
