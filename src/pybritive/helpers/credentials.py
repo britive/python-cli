@@ -48,7 +48,7 @@ class CouldNotExtractExpirationTimeFromJwtException(Exception):
 # this base class expects self.credentials to be a dict - so sub classes need to convert to dict
 class CredentialManager:
     def __init__(self, tenant_name: str, tenant_alias: str, cli: any, federation_provider: str = None,
-                 browser: str = None):
+                 browser: str = os.getenv('PYBRITIVE_BROWSER')):
         self.cli = cli
         self.tenant = tenant_name
         self.alias = tenant_alias
@@ -287,7 +287,7 @@ class CredentialManager:
 
 class FileCredentialManager(CredentialManager):
     def __init__(self, tenant_name: str, tenant_alias: str, cli: any, federation_provider: str = None,
-                 browser: str = None):
+                 browser: str = os.getenv('PYBRITIVE_BROWSER')):
         home = os.getenv('PYBRITIVE_HOME_DIR', str(Path.home()))
         self.path = str(Path(home) / '.britive' / 'pybritive.credentials')
         super().__init__(tenant_name, tenant_alias, cli, federation_provider, browser)
@@ -338,7 +338,7 @@ class FileCredentialManager(CredentialManager):
 
 class EncryptedFileCredentialManager(CredentialManager):
     def __init__(self, tenant_name: str, tenant_alias: str, cli: any, passphrase: str = None,
-                 federation_provider: str = None, browser: str = None):
+                 federation_provider: str = None, browser: str = os.getenv('PYBRITIVE_BROWSER')):
         home = os.getenv('PYBRITIVE_HOME_DIR', str(Path.home()))
         self.path = str(Path(home) / '.britive' / 'pybritive.credentials.encrypted')
         self.passphrase = passphrase

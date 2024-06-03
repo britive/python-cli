@@ -26,6 +26,7 @@ import jwt
 
 default_table_format = 'fancy_grid'
 debug_enabled = os.getenv('PYBRITIVE_DEBUG')
+default_browser = os.getenv('PYBRITIVE_BROWSER')
 
 
 class BritiveCli:
@@ -56,7 +57,7 @@ class BritiveCli:
                 'expiration_jmespath': 'expirationTime'
             }
         }
-        self.browser = None
+        self.browser = default_browser
 
     def set_output_format(self, output_format: str):
         self.output_format = self.config.get_output_format(output_format)
@@ -102,7 +103,7 @@ class BritiveCli:
         except Exception:
             return None
 
-    def login(self, explicit: bool = False, browser: str = None):
+    def login(self, explicit: bool = False, browser: str = default_browser):
         # explicit means the user called pybritive login, otherwise it is being implicitly called by something else
 
         self.browser = browser
@@ -162,7 +163,6 @@ class BritiveCli:
                     counter += 1
 
         self._update_sdk_user_agent()
-
         # if user called `pybritive login` and we should get profiles...do so
         should_get_profiles = any([self.config.auto_refresh_profile_cache(), self.config.auto_refresh_kube_config()])
         if explicit and should_get_profiles:
@@ -478,7 +478,6 @@ class BritiveCli:
                         }
                         data.append(row)
             self.available_profiles = data
-
             if not from_cache_command and self.config.auto_refresh_profile_cache():
                 self.cache_profiles()
             if not from_cache_command and self.config.auto_refresh_kube_config():
@@ -729,7 +728,7 @@ class BritiveCli:
             if mode.startswith('browser'):
                 self.browser = mode.replace('browser-', '')
             else:
-                self.browser = os.getenv('PYBRITIVE_BROWSER')
+                self.browser = default_browser
 
         self._validate_justification(justification)
 
