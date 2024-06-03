@@ -17,7 +17,7 @@ def extract_tenant(tenant_key):
 
 
 def lowercase(obj):
-    """ Make dictionary lowercase """
+    """Make dictionary lowercase"""
     if isinstance(obj, dict):
         return {k.lower(): lowercase(v) for k, v in obj.items()}
     if isinstance(obj, (list, set, tuple)):
@@ -35,34 +35,21 @@ def coalesce(*arg):
     return None
 
 
-non_tenant_sections = [
-    'global',
-    'profile-aliases',
-    'aws',
-    'gcp'
-]
+non_tenant_sections = ['global', 'profile-aliases', 'aws', 'gcp']
 
 global_fields = [
     'default_tenant',
     'output_format',
     'credential_backend',
     'auto-refresh-profile-cache',
-    'auto-refresh-kube-config'
+    'auto-refresh-kube-config',
 ]
 
-tenant_fields = [
-    'name',
-    'output_format',
-    'sso_idp'
-]
+tenant_fields = ['name', 'output_format', 'sso_idp']
 
-aws_fields = [
-    'default_checkout_mode'
-]
+aws_fields = ['default_checkout_mode']
 
-gcp_fields = [
-    'gcloud_default_account'
-]
+gcp_fields = ['gcloud_default_account']
 
 
 class ConfigManager:
@@ -103,7 +90,7 @@ class ConfigManager:
             output_format,
             self.get_tenant().get('output_format'),
             self.config.get('global', {}).get('output_format'),
-            'json'  # set to json if no output format is provided
+            'json',  # set to json if no output format is provided
         )
 
     def load(self, force=False):
@@ -228,15 +215,11 @@ class ConfigManager:
         aws_section = npm_config.get('AWS', None)
 
         # reset the config as we are building a new one
-        self.config = {
-            'global': {}
-        }
+        self.config = {'global': {}}
         if tenant != '':
             self.cli.print(f'Found tenant {tenant}.')
             self.config['global']['default_tenant'] = tenant
-            self.config[f'tenant-{tenant}'] = {
-                'name': tenant
-            }
+            self.config[f'tenant-{tenant}'] = {'name': tenant}
         if output_format != '':
             self.cli.print(f'Found default output format {output_format}.')
             self.config['global']['output_format'] = output_format
@@ -313,9 +296,7 @@ class ConfigManager:
                 error = f'Invalid {section} field {field} value {value} provided. Invalid value choice.'
                 self.validation_error_messages.append(error)
             if field == 'default_tenant':
-                tenant_aliases_from_sections = [
-                    extract_tenant(t) for t in self.config if t.startswith('tenant-')
-                ]
+                tenant_aliases_from_sections = [extract_tenant(t) for t in self.config if t.startswith('tenant-')]
                 if value not in tenant_aliases_from_sections:
                     error = f'Invalid {section} field {field} value {value} provided. Tenant not found.'
                     self.validation_error_messages.append(error)
@@ -323,8 +304,10 @@ class ConfigManager:
     def validate_profile_aliases(self, section, fields):
         for field, value in fields.items():
             if len(profile_split(value)) not in [2, 3]:
-                error = f'Invalid {section} field {field} value {value} provided. Value must be 2 or 3 parts ' \
-                        'separated by a /'
+                error = (
+                    f'Invalid {section} field {field} value {value} provided. Value must be 2 or 3 parts '
+                    'separated by a /'
+                )
                 self.validation_error_messages.append(error)
 
     def validate_aws(self, section, fields):

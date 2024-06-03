@@ -18,11 +18,11 @@ classifiers = [
 license = {file = "LICENSE"}
 requires-python = ">= 3.7"
 dependencies = [
-    "britive>=2.24.0rc5",
+    "britive>=2.25.0rc3",
     "click",
     "cryptography>=41.0.0",
     "jmespath",
-    "merge_args",
+    "merge-args",
     "pyjwt",
     "python-dateutil",
     "PyYAML",
@@ -57,3 +57,15 @@ version = {attr = "pybritive.__version__"}
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.pymarkdown]
+plugins.md013.line_length = 120
+plugins.md013.code_block_line_length = 120
+
+[tool.black]
+line-length = 120
+skip-string-normalization = true
+
+[tool.pylint]
+max-line-length = 120
+disable = "C0114,C0116,E0401"
