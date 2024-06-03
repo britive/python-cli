@@ -1224,13 +1224,23 @@ class BritiveCli:
                 file = key.split('/')[-1].split('.')[0]
                 expiration = int(file.split('-')[2])
                 if expiration < now:
-                    Path(key).unlink(missing_ok=True)
+                    # Path(key).unlink(missing_ok=True)
+                    # removed for now, for 3.7 compatability
+                    try:
+                        Path(key).unlink()
+                    except FileNotFoundError:
+                        pass
 
             pem_file = ssh_dir / f'random-{uuid.uuid4().hex}-{now + 60}.pem'
         elif key_source == 'static':
             # clean up the specific key if it exists, so we can create a new one
             pem_file = ssh_dir / f'{hostname}.{username}.pem'
-            pem_file.unlink(missing_ok=True)
+            # pem_file.unlink(missing_ok=True)
+            # removed for now, for 3.7 compatability
+            try:
+                pem_file.unlink()
+            except FileNotFoundError:
+                pass
         else:
             raise ValueError(f'invalid --key-source value {key_source}')
 
@@ -1476,7 +1486,12 @@ class BritiveCli:
                         '--quiet'
                     ]
                     subprocess.run(commands, check=False)
-                    key_file.unlink(missing_ok=True)
+                    # key_file.unlink(missing_ok=True)
+                    # removed for now, for 3.7 compatability
+                    try:
+                        key_file.unlink()
+                    except FileNotFoundError:
+                        pass
 
         commands = [
             'gcloud',

@@ -88,7 +88,13 @@ class ConfigManager:
         if profile:  # if we are given a specific profile we should clear just that key file
             key_file = self.cli.build_gcloud_key_file_for_gcloudauthexec(profile=profile)
             path = path / key_file
-            path.unlink(missing_ok=True)
+
+            # path.unlink(missing_ok=True)
+            # removed for now, for 3.7 compatability
+            try:
+                path.unlink()
+            except FileNotFoundError:
+                pass
         else:  # otherwise we can remove all items in the directory and the directory itself
             shutil.rmtree(str(path), ignore_errors=True)
 

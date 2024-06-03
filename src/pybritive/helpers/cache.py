@@ -60,7 +60,13 @@ class Cache:
 
         # delete kube config if it exists
         kubeconfig = Path(self.base_path) / 'kube' / 'config'
-        kubeconfig.unlink(missing_ok=True)
+        # kubeconfig.unlink(missing_ok=True)
+        # removed for now, for 3.7 compatability
+        try:
+            kubeconfig.unlink()
+        except FileNotFoundError:
+            pass
+
 
     def get_credentials(self, profile_name: str, mode: str = 'awscredentialprocess'):
         try:
