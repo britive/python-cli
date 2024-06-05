@@ -1,5 +1,3 @@
-
-
 def common_asserts(result):
     assert result.exit_code == 0
     assert 'pybritive:' in result.output

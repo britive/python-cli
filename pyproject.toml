@@ -4,3 +4,68 @@ requires = [
     "wheel"
 ]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "pybritive"
+authors = [{name = "Britive Inc.", email = "support@britive.com"}]
+description = "A pure Python CLI for Britive"
+readme = "README.md"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent"
+]
+license = {file = "LICENSE"}
+requires-python = ">= 3.7"
+dependencies = [
+    "britive>=2.25.0rc3",
+    "click",
+    "cryptography>=41.0.0",
+    "jmespath",
+    "merge-args",
+    "pyjwt",
+    "python-dateutil",
+    "PyYAML",
+    "requests>=2.31.0",
+    "tabulate",
+    "toml"
+]
+dynamic = ["version"]
+keywords = ["britive", "cpam", "identity", "jit", "cli"]
+
+[project.optional-dependencies]
+openshift = ["beautifulsoup4"]
+aws = ["boto3"]
+
+[project.scripts]
+pybritive = "pybritive.cli_interface:safe_cli"
+pybritive-aws-cred-process = "pybritive.helpers.aws_credential_process:main"
+pybritive-kube-exec = "pybritive.helpers.k8s_exec:main"
+
+[project.urls]
+Homepage = "https://www.britive.com"
+Documentation = "https://britive.github.io/python-cli/"
+Repository = "https://github.com/britive/python-cli.git"
+Issues = "https://github.com/britive/python-cli/issues"
+Changelog = "https://github.com/britive/python-cli/CHANGELOG.md"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.dynamic]
+version = {attr = "pybritive.__version__"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pymarkdown]
+plugins.md013.line_length = 120
+plugins.md013.code_block_line_length = 120
+
+[tool.black]
+line-length = 120
+skip-string-normalization = true
+
+[tool.pylint]
+max-line-length = 120
+disable = "C0114,C0116,E0401"

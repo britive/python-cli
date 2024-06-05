@@ -1,6 +1,3 @@
-import os
-
-
 def common_asserts(result, substring=None, exit_code=0):
     assert result.exit_code == exit_code
     if isinstance(substring, str):
@@ -26,5 +23,7 @@ def test_ls_environments(runner, cli):
 
 def test_ls_secrets(runner, cli):
     result = runner.invoke(cli, 'ls secrets -f yaml'.split(' '))
-    common_asserts(result, ['entityType', 'id', 'metadata', 'name', 'path', 'rotationInterval', 'secretNature',
-                            'secretType', 'status'])
+    common_asserts(
+        result,
+        ['entityType', 'id', 'metadata', 'name', 'path', 'rotationInterval', 'secretNature', 'secretType', 'status'],
+    )

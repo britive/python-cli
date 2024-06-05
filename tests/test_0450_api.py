@@ -1,8 +1,3 @@
-import os
-from pathlib import Path
-import json
-
-
 def common_asserts(result, substring=None, exit_code=0):
     assert result.exit_code == exit_code
     if isinstance(substring, str):

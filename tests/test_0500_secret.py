@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 
 
@@ -20,18 +19,28 @@ def test_download(runner, cli):
     result = runner.invoke(cli, 'secret download /pybritive-test-file'.split(' '))
     message = 'wrote contents of secret file to'
     common_asserts(result, message)
-    with open(filename, 'r') as f:
+    with open(filename, 'r', encoding='utf-8') as f:
         assert 'test' in f.read()
     path = Path(filename)
-    path.unlink(missing_ok=True)
+    # path.unlink(missing_ok=True)
+    # removed for now, for 3.7 compatability
+    try:
+        path.unlink()
+    except FileNotFoundError:
+        pass
 
 
 def test_download_filename_provided(runner, cli):
     filename = 'pybritive-test-secret-file-2.txt'
     result = runner.invoke(cli, f'secret download /pybritive-test-file -F {filename}'.split(' '))
-    message = f'wrote contents of secret file to'
+    message = 'wrote contents of secret file to'
     common_asserts(result, message)
-    with open(filename, 'r') as f:
+    with open(filename, 'r', encoding='utf-8') as f:
         assert 'test' in f.read()
     path = Path(filename)
-    path.unlink(missing_ok=True)
+    # path.unlink(missing_ok=True)
+    # removed for now, for 3.7 compatability
+    try:
+        path.unlink()
+    except FileNotFoundError:
+        pass

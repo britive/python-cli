@@ -7,7 +7,7 @@ def test_clear_cache(runner, cli):
     result = runner.invoke(cli, 'clear cache'.split(' '))
     local_home = os.getenv('PYBRITIVE_HOME_DIR')
     path = Path(Path(local_home) / '.britive' / 'pybritive.cache')
-    with open(str(path), 'r') as f:
+    with open(str(path), 'r', encoding='utf-8') as f:
         data = json.loads(f.read())
     assert result.exit_code == 0
     assert 'profiles' in data.keys()

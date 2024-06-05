@@ -1,9 +1,9 @@
-import pytest
-from click.testing import CliRunner
-from pybritive import cli_interface
+import json
 import os
 from pathlib import Path
-import json
+from click.testing import CliRunner
+import pytest
+from pybritive import cli_interface
 
 
 def rm_tree(pth: Path):
@@ -26,7 +26,7 @@ def prepare_dot_britive():
             rm_tree(Path(local_home) / '.britive')
 
 
-def pytest_sessionstart(session):
+def pytest_sessionstart():
     """
     Called after the Session object has been created and
     before performing collection and entering the run test loop.
@@ -35,7 +35,7 @@ def pytest_sessionstart(session):
     prepare_dot_britive()
 
 
-def pytest_sessionfinish(session, exitstatus):
+def pytest_sessionfinish():
     """
     Called after whole test run finished, right before
     returning the exit status to the system.
@@ -63,14 +63,19 @@ def cli():
 def profile():
     local_home = os.getenv('PYBRITIVE_HOME_DIR')
     path = Path(Path(local_home) / '.britive' / 'pybritive.cache')
-    with open(str(path), 'r') as f:
-        data = json.loads(f.read())
-    profile = [p for p in data['profiles'] if 'AWS' in p][-1]
-    return profile
+    profiles = []
+    while not profiles:
+        with open(str(path), 'r', encoding="utf-8") as f:
+            loaded_profiles = json.loads(f.read()).get('profiles')
+        if not loaded_profiles:
+            runner.invoke(cli, 'cache profiles'.split(' '))
+            continue
+        profiles += loaded_profiles
+    return [p for p in loaded_profiles if 'AWS' in p][-1]
 
 
 @pytest.fixture
 def unset_api_token_env_var():
     name = 'BRITIVE_API_TOKEN'
-    if name in os.environ.keys():
+    if name in os.environ:
         del os.environ[name]
