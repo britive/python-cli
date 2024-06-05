@@ -110,7 +110,8 @@ def main():
             aws_credentials_file=None,
             gcloud_key_file=None,
             verbose=None,
-            extend=False
+            extend=False,
+            otp=None,
         )
         raise SystemExit()
 

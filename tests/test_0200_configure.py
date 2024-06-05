@@ -1,6 +1,6 @@
-import conftest
 import os
 from pathlib import Path
+import conftest
 
 
 def read_config():
@@ -16,10 +16,7 @@ def write_npm_config(simple=True):
         path = Path(Path(local_home) / '.britive' / 'config')
 
         tenant = os.getenv('PYBRITIVE_TEST_TENANT')
-        contents = [
-            f'tenantURL = "https://{tenant}.britive-app.com"',
-            'output_format = "Table"'
-        ]
+        contents = [f'tenantURL = "https://{tenant}.britive-app.com"', 'output_format = "Table"']
 
         alias = os.getenv('PYBRITIVE_NPM_IMPORT_PROFILE_ALIAS_VALUE')
         if not simple and alias:
@@ -28,13 +25,13 @@ def write_npm_config(simple=True):
                 'output_format = "Table"',
                 '',
                 '[envProfileMap]',
-                f'testalias = "{alias}"'
+                f'testalias = "{alias}"',
             ]
 
         path.write_text('\n'.join(contents), encoding='utf-8')
 
 
-def common_asserts(result, substring=None, exit_code=0):
+def common_asserts(result, substring: list = None, exit_code: int = 0):
     assert result.exit_code == exit_code
     if substring:
         if isinstance(substring, str):
@@ -86,35 +83,31 @@ def test_configure_tenant_via_prompt_yes_alias_no_format(runner, cli):
 
 def test_configure_global_via_flags_file_backend(runner, cli):
     result = runner.invoke(cli, 'configure global -t pybritivetest1.dev -f table -b file'.split(' '))
-    common_asserts(result, substring=['default_tenant=pybritivetest1.dev', 'output_format=table', 'credential_backend=file'])
+    common_asserts(
+        result, substring=['default_tenant=pybritivetest1.dev', 'output_format=table', 'credential_backend=file']
+    )
 
 
 def test_configure_global_via_flags_encrypted_file_backend(runner, cli):
     result = runner.invoke(cli, 'configure global -t pybritivetest2.dev -f yaml -b encrypted-file'.split(' '))
     common_asserts(
         result,
-        substring=[
-            'default_tenant=pybritivetest2.dev',
-            'output_format=yaml',
-            'credential_backend=encrypted-file'
-        ]
+        substring=['default_tenant=pybritivetest2.dev', 'output_format=yaml', 'credential_backend=encrypted-file'],
     )
 
 
 def test_configure_global_via_prompt_file_backend(runner, cli):
     result = runner.invoke(cli, 'configure global'.split(' '), input='pybritivetest1.dev\ntable-pretty\nfile\n')
-    common_asserts(result, substring=['default_tenant=pybritivetest1.dev', 'output_format=table-pretty', 'credential_backend=file'])
+    common_asserts(
+        result, substring=['default_tenant=pybritivetest1.dev', 'output_format=table-pretty', 'credential_backend=file']
+    )
 
 
 def test_configure_global_via_prompt_encrypted_file_backend(runner, cli):
     result = runner.invoke(cli, 'configure global'.split(' '), input='pybritivetest2.dev\n\nencrypted-file\n')
     common_asserts(
         result,
-        substring=[
-            'default_tenant=pybritivetest2.dev',
-            'output_format=json',
-            'credential_backend=encrypted-file'
-        ]
+        substring=['default_tenant=pybritivetest2.dev', 'output_format=json', 'credential_backend=encrypted-file'],
     )
 
 
@@ -141,7 +134,7 @@ def test_configure_import_complex(runner, cli):
     result = runner.invoke(cli, 'configure import'.split(' '))
     print(result.output)
     assert f'Found tenant {tenant}.' in result.output
-    assert f'Found default output format' in result.output
+    assert 'Found default output format' in result.output
     assert 'Profile aliases exist...will retrieve profile details from the tenant.' in result.output
     assert 'Saved alias testalias to profile' in result.output
     common_asserts(result, substring=[tenant, '[profile-aliases]', 'testalias='])
@@ -173,5 +166,5 @@ def test_configure_update_tenant_correct_data(runner, cli):
 
 
 def test_configure_update_aws_data(runner, cli):
-    result = runner.invoke(cli, f'configure update aws default_checkout_mode integrate'.split(' '))
+    result = runner.invoke(cli, 'configure update aws default_checkout_mode integrate'.split(' '))
     common_asserts(result, substring=['aws', 'default_checkout_mode=integrate'])

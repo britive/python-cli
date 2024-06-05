@@ -2,8 +2,8 @@ import hashlib
 import json
 import os
 from pathlib import Path
-from .encryption import StringEncryption, InvalidPassphraseException
 import time
+from .encryption import StringEncryption, InvalidPassphraseException
 
 
 class Cache:
@@ -60,7 +60,13 @@ class Cache:
 
         # delete kube config if it exists
         kubeconfig = Path(self.base_path) / 'kube' / 'config'
-        kubeconfig.unlink(missing_ok=True)
+        # kubeconfig.unlink(missing_ok=True)
+        # removed for now, for 3.7 compatability
+        try:
+            kubeconfig.unlink()
+        except FileNotFoundError:
+            pass
+
 
     def get_credentials(self, profile_name: str, mode: str = 'awscredentialprocess'):
         try:
@@ -82,7 +88,7 @@ class Cache:
 
     @staticmethod
     def hash_banner(banner: dict) -> str:
-        return hashlib.sha512(string=json.dumps(banner, default=str)).hexdigest()
+        return hashlib.sha512(json.dumps(banner, default=str)).hexdigest()
 
     def banner_expired(self, tenant: str) -> bool:
         cached_banner_data = self.cache.get('banners', {}).get(tenant)
@@ -98,7 +104,7 @@ class Cache:
 
         cached_banner_data = self.cache.get('banners', {}).get(tenant, {})
         cached_hash = cached_banner_data.get('hash', '')
-        new_hash = hashlib.sha512(string=json.dumps(banner, default=str, sort_keys=True).encode('utf-8')).hexdigest()
+        new_hash = hashlib.sha512(json.dumps(banner, default=str, sort_keys=True).encode('utf-8')).hexdigest()
         self.cache['banners'][tenant] = {
             'hash': new_hash,
             'expires': int(time.time()) + (5 * 60)

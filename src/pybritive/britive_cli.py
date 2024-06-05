@@ -1,36 +1,43 @@
 import csv
-import hashlib
 from datetime import datetime
-from datetime import timezone
 from datetime import timedelta
+from datetime import timezone
+import hashlib
 import io
 import json
 import os
-import pathlib
 from pathlib import Path
 import sys
 import uuid
-import yaml
 import click
-import jmespath
-from britive.britive import Britive
 from britive import exceptions
+from britive.britive import Britive
+import jmespath
+import jwt
 from tabulate import tabulate
+import yaml
+from .helpers import cloud_credential_printer as printer
+from .helpers.cache import Cache
 from .helpers.config import ConfigManager
 from .helpers.credentials import FileCredentialManager, EncryptedFileCredentialManager
 from .helpers.split import profile_split
-from .helpers import cloud_credential_printer as printer
-from .helpers.cache import Cache
-import jwt
-
+from . import __version__
 
 default_table_format = 'fancy_grid'
 debug_enabled = os.getenv('PYBRITIVE_DEBUG')
+default_browser = os.getenv('PYBRITIVE_BROWSER')
 
 
 class BritiveCli:
-    def __init__(self, tenant_name: str = None, token: str = None, silent: bool = False, passphrase: str = None,
-                 federation_provider: str = None, from_helper_console_script: bool = False):
+    def __init__(
+        self,
+        tenant_name: str = None,
+        token: str = None,
+        silent: bool = False,
+        passphrase: str = None,
+        federation_provider: str = None,
+        from_helper_console_script: bool = False,
+    ):
         self.silent = silent
         self.from_helper_console_script = from_helper_console_script
         self.output_format = None
@@ -47,16 +54,10 @@ class BritiveCli:
         self.verbose_checkout = False
         self.checkout_progress_previous_message = None
         self.cachable_modes = {
-            'awscredentialprocess': {
-                'app_type': 'AWS',
-                'expiration_jmespath': 'expirationTime'
-            },
-            'kube-exec': {
-                'app_type': 'Kubernetes',
-                'expiration_jmespath': 'expirationTime'
-            }
+            'awscredentialprocess': {'app_type': 'AWS', 'expiration_jmespath': 'expirationTime'},
+            'kube-exec': {'app_type': 'Kubernetes', 'expiration_jmespath': 'expirationTime'},
         }
-        self.browser = None
+        self.browser = default_browser
 
     def set_output_format(self, output_format: str):
         self.output_format = self.config.get_output_format(output_format)
@@ -71,7 +72,7 @@ class BritiveCli:
                 tenant_name=self.tenant_name,
                 cli=self,
                 federation_provider=self.federation_provider,
-                browser=self.browser
+                browser=self.browser,
             )
         elif backend == 'encrypted-file':
             self.credential_manager = EncryptedFileCredentialManager(
@@ -80,7 +81,7 @@ class BritiveCli:
                 cli=self,
                 passphrase=self.passphrase,
                 federation_provider=self.federation_provider,
-                browser=self.browser
+                browser=self.browser,
             )
         else:
             raise click.ClickException(f'invalid credential backend {backend}.')
@@ -94,15 +95,12 @@ class BritiveCli:
                 # so not verifying everything here is okay since we are just
                 # trying to extract the token expiration time so we can store
                 # it in the ~/.britive/pybritive.credentials[.encrypted] file
-                options={
-                    'verify_signature': verify,
-                    'verify_aud': verify
-                }
+                options={'verify_signature': verify, 'verify_aud': verify},
             )[field]
         except Exception:
             return None
 
-    def login(self, explicit: bool = False, browser: str = None):
+    def login(self, explicit: bool = False, browser: str = default_browser):
         # explicit means the user called pybritive login, otherwise it is being implicitly called by something else
 
         self.browser = browser
@@ -114,11 +112,7 @@ class BritiveCli:
         # taking a very straightforward approach here...if user provided a token and it doesn't work just exit
         if self.token:  # static token provided or BRITIVE_API_TOKEN set
             try:
-                self.b = Britive(
-                    tenant=self.tenant_name,
-                    token=self.token,
-                    query_features=False
-                )
+                self.b = Britive(tenant=self.tenant_name, token=self.token, query_features=False)
                 self.b.my_access.whoami()  # this is what may cause UnauthorizedRequest
             except exceptions.UnauthorizedRequest as e:
                 raise click.ClickException('Invalid API token provided.') from e
@@ -140,11 +134,7 @@ class BritiveCli:
                     token = self.credential_manager.get_token()
                     jti = self._extract_field_from_jwt(token=token, field='jti')
                     self.debug(f'got token jti of {jti} from credential manager')
-                    self.b = Britive(
-                        tenant=self.tenant_name,
-                        token=token,
-                        query_features=False
-                    )
+                    self.b = Britive(tenant=self.tenant_name, token=token, query_features=False)
                     self.b.my_access.whoami()  # this is what may cause UnauthorizedRequest
                     break
                 except exceptions.UnauthorizedRequest as e:
@@ -162,7 +152,6 @@ class BritiveCli:
                     counter += 1
 
         self._update_sdk_user_agent()
-
         # if user called `pybritive login` and we should get profiles...do so
         should_get_profiles = any([self.config.auto_refresh_profile_cache(), self.config.auto_refresh_kube_config()])
         if explicit and should_get_profiles:
@@ -188,14 +177,11 @@ class BritiveCli:
         user_agent = self.b.session.headers.get('User-Agent')
 
         try:
-            import pybritive
-            version = pybritive.__version__
+            version = __version__
         except Exception:
             version = 'unknown'
 
-        self.b.session.headers.update({
-            'User-Agent': f'pybritive/{version} {user_agent}'
-        })
+        self.b.session.headers.update({'User-Agent': f'pybritive/{version} {user_agent}'})
 
     def _cleanup_credentials(self):
         self.set_credential_manager()
@@ -203,8 +189,6 @@ class BritiveCli:
 
     @staticmethod
     def _is_saml_user(token):
-        import jwt  # lazy load as this will not happen often
-
         try:
             username = jwt.decode(
                 token,
@@ -212,10 +196,7 @@ class BritiveCli:
                 # so not verifying everything here is okay since we are just
                 # trying to extract the username to determine if they are a
                 # SAML user or not
-                options={
-                    'verify_signature': False,
-                    'verify_aud': False
-                }
+                options={'verify_signature': False, 'verify_aud': False},
             ).get('username', '')
 
             return username.startswith('SAML')
@@ -239,11 +220,7 @@ class BritiveCli:
 
             # keep it as local variable, so we don't mess up anything that may be happening in login
             # if this method is called due to a 401 E0000 error
-            b = Britive(
-                tenant=self.tenant_name,
-                token=token,
-                query_features=False
-            )
+            b = Britive(tenant=self.tenant_name, token=token, query_features=False)
 
             params = {}
             if self._is_saml_user(token):
@@ -365,7 +342,7 @@ class BritiveCli:
                 key = f'{p["papId"]}-{p["environmentId"]}'
                 checked_out_profiles[key] = {
                     'expiration': expiration_str,
-                    'expires_in_seconds': seconds_until_expiration
+                    'expires_in_seconds': seconds_until_expiration,
                 }
 
         for profile in self.available_profiles:
@@ -377,7 +354,7 @@ class BritiveCli:
                     'Environment': profile['env_name'],
                     'Profile': profile['profile_name'],
                     'Description': profile['profile_description'],
-                    'Type': profile['app_type']
+                    'Type': profile['app_type'],
                 }
 
                 if profile_is_checked_out:
@@ -386,7 +363,7 @@ class BritiveCli:
 
                     hours, remainder = divmod(total_seconds, 3600)
                     minutes, seconds = divmod(remainder, 60)
-                    time_format = '{:02d}:{:02d}:{:02d}'.format(hours, minutes, seconds)
+                    time_format = f'{hours:02d}:{minutes:02d}:{seconds:02d}'
                     row['TimeRemaining'] = time_format
                     row['TimeRemainingSeconds'] = total_seconds
 
@@ -428,7 +405,6 @@ class BritiveCli:
                 'Application': app['app_name'],
                 'Type': app['app_type'],
                 'Description': app['app_description'],
-
             }
             data.append(row)
         self.print(data, ignore_silent=True)
@@ -448,7 +424,7 @@ class BritiveCli:
                 'Application': env['app_name'],
                 'Environment': env['env_name'],
                 'Description': env['env_description'],
-                'Type': env['app_type']
+                'Type': env['app_type'],
             }
             data.append(row)
         self.print(data, ignore_silent=True)
@@ -466,7 +442,7 @@ class BritiveCli:
                             'app_description': app['appDescription'],
                             'env_name': env['environmentName'],
                             'env_id': env['environmentId'],
-                            'env_short_name':  env['alternateEnvironmentName'],
+                            'env_short_name': env['alternateEnvironmentName'],
                             'env_description': env['environmentDescription'],
                             'profile_name': profile['profileName'],
                             'profile_id': profile['profileId'],
@@ -474,11 +450,10 @@ class BritiveCli:
                             'profile_allows_programmatic': profile['programmaticAccess'],
                             'profile_description': profile['profileDescription'],
                             '2_part_profile_format_allowed': app['requiresHierarchicalModel'],
-                            'env_properties': env.get('profileEnvironmentProperties', {})
+                            'env_properties': env.get('profileEnvironmentProperties', {}),
                         }
                         data.append(row)
             self.available_profiles = data
-
             if not from_cache_command and self.config.auto_refresh_profile_cache():
                 self.cache_profiles()
             if not from_cache_command and self.config.auto_refresh_kube_config():
@@ -499,21 +474,21 @@ class BritiveCli:
                 url = props.get('apiServerUrl')
                 cert = props.get('certificateAuthorityData')
                 if props and all([url, cert]):
-                    profiles.append({
-                        'app': p['app_name'],
-                        'env': p['env_name'],
-                        'profile': p['profile_name'],
-                        'url': url,
-                        'cert': cert,
-                    })
+                    profiles.append(
+                        {
+                            'app': p['app_name'],
+                            'env': p['env_name'],
+                            'profile': p['profile_name'],
+                            'url': url,
+                            'cert': cert,
+                        }
+                    )
 
         try:
             from .helpers.kube_config_builder import build_kube_config  # lazy import as not everyone will want this
+
             build_kube_config(
-                profiles=profiles,
-                config=self.config,
-                username=self.b.my_access.whoami()['username'],
-                cli=self
+                profiles=profiles, config=self.config, username=self.b.my_access.whoami()['username'], cli=self
             )
         except Exception as e:  # do NOT fail the CLI invocation because of this
             self.print(f'error auto-generating the Britive managed kube config file: {str(e)}')
@@ -525,8 +500,18 @@ class BritiveCli:
                 return profile['app_type']
         raise click.ClickException(f'Application {application_id} not found')
 
-    def __get_cloud_credential_printer(self, app_type, console, mode, profile, silent, credentials,
-                                       aws_credentials_file, gcloud_key_file, k8s_processor):
+    def __get_cloud_credential_printer(
+        self,
+        app_type,
+        console,
+        mode,
+        profile,
+        silent,
+        credentials,
+        aws_credentials_file,
+        gcloud_key_file,
+        k8s_processor,
+    ):
         if app_type in ['AWS', 'AWS Standalone']:
             return printer.AwsCloudCredentialPrinter(
                 console=console,
@@ -535,16 +520,11 @@ class BritiveCli:
                 credentials=credentials,
                 silent=silent,
                 cli=self,
-                aws_credentials_file=aws_credentials_file
+                aws_credentials_file=aws_credentials_file,
             )
         if app_type in ['Azure']:
             return printer.AzureCloudCredentialPrinter(
-                console=console,
-                mode=mode,
-                profile=profile,
-                credentials=credentials,
-                silent=silent,
-                cli=self
+                console=console, mode=mode, profile=profile, credentials=credentials, silent=silent, cli=self
             )
         if app_type in ['GCP']:
             return printer.GcpCloudCredentialPrinter(
@@ -554,9 +534,9 @@ class BritiveCli:
                 credentials=credentials,
                 silent=silent,
                 cli=self,
-                gcloud_key_file=gcloud_key_file
+                gcloud_key_file=gcloud_key_file,
             )
-        elif app_type in ['Kubernetes']:
+        if app_type in ['Kubernetes']:
             return printer.KubernetesCredentialPrinter(
                 console=console,
                 mode=mode,
@@ -564,26 +544,15 @@ class BritiveCli:
                 credentials=credentials,
                 silent=silent,
                 cli=self,
-                k8s_processor=k8s_processor
+                k8s_processor=k8s_processor,
             )
-        elif app_type in ['OpenShift']:
+        if app_type in ['OpenShift']:
             return printer.OpenShiftCredentialPrinter(
-                console=console,
-                mode=mode,
-                profile=profile,
-                credentials=credentials,
-                silent=silent,
-                cli=self
+                console=console, mode=mode, profile=profile, credentials=credentials, silent=silent, cli=self
             )
-        else:
-            return printer.GenericCloudCredentialPrinter(
-                console=console,
-                mode=mode,
-                profile=profile,
-                credentials=credentials,
-                silent=silent,
-                cli=self
-            )
+        return printer.GenericCloudCredentialPrinter(
+            console=console, mode=mode, profile=profile, credentials=credentials, silent=silent, cli=self
+        )
 
     def checkin(self, profile, console):
         self.login()
@@ -591,9 +560,7 @@ class BritiveCli:
         parts = self._split_profile_into_parts(profile)
 
         ids = self._convert_names_to_ids(
-            profile_name=parts['profile'],
-            environment_name=parts['env'],
-            application_name=parts['app']
+            profile_name=parts['profile'], environment_name=parts['env'], application_name=parts['app']
         )
 
         access_type = 'CONSOLE' if console else 'PROGRAMMATIC'
@@ -617,23 +584,19 @@ class BritiveCli:
         if not transaction_id:
             raise ValueError('no checked out profile found for the given profile')
 
-        self.b.my_access.checkin(
-            transaction_id=transaction_id
-        )
+        self.b.my_access.checkin(transaction_id=transaction_id)
 
         if application_type in ['aws', 'aws standalone']:
             self.clear_cached_aws_credentials(profile)
         if application_type in ['gcp']:
             self.clear_gcloud_auth_key_files(profile=profile)
 
-    def _checkout(self, profile_name, env_name, app_name, programmatic, blocktime, maxpolltime, justification):
+    def _checkout(self, profile_name, env_name, app_name, programmatic, blocktime, maxpolltime, justification, otp):
         try:
             self.login()
 
             ids = self._convert_names_to_ids(
-                profile_name=profile_name,
-                environment_name=env_name,
-                application_name=app_name
+                profile_name=profile_name, environment_name=env_name, application_name=app_name
             )
 
             return self.b.my_access.checkout(
@@ -644,7 +607,8 @@ class BritiveCli:
                 wait_time=blocktime,
                 max_wait_time=maxpolltime,
                 justification=justification,
-                progress_func=self.checkout_callback_printer  # callback will handle silent, isatty, etc.
+                otp=otp,
+                progress_func=self.checkout_callback_printer,  # callback will handle silent, isatty, etc.
             )
         except exceptions.ApprovalRequiredButNoJustificationProvided as e:
             raise click.ClickException('approval required and no justification provided.') from e
@@ -655,7 +619,9 @@ class BritiveCli:
                 # attempt to automatically checkout console access instead
                 # this is a cli only feature - not available in the sdk
                 self.print('no programmatic access available - checking out console access instead')
-                return self._checkout(profile_name, env_name, app_name, False, blocktime, maxpolltime, justification)
+                return self._checkout(
+                    profile_name, env_name, app_name, False, blocktime, maxpolltime, justification, otp
+                )
             raise e
 
     @staticmethod
@@ -669,11 +635,7 @@ class BritiveCli:
             parts = [parts[0], parts[0], parts[1]]
         if len(parts) != 3:
             raise click.ClickException('Provided profile string does not have the required parts.')
-        parts_dict = {
-            'app': parts[0],
-            'env': parts[1],
-            'profile': parts[2]
-        }
+        parts_dict = {'app': parts[0], 'env': parts[1], 'profile': parts[2]}
         return parts_dict
 
     def _extend_checkout(self, profile, console):
@@ -683,12 +645,26 @@ class BritiveCli:
             profile_name=parts['profile'],
             environment_name=parts['env'],
             application_name=parts['app'],
-            programmatic=not console
+            programmatic=not console,
         )
 
-    def checkout(self, alias, blocktime, console, justification, mode, maxpolltime, profile, passphrase,
-                 force_renew, aws_credentials_file, gcloud_key_file, verbose, extend):
-
+    def checkout(
+        self,
+        alias,
+        blocktime,
+        console,
+        justification,
+        otp,
+        mode,
+        maxpolltime,
+        profile,
+        passphrase,
+        force_renew,
+        aws_credentials_file,
+        gcloud_key_file,
+        verbose,
+        extend,
+    ):
         # handle this special use case and quit
         if extend:
             self._extend_checkout(profile, console)
@@ -705,6 +681,7 @@ class BritiveCli:
         # will not be able to return a response back to kubectl via the exec command
         if mode == 'kube-exec':
             from .helpers.k8s_exec_credential_builder import KubernetesExecCredentialProcessor
+
             k8s_processor = KubernetesExecCredentialProcessor()
 
         # these 3 modes implicitly say that console access should be checked out without having to provide
@@ -714,7 +691,7 @@ class BritiveCli:
             if mode.startswith('browser'):
                 self.browser = mode.replace('browser-', '')
             else:
-                self.browser = os.getenv('PYBRITIVE_BROWSER')
+                self.browser = default_browser
 
         self._validate_justification(justification)
 
@@ -726,8 +703,7 @@ class BritiveCli:
             credentials = Cache(passphrase=passphrase).get_credentials(profile_name=alias or profile, mode=mode)
             if credentials:
                 expiration_timestamp_str = jmespath.search(
-                    expression=self.cachable_modes[mode]['expiration_jmespath'],
-                    data=credentials
+                    expression=self.cachable_modes[mode]['expiration_jmespath'], data=credentials
                 ).replace('Z', '')
                 expires = datetime.fromisoformat(expiration_timestamp_str)
                 now = datetime.utcnow()
@@ -746,7 +722,8 @@ class BritiveCli:
             'programmatic': not console,
             'blocktime': blocktime,
             'maxpolltime': maxpolltime,
-            'justification': justification
+            'justification': justification,
+            'otp': otp,
         }
 
         if not cached_credentials_found:  # nothing found in cache, cache is expired, or not a cachable mode
@@ -772,9 +749,7 @@ class BritiveCli:
 
         if mode in self.cachable_modes and not cached_credentials_found:
             Cache(passphrase=passphrase).save_credentials(
-                profile_name=alias or profile,
-                credentials=credentials,
-                mode=mode
+                profile_name=alias or profile, credentials=credentials, mode=mode
             )
 
         self.__get_cloud_credential_printer(
@@ -786,7 +761,7 @@ class BritiveCli:
             credentials,
             aws_credentials_file,
             gcloud_key_file,
-            k8s_processor
+            k8s_processor,
         ).print()
 
     def import_existing_npm_config(self):
@@ -801,7 +776,6 @@ class BritiveCli:
         self.login()
         self._set_available_profiles()
         self.print('')
-
         for alias, ids in profile_aliases.items():
             if '/' in alias:  # no need to import the aliases that aren't really aliases
                 continue
@@ -813,18 +787,10 @@ class BritiveCli:
                     self.print(f'Saved alias {alias} to profile {profile_str}')
 
     def configure_tenant(self, tenant, alias, output_format):
-        self.config.save_tenant(
-            tenant=tenant,
-            alias=alias,
-            output_format=output_format
-        )
+        self.config.save_tenant(tenant=tenant, alias=alias, output_format=output_format)
 
     def configure_global(self, default_tenant_name, output_format, backend):
-        self.config.save_global(
-            default_tenant_name=default_tenant_name,
-            output_format=output_format,
-            backend=backend
-        )
+        self.config.save_global(default_tenant_name=default_tenant_name, output_format=output_format, backend=backend)
 
     def viewsecret(self, path, blocktime, justification, maxpolltime):
         self._validate_justification(justification)
@@ -832,10 +798,7 @@ class BritiveCli:
 
         try:
             value = self.b.my_secrets.view(
-                path=path,
-                justification=justification,
-                wait_time=blocktime,
-                max_wait_time=maxpolltime
+                path=path, justification=justification, wait_time=blocktime, max_wait_time=maxpolltime
             )
         except exceptions.AccessDenied as e:
             raise click.ClickException('user does not have access to the secret.') from e
@@ -863,10 +826,7 @@ class BritiveCli:
 
         try:
             response = self.b.my_secrets.download(
-                path=path,
-                justification=justification,
-                wait_time=blocktime,
-                max_wait_time=maxpolltime
+                path=path, justification=justification, wait_time=blocktime, max_wait_time=maxpolltime
             )
         except exceptions.AccessDenied as e:
             raise click.ClickException('user does not have access to the secret.') from e
@@ -881,8 +841,7 @@ class BritiveCli:
                 self.print(content.decode('utf-8'), ignore_silent=True)
             except UnicodeDecodeError as e:
                 raise click.ClickException(
-                    'Secret file contents cannot be decoded to utf-8. '
-                    'Save the contents of the file to disk instead.'
+                    'Secret file contents cannot be decoded to utf-8. Save the contents of the file to disk instead.'
                 ) from e
             return
 
@@ -930,16 +889,14 @@ class BritiveCli:
         parts = self._split_profile_into_parts(profile)
 
         ids = self._convert_names_to_ids(
-            profile_name=parts['profile'],
-            environment_name=parts['env'],
-            application_name=parts['app']
+            profile_name=parts['profile'], environment_name=parts['env'], application_name=parts['app']
         )
 
         self.b.my_access.request_approval(
             profile_id=ids['profile_id'],
             environment_id=ids['environment_id'],
             block_until_disposition=False,
-            justification=justification
+            justification=justification,
         )
 
     def request_withdraw(self, profile):
@@ -947,15 +904,10 @@ class BritiveCli:
         parts = self._split_profile_into_parts(profile)
 
         ids = self._convert_names_to_ids(
-            profile_name=parts['profile'],
-            environment_name=parts['env'],
-            application_name=parts['app']
+            profile_name=parts['profile'], environment_name=parts['env'], application_name=parts['app']
         )
 
-        self.b.my_access.withdraw_approval_request(
-            profile_id=ids['profile_id'],
-            environment_id=ids['environment_id']
-        )
+        self.b.my_access.withdraw_approval_request(profile_id=ids['profile_id'], environment_id=ids['environment_id'])
 
     @staticmethod
     def build_gcloud_key_file_for_gcloudauthexec(profile: str):
@@ -972,15 +924,9 @@ class BritiveCli:
 
             if path.exists():  # we have a valid gcloudauthexec key file, so we know there was a checkout with this mode
                 try:
-                    with open(str(path), 'r') as f:
+                    with open(str(path), 'r', encoding='utf-8') as f:
                         credentials = json.loads(f.read())
-                    commands = [
-                        'gcloud',
-                        'auth',
-                        'revoke',
-                        credentials['client_email'],
-                        '--verbosity=error'
-                    ]
+                    commands = ['gcloud', 'auth', 'revoke', credentials['client_email'], '--verbosity=error']
                     self.debug(' '.join(commands))
                     subprocess.run(commands, check=True)
 
@@ -993,7 +939,7 @@ class BritiveCli:
                             'set',
                             'account',
                             gcloud_default_account,  # no need for "" here as subprocess will properly escape
-                            '--verbosity=error'
+                            '--verbosity=error',
                         ]
                         self.debug(' '.join(commands))
                         subprocess.run(commands, check=True)
@@ -1017,13 +963,13 @@ class BritiveCli:
 
                 if value.startswith('file://'):
                     filepath = value.replace('file://', '')
-                    path = pathlib.Path(filepath)
+                    path = Path(filepath)
                     with open(str(path), 'r', encoding='utf-8') as f:
                         computed_value = f.read().strip()
 
                 if value.startswith('fileb://'):
                     filepath = value.replace('fileb://', '')
-                    path = pathlib.Path(filepath)
+                    path = Path(filepath)
                     computed_value = open(str(path), 'rb')
                     open_file_keys.append(computed_key)
 
@@ -1087,11 +1033,7 @@ class BritiveCli:
                 found_profiles[found_profile_id] = []
 
             # load up multiple options
-            env_options = [
-                profile['env_name'].lower(),
-                profile['env_id'].lower(),
-                profile['env_short_name'].lower()
-            ]
+            env_options = [profile['env_name'].lower(), profile['env_id'].lower(), profile['env_short_name'].lower()]
 
             if environment_name in env_options:
                 found_profiles[found_profile_id].append(profile['env_id'])
@@ -1110,10 +1052,7 @@ class BritiveCli:
         if len(possible_environments) > 1:
             raise click.ClickException('multiple matching profiles found - cannot determine which profile to use')
 
-        return {
-            'profile_id': found_profile_id,
-            'environment_id': possible_environments[0]
-        }
+        return {'profile_id': found_profile_id, 'environment_id': possible_environments[0]}
 
     @staticmethod
     def _validate_justification(justification: str):
@@ -1132,17 +1071,13 @@ class BritiveCli:
             aws_region = helper[2]
 
         if push_public_key:
-            details = self._ssh_generate_key(
-                username=username,
-                hostname=hostname,
-                key_source=key_source
-            )
+            details = self._ssh_generate_key(username=username, hostname=hostname, key_source=key_source)
             self._ssh_aws_push_key(
                 instance_id=instance_id,
                 aws_profile=aws_profile,
                 aws_region=aws_region,
                 username=username,
-                key_pair=details['key_pair']
+                key_pair=details['key_pair'],
             )
 
         commands = [
@@ -1151,7 +1086,7 @@ class BritiveCli:
             'start-session',
             f'--parameters portNumber={port_number}',
             '--document-name AWS-StartSSHSession',
-            f'--target {instance_id}'
+            f'--target {instance_id}',
         ]
 
         if aws_profile:
@@ -1167,26 +1102,19 @@ class BritiveCli:
         from cryptography.hazmat.primitives.asymmetric import rsa
         from cryptography.hazmat.primitives import serialization
 
-        private_key = rsa.generate_private_key(
-            public_exponent=65537,
-            key_size=2048
-        )
+        private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
 
         pem_private_key = private_key.private_bytes(
             encoding=serialization.Encoding.PEM,
             format=serialization.PrivateFormat.TraditionalOpenSSL,
-            encryption_algorithm=serialization.NoEncryption()
+            encryption_algorithm=serialization.NoEncryption(),
         )
 
         pem_public_key = private_key.public_key().public_bytes(
-            encoding=serialization.Encoding.OpenSSH,
-            format=serialization.PublicFormat.OpenSSH
+            encoding=serialization.Encoding.OpenSSH, format=serialization.PublicFormat.OpenSSH
         )
 
-        return {
-            'private': pem_private_key,
-            'public': pem_public_key
-        }
+        return {'private': pem_private_key, 'public': pem_public_key}
 
     def _ssh_generate_key(self, username, hostname, key_source):
         # doing imports here as these packages are not a requirement to use pybritive in general
@@ -1208,13 +1136,23 @@ class BritiveCli:
                 file = key.split('/')[-1].split('.')[0]
                 expiration = int(file.split('-')[2])
                 if expiration < now:
-                    Path(key).unlink(missing_ok=True)
+                    # Path(key).unlink(missing_ok=True)
+                    # removed for now, for 3.7 compatability
+                    try:
+                        Path(key).unlink()
+                    except FileNotFoundError:
+                        pass
 
             pem_file = ssh_dir / f'random-{uuid.uuid4().hex}-{now + 60}.pem'
         elif key_source == 'static':
             # clean up the specific key if it exists, so we can create a new one
             pem_file = ssh_dir / f'{hostname}.{username}.pem'
-            pem_file.unlink(missing_ok=True)
+            # pem_file.unlink(missing_ok=True)
+            # removed for now, for 3.7 compatability
+            try:
+                pem_file.unlink()
+            except FileNotFoundError:
+                pass
         else:
             raise ValueError(f'invalid --key-source value {key_source}')
 
@@ -1230,10 +1168,7 @@ class BritiveCli:
         if key_source == 'ssh-agent':
             subprocess.run(['ssh-add', '-t', '60', '-q', str(pem_file)], check=False)
 
-        return {
-            'private_key_filename': pem_file,
-            'key_pair': key_pair
-        }
+        return {'private_key_filename': pem_file, 'key_pair': key_pair}
 
     @staticmethod
     def build_import_exception_message(extras: str):
@@ -1253,15 +1188,15 @@ class BritiveCli:
         ec2 = session.client('ec2')
 
         # now push the key
-        az = ec2.describe_instances(
-            InstanceIds=[instance_id]
-        )['Reservations'][0]['Instances'][0]['Placement']['AvailabilityZone']
+        az = ec2.describe_instances(InstanceIds=[instance_id])['Reservations'][0]['Instances'][0]['Placement'][
+            'AvailabilityZone'
+        ]
 
         eic.send_ssh_public_key(
             InstanceId=instance_id,
             InstanceOSUser=username,
             SSHPublicKey=key_pair['public'].decode(),
-            AvailabilityZone=az
+            AvailabilityZone=az,
         )
 
     def ssh_aws_openssh_config(self, push_public_key, key_source):
@@ -1270,7 +1205,7 @@ class BritiveCli:
             commands = [
                 '\tProxyCommand eval $(pybritive ssh aws ssm-proxy --hostname %h',
                 '--username %r --port-number %p --push-public-key',
-                f'--key-source {key_source})'
+                f'--key-source {key_source})',
             ]
             lines.append(' '.join(commands))
 
@@ -1308,37 +1243,30 @@ class BritiveCli:
         session_id = creds.access_key
         session_key = creds.secret_key
         session_token = creds.token
-        json_creds = json.dumps({
-            'sessionId': session_id,
-            'sessionKey': session_key,
-            'sessionToken': session_token
-        })
+        json_creds = json.dumps({'sessionId': session_id, 'sessionKey': session_key, 'sessionToken': session_token})
 
         # Make request to AWS federation endpoint to get sign-in token. Construct the parameter string with
         # the sign-in action request and the JSON document with temporary credentials as parameters.
 
-        params = {
-            'Action': 'getSigninToken',
-            'SessionDuration': duration,
-            'Session': json_creds
-        }
+        params = {'Action': 'getSigninToken', 'SessionDuration': duration, 'Session': json_creds}
 
         url = 'https://signin.aws.amazon.com/federation'
 
-        response = requests.get(url, params=params)
+        response = requests.get(url, params=params, timeout=15)
 
         signin_token = None
         try:
             signin_token = json.loads(response.text)
         except json.decoder.JSONDecodeError:
-            click.ClickException('Credentials have expired or another issue occurred. '
-                                 'Please re-authenticate and try again.')
+            raise click.ClickException(
+                'Credentials have expired or another issue occurred. Please re-authenticate and try again.'
+            )
 
         params = {
             'Action': 'login',
             'Issuer': 'pybritive',
             'Destination': 'https://console.aws.amazon.com/',
-            'SigninToken': signin_token['SigninToken']
+            'SigninToken': signin_token['SigninToken'],
         }
 
         # using requests.prepare() here to  help construct the url (with url encoding, etc.)
@@ -1389,16 +1317,14 @@ class BritiveCli:
             raise click.BadParameter(f'no zone found for instance {instance_name} in project {project}')
 
         if push_public_key:
-            details = self._ssh_generate_key(
-                username=username,
-                hostname=hostname,
-                key_source=key_source
-            )
+            details = self._ssh_generate_key(username=username, hostname=hostname, key_source=key_source)
 
             if push_public_key == 'os-login':  # this is pretty straightforward
-                public_key = details["key_pair"]["public"].decode('utf-8')
-                command = f'gcloud compute os-login ssh-keys add --key="{public_key}" ' \
-                          f'--project={project} --ttl=1m --no-user-output-enabled --quiet'
+                public_key = details['key_pair']['public'].decode('utf-8')
+                command = (
+                    f'gcloud compute os-login ssh-keys add --key="{public_key}" '
+                    f'--project={project} --ttl=1m --no-user-output-enabled --quiet'
+                )
                 subprocess.check_output(shlex.split(command))
             if push_public_key == 'instance-metadata':  # this is a bit more involved
                 now = datetime.now(timezone.utc).replace(microsecond=0)
@@ -1430,10 +1356,10 @@ class BritiveCli:
                     # format is 2023-05-16T20:15:22+0000
                     google_ssh_data = {
                         'userName': active_gcloud_user,
-                        'expireOn': (now + timedelta(seconds=60)).strftime('%Y-%m-%dT%H:%M:%S+0000')
+                        'expireOn': (now + timedelta(seconds=60)).strftime('%Y-%m-%dT%H:%M:%S+0000'),
                     }
                     google_ssh_data = json.dumps(google_ssh_data, separators=(',', ':'))  # separators IMPORTANT
-                    public_key = details["key_pair"]["public"].decode('utf-8')
+                    public_key = details['key_pair']['public'].decode('utf-8')
                     new_key = f'{username}:{public_key} google-ssh {google_ssh_data}'
                     future_keys.append(new_key)
 
@@ -1457,10 +1383,15 @@ class BritiveCli:
                         zone,
                         '--verbosity=error',
                         '--no-user-output-enabled',
-                        '--quiet'
+                        '--quiet',
                     ]
                     subprocess.run(commands, check=False)
-                    key_file.unlink(missing_ok=True)
+                    # key_file.unlink(missing_ok=True)
+                    # removed for now, for 3.7 compatability
+                    try:
+                        key_file.unlink()
+                    except FileNotFoundError:
+                        pass
 
         commands = [
             'gcloud',
@@ -1471,7 +1402,7 @@ class BritiveCli:
             '--listen-on-stdin',
             f'--project={project}',
             f'--zone={zone}',
-            '--verbosity=error'
+            '--verbosity=error',
         ]
 
         self.print(' '.join(commands), ignore_silent=True)
@@ -1482,7 +1413,7 @@ class BritiveCli:
             commands = [
                 '\tProxyCommand eval $(pybritive gcp identity-aware-proxy --hostname %h',
                 f'--username %r --port-number %p --push-public-key {push_public_key}',
-                f'--key-source {key_source})'
+                f'--key-source {key_source})',
             ]
             lines.append(' '.join(commands))
 
@@ -1490,8 +1421,10 @@ class BritiveCli:
                 ssh_dir = Path(self.config.path).parent.absolute() / 'ssh'
                 lines.append(f'\tIdentityFile {str(ssh_dir)}/%h.%r.pem')
         else:
-            line = '\tProxyCommand eval $(pybritive ssh gcp identity-aware-proxy --hostname %h --username %r ' \
-                   '--port-number %p)'
+            line = (
+                '\tProxyCommand eval $(pybritive ssh gcp identity-aware-proxy --hostname %h --username %r '
+                '--port-number %p)'
+            )
             lines.append(line)
 
         self.print('Add the below Match directive to your SSH config file, after all Host directives.')
