@@ -74,7 +74,10 @@ class CredentialManager:
         self.session = requests.Session()
         retries = Retry(total=5, backoff_factor=1, status_forcelist=[429, 500, 502, 503, 504])
         self.session.mount('https://', HTTPAdapter(max_retries=retries))
-
+        global_ca_bundle = self.cli.config.get_tenant().get('ca_bundle')
+        if global_ca_bundle and not os.getenv('REQUESTS_CA_BUNDLE', os.getenv('CURL_CA_BUNDLE')):
+            os.environ['PYBRITIVE_CA_BUNDLE'] = global_ca_bundle
+            self.session.verify = global_ca_bundle
         # allow the disabling of TLS/SSL verification for testing in development (mostly local development)
         if os.getenv('BRITIVE_NO_VERIFY_SSL') and '.dev.' in self.tenant:
             # turn off ssl verification
