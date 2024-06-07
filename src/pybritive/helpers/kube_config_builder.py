@@ -1,10 +1,10 @@
-import click
-import yaml
+import base64
+import os
 from pathlib import Path
+import shutil
+import yaml
 from .config import ConfigManager
 from ..britive_cli import BritiveCli
-import os
-import base64
 
 
 def sanitize(name: str):
@@ -19,7 +19,7 @@ def check_env_var(filename, cli: BritiveCli):
     # no env var present
     if not kubeconfig:
         command = f'export KUBECONFIG=~/.kube/config:{filename}'
-        cli.print(f'Please ensure your KUBECONFIG environment variable includes the Britive managed kube config file.')
+        cli.print('Please ensure your KUBECONFIG environment variable includes the Britive managed kube config file.')
         cli.print(command)
     else:
         for configfile in kubeconfig.split(':'):
@@ -28,8 +28,7 @@ def check_env_var(filename, cli: BritiveCli):
                 return  # we found what we came for - silently continue
 
         # if we get here we need to instruct the user to add the britive managed kube config file
-        cli.print(f'Please modify your KUBECONFIG environment variable to include the '
-                  f'Britive managed kube config file.')
+        cli.print('Please modify your KUBECONFIG environment variable to include the Britive managed kube config file.')
         command = f'export KUBECONFIG="${{KUBECONFIG}}:{filename}"'
         cli.print(command)
 
@@ -40,7 +39,7 @@ def merge_new_with_existing(clusters, contexts, users, filename, tenant):
     # them with the above created items
     existing_kubeconfig = {}
     if Path(filename).exists():
-        with open(filename, 'r') as f:
+        with open(filename, 'r', encoding='utf-8') as f:
             existing_kubeconfig = yaml.safe_load(f) or {}
 
     prefix = f'{tenant}-'
@@ -57,16 +56,10 @@ def merge_new_with_existing(clusters, contexts, users, filename, tenant):
         if not user.get('name', '').startswith(prefix):
             users.append(user)
 
-    kubeconfig = {
-        'apiVersion': 'v1',
-        'clusters': clusters,
-        'contexts': contexts,
-        'users': users,
-        'kind': 'Config'
-    }
+    kubeconfig = {'apiVersion': 'v1', 'clusters': clusters, 'contexts': contexts, 'users': users, 'kind': 'Config'}
 
     # write out the config file
-    with open(filename, 'w') as f:
+    with open(filename, 'w', encoding='utf-8') as f:
         yaml.safe_dump(kubeconfig, f, default_flow_style=False, encoding='utf-8')
 
 
@@ -90,7 +83,7 @@ def parse_profiles(profiles, aliases):
                 'cert': profile['cert'],
                 'escaped_profile': escaped_profile_str,
                 'profile': f"{profile['app']}/{profile['env']}/{profile['profile']}".lower(),
-                'alias': alias
+                'alias': alias,
             }
         cluster_names[env_profile]['apps'].append(sanitize(profile['app']))
     return [cluster_names, assigned_aliases]
@@ -110,24 +103,28 @@ def valid_cert(cert: str, profile: str, cli: BritiveCli):
 
 
 def build_tenant_config(tenant, cluster_names, username, cli: BritiveCli):
-    users = [
-        {
-            'name': username,
-            'user': {
-                'exec': {
-                    'apiVersion': 'client.authentication.k8s.io/v1beta1',
-                    'command': 'pybritive-kube-exec',
-                    'args': [
-                        '-t',
-                        tenant
-                    ],
-                    'env': None,
-                    'interactiveMode': 'Never',
-                    'provideClusterInfo': True
-                }
+    kube_exec_full_path = shutil.which('pybritive-kube-exec')
+    if not kube_exec_full_path:
+        kube_exec_full_path = 'pybritive-kube-exec'
+    users = (
+        [
+            {
+                'name': username,
+                'user': {
+                    'exec': {
+                        'apiVersion': 'client.authentication.k8s.io/v1beta1',
+                        'command': kube_exec_full_path,
+                        'args': ['-t', tenant],
+                        'env': None,
+                        'interactiveMode': 'Never',
+                        'provideClusterInfo': True,
+                    }
+                },
             }
-        }
-    ] if len(cluster_names.keys()) > 0 else []
+        ]
+        if len(cluster_names.keys()) > 0
+        else []
+    )
     contexts = []
     clusters = []
 
@@ -153,22 +150,17 @@ def build_tenant_config(tenant, cluster_names, username, cli: BritiveCli):
                         'extensions': [
                             {
                                 'name': 'client.authentication.k8s.io/exec',
-                                'extension': {
-                                    'britive-profile': details.get('alias') or details['escaped_profile']
-                                }
+                                'extension': {'britive-profile': details.get('alias') or details['escaped_profile']},
                             }
-                        ]
-                    }
+                        ],
+                    },
                 }
             )
 
             contexts.append(
                 {
                     'name': details.get('alias') or f'{tenant}-{name}',
-                    'context': {
-                        'cluster': f'{tenant}-{name}',
-                        'user': username
-                    }
+                    'context': {'cluster': f'{tenant}-{name}', 'user': username},
                 }
             )
     return [clusters, contexts, users]
@@ -189,10 +181,7 @@ def build_kube_config(profiles: list, config: ConfigManager, username: str, cli:
 
     # establish the 3 elements of the config
     clusters, contexts, users = build_tenant_config(
-        tenant=tenant,
-        cluster_names=cluster_names,
-        username=username,
-        cli=cli
+        tenant=tenant, cluster_names=cluster_names, username=username, cli=cli
     )
 
     # calculate the path for the config
@@ -202,13 +191,7 @@ def build_kube_config(profiles: list, config: ConfigManager, username: str, cli:
 
     # merge any existing config with the new config
     # and write it to disk
-    merge_new_with_existing(
-        clusters=clusters,
-        contexts=contexts,
-        users=users,
-        tenant=tenant,
-        filename=filename
-    )
+    merge_new_with_existing(clusters=clusters, contexts=contexts, users=users, tenant=tenant, filename=filename)
 
     # if required ensure we tell the user they need to modify their KUBECONFIG env var
     # in order to pick up the Britive managed kube config file

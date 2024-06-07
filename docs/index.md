@@ -71,6 +71,17 @@ As such, any functionality of `requests` can be used, including setting an HTTP 
 
 ### Custom TLS Certificates
 
+This can be set in the `pybritive.config` `global` settings by setting `ca_bundle`, e.g.:
+
+```toml
+[global]
+default_tenant=tenant
+output_format=json
+credential_backend=file
+# replace "/location/of/the/CA_BUNDLE_FILE.pem" with the path to the desired CA bundle file
+ca_bundle=/location/of/the/CA_BUNDLE_FILE.pem
+```
+
 Setting custom TLS certificates functionality of `requests` can also be used.
 
 * Certificate bundles will be set via environment variables.

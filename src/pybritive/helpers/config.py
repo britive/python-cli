@@ -43,6 +43,7 @@ global_fields = [
     'credential_backend',
     'auto-refresh-profile-cache',
     'auto-refresh-kube-config',
+    'ca_bundle',
 ]
 
 tenant_fields = ['name', 'output_format', 'sso_idp']
@@ -69,6 +70,7 @@ class ConfigManager:
         self.loaded = False
         self.validation_error_messages = []
         self.gcloud_key_file_path: str = str(Path(self.path).parent / 'pybritive-gcloud-key-files')
+        self.global_ca_bundle = None
 
     def clear_gcloud_auth_key_files(self, profile=None):
         path = Path(self.gcloud_key_file_path)
@@ -123,6 +125,7 @@ class ConfigManager:
                     self.tenants_by_name[name] = item
         self.aliases_and_names = {**self.tenants, **self.tenants_by_name}
         self.profile_aliases = self.config.get('profile-aliases', {})
+        self.global_ca_bundle = self.config.get('ca_bundle', {})
         self.loaded = True
 
     def get_tenant(self):
@@ -299,6 +302,11 @@ class ConfigManager:
                 tenant_aliases_from_sections = [extract_tenant(t) for t in self.config if t.startswith('tenant-')]
                 if value not in tenant_aliases_from_sections:
                     error = f'Invalid {section} field {field} value {value} provided. Tenant not found.'
+                    self.validation_error_messages.append(error)
+            if field == 'ca_bundle':
+                ca_bundle_file_path = Path(value).expanduser()
+                if not Path.is_file(ca_bundle_file_path):
+                    error = f'Invalid {field} file {ca_bundle_file_path}. File does not exist.'
                     self.validation_error_messages.append(error)
 
     def validate_profile_aliases(self, section, fields):

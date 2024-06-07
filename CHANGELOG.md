@@ -3,6 +3,28 @@
 * As of v1.4.0 release candidates will be published in an effort to get new features out faster while still allowing
 time for full QA testing before moving the release candidate to a full release.
 
+## v1.8.0rc2 [2024-06-07]
+
+__What's New:__
+
+* Added a new global config setting for CA bundle certificates.
+
+__Enhancements:__
+
+* Added new `ca_bundle` global setting for user provided CA bundle certs.
+
+__Bug Fixes:__
+
+* Switched `pybritive-kube-exec` to full path in for kube config.
+
+__Dependencies:__
+
+* `britive>=2.25.0rc4`
+
+__Other:__
+
+* None
+
 ## v1.8.0rc1 [2024-06-03]
 
 __What's New:__
