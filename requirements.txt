@@ -1,6 +1,6 @@
 beautifulsoup4
 boto3
-britive>=2.25.0rc3
+britive>=2.25.0rc4
 certifi
 charset-normalizer
 click~=8.1.7
