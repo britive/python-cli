@@ -15,7 +15,7 @@ __Enhancements:__
 
 __Bug Fixes:__
 
-* None
+* Switched `pybritive-kube-exec` to full path in for kube config.
 
 __Dependencies:__
 
