@@ -992,6 +992,10 @@ class BritiveCli:
     def cache_clear():
         Cache().clear()
 
+    @staticmethod
+    def cache_clear_kubeconfig():
+        Cache().clear_kubeconfig()
+
     def configure_update(self, section, field, value):
         self.config.update(section=section, field=field, value=value)
 
