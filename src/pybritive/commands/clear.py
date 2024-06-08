@@ -16,6 +16,13 @@ def cache(ctx):
     ctx.obj.britive.cache_clear()
 
 
+@clear.command(name='kubeconfig')
+@build_britive
+def cache(ctx):
+    ctx.obj.britive.cache_clear_kubeconfig()
+    """Clears the local .britive/kube/config file."""
+
+
 @clear.command(name='gcloud-auth-key-files')
 @build_britive
 def gcloud_auth_key_files(ctx):
