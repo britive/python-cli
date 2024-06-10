@@ -18,7 +18,7 @@ def cache(ctx):
 
 @clear.command(name='kubeconfig')
 @build_britive
-def cache(ctx):
+def clear_kube(ctx):
     ctx.obj.britive.cache_clear_kubeconfig()
     """Clears the local .britive/kube/config file."""
 
