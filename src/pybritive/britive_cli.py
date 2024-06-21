@@ -58,6 +58,7 @@ class BritiveCli:
             'kube-exec': {'app_type': 'Kubernetes', 'expiration_jmespath': 'expirationTime'},
         }
         self.browser = default_browser
+        self.resource_profile_prefix = 'resources/'
 
     def set_output_format(self, output_format: str):
         self.output_format = self.config.get_output_format(output_format)
@@ -328,6 +329,23 @@ class BritiveCli:
         approvals.reverse()
         self.print(approvals, ignore_silent=True)
 
+    def list_resources(self):
+        self.login()
+        found_resource_names = []
+        resources = []
+        for item in self.b.my_resources.list_profiles():
+            name = item['resourceName']
+            if name not in found_resource_names:
+                resources.append(
+                    {
+                        'resourceId': item['resourceId'],
+                        'resourceName': name,
+                        'resourceLabels': item['resourceLabels']
+                    }
+                )
+                found_resource_names.append(name)
+        self.print(resources, ignore_silent=True)
+
     def list_profiles(self, checked_out: bool = False):
         self.login()
         self._set_available_profiles()
@@ -429,30 +447,51 @@ class BritiveCli:
             data.append(row)
         self.print(data, ignore_silent=True)
 
-    def _set_available_profiles(self, from_cache_command=False):
+    def _set_available_profiles(self, from_cache_command=False, profile_type: str = None):
         if not self.available_profiles:
             data = []
-            for app in self.b.my_access.list_profiles():
-                for profile in app.get('profiles', []):
-                    for env in profile.get('environments', []):
-                        row = {
-                            'app_name': app['appName'],
-                            'app_id': app['appContainerId'],
-                            'app_type': app['catalogAppName'],
-                            'app_description': app['appDescription'],
-                            'env_name': env['environmentName'],
-                            'env_id': env['environmentId'],
-                            'env_short_name': env['alternateEnvironmentName'],
-                            'env_description': env['environmentDescription'],
-                            'profile_name': profile['profileName'],
-                            'profile_id': profile['profileId'],
-                            'profile_allows_console': profile['consoleAccess'],
-                            'profile_allows_programmatic': profile['programmaticAccess'],
-                            'profile_description': profile['profileDescription'],
-                            '2_part_profile_format_allowed': app['requiresHierarchicalModel'],
-                            'env_properties': env.get('profileEnvironmentProperties', {}),
-                        }
-                        data.append(row)
+            if not profile_type or profile_type == 'my-access':
+                for app in self.b.my_access.list_profiles():
+                    for profile in app.get('profiles', []):
+                        for env in profile.get('environments', []):
+                            row = {
+                                'app_name': app['appName'],
+                                'app_id': app['appContainerId'],
+                                'app_type': app['catalogAppName'],
+                                'app_description': app['appDescription'],
+                                'env_name': env['environmentName'],
+                                'env_id': env['environmentId'],
+                                'env_short_name':  env['alternateEnvironmentName'],
+                                'env_description': env['environmentDescription'],
+                                'profile_name': profile['profileName'],
+                                'profile_id': profile['profileId'],
+                                'profile_allows_console': profile['consoleAccess'],
+                                'profile_allows_programmatic': profile['programmaticAccess'],
+                                'profile_description': profile['profileDescription'],
+                                '2_part_profile_format_allowed': app['requiresHierarchicalModel'],
+                                'env_properties': env.get('profileEnvironmentProperties', {})
+                            }
+                            data.append(row)
+            if not profile_type or profile_type == 'my-resources':
+                for item in self.b.my_resources.list_profiles():
+                    row = {
+                        'app_name': None,
+                        'app_id': None,
+                        'app_type': 'Resources',
+                        'app_description': None,
+                        'env_name': item['resourceName'],
+                        'env_id': item['resourceId'],
+                        'env_short_name': item['resourceName'],
+                        'env_description': None,
+                        'profile_name': item['profileName'],
+                        'profile_id': item['profileId'],
+                        'profile_allows_console': False,
+                        'profile_allows_programmatic': True,
+                        'profile_description': None,
+                        '2_part_profile_format_allowed': False,
+                        'env_properties': item.get('resourceLabels', {})
+                    }
+                    data.append(row)
             self.available_profiles = data
             if not from_cache_command and self.config.auto_refresh_profile_cache():
                 self.cache_profiles()
@@ -548,13 +587,37 @@ class BritiveCli:
             )
         if app_type in ['OpenShift']:
             return printer.OpenShiftCredentialPrinter(
-                console=console, mode=mode, profile=profile, credentials=credentials, silent=silent, cli=self
+                console=console,
+                mode=mode,
+                profile=profile,
+                credentials=credentials,
+                silent=silent,
+                cli=self
+            )
+        if app_type in ['Resources']:
+            return printer.ResourcesCredentialPrinter(
+                profile=profile,
+                credentials=credentials,
+                silent=silent,
+                cli=self
             )
         return printer.GenericCloudCredentialPrinter(
-            console=console, mode=mode, profile=profile, credentials=credentials, silent=silent, cli=self
+            console=console,
+            mode=mode,
+            profile=profile,
+            credentials=credentials,
+            silent=silent,
+            cli=self,
+        )
+    def _resource_checkin(self, profile):
+        resource_name, profile_name = self._split_resource_profile_into_parts(profile=profile)
+        self.login()
+        self.b.my_resources.checkin_by_name(
+            profile_name=profile_name,
+            resource_name=resource_name
         )
 
-    def checkin(self, profile, console):
+    def _access_checkin(self, profile, console):
         self.login()
         self._set_available_profiles()
         parts = self._split_profile_into_parts(profile)
@@ -590,6 +653,12 @@ class BritiveCli:
             self.clear_cached_aws_credentials(profile)
         if application_type in ['gcp']:
             self.clear_gcloud_auth_key_files(profile=profile)
+
+    def checkin(self, profile, console, profile_type: str = 'my-access'):
+        if self._profile_is_for_resource(profile=profile, profile_type=profile_type):
+            self._resource_checkin(profile=profile)
+        else:
+            self._access_checkin(profile=profile, console=console)
 
     def _checkout(self, profile_name, env_name, app_name, programmatic, blocktime, maxpolltime, justification, otp):
         try:
@@ -648,23 +717,38 @@ class BritiveCli:
             programmatic=not console,
         )
 
-    def checkout(
-        self,
-        alias,
-        blocktime,
-        console,
-        justification,
-        otp,
-        mode,
-        maxpolltime,
-        profile,
-        passphrase,
-        force_renew,
-        aws_credentials_file,
-        gcloud_key_file,
-        verbose,
-        extend,
-    ):
+    def _save_alias(self, alias, profile):
+        if alias:
+            self.config.save_profile_alias(alias=alias, profile=profile.lower())
+
+    def _split_resource_profile_into_parts(self, profile):
+        real_profile_name = self.config.profile_aliases.get(profile.lower(), profile).lower()
+        if real_profile_name.startswith(self.resource_profile_prefix):
+            real_profile_name = real_profile_name.replace(self.resource_profile_prefix, '')
+        return real_profile_name.split('/')
+
+    def _profile_is_for_resource(self, profile, profile_type):
+        if profile_type == 'my-resources':
+            return True
+        real_profile_name = self.config.profile_aliases.get(profile.lower(), profile).lower()
+        return real_profile_name.startswith(f'{self.resource_profile_prefix}')
+
+    def _resource_checkout(self, blocktime, justification, maxpolltime, profile):
+        self.login()
+        resource_name, profile_name = self._split_resource_profile_into_parts(profile=profile)
+        response = self.b.my_resources.checkout_by_name(
+            resource_name=resource_name,
+            profile_name=profile_name,
+            include_credentials=True,
+            justification=justification,
+            wait_time=blocktime,
+            max_wait_time=maxpolltime,
+            progress_func=self.checkout_callback_printer  # callback will handle silent, isatty, etc.
+        )
+        return response['credentials']
+
+    def _access_checkout(self, alias, blocktime, console, justification, otp, mode, maxpolltime, profile, passphrase,
+                         force_renew, verbose, extend):
         # handle this special use case and quit
         if extend:
             self._extend_checkout(profile, console)
@@ -744,13 +828,41 @@ class BritiveCli:
                 cached_credentials_found = False  # need to write new creds to cache
                 credentials = response['credentials']
 
-        if alias:  # do this down here, so we know that the profile is valid and a checkout was successful
-            self.config.save_profile_alias(alias=alias, profile=profile)
-
         if mode in self.cachable_modes and not cached_credentials_found:
             Cache(passphrase=passphrase).save_credentials(
                 profile_name=alias or profile, credentials=credentials, mode=mode
             )
+        return app_type, credentials, k8s_processor
+
+    def checkout(self, alias, blocktime, console, justification, otp, mode, maxpolltime, profile, passphrase,
+                 force_renew, aws_credentials_file, gcloud_key_file, verbose, extend, profile_type: str = 'my-access'):
+        if self._profile_is_for_resource(profile=profile, profile_type=profile_type):
+            app_type = 'Resources'
+            k8s_processor = None
+            credentials = self._resource_checkout(
+                blocktime=blocktime,
+                justification=justification,
+                maxpolltime=maxpolltime,
+                profile=profile
+            )
+        else:
+            app_type, credentials, k8s_processor = self._access_checkout(
+                alias=alias,
+                blocktime=blocktime,
+                console=console,
+                justification=justification,
+                otp=otp,
+                mode=mode,
+                maxpolltime=maxpolltime,
+                profile=profile,
+                passphrase=passphrase,
+                force_renew=force_renew,
+                verbose=verbose,
+                extend=extend
+            )
+
+        # do this down here, so we know that the profile is valid and a checkout was successful
+        self._save_alias(alias=alias, profile=profile)
 
         self.__get_cloud_credential_printer(
             app_type,
@@ -879,6 +991,11 @@ class BritiveCli:
     @staticmethod
     def cache_clear():
         Cache().clear()
+        Cache().clear_kubeconfig()
+
+    @staticmethod
+    def clear_kubeconfig():
+        Cache().clear_kubeconfig()
 
     def configure_update(self, section, field, value):
         self.config.update(section=section, field=field, value=value)
