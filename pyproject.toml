@@ -18,7 +18,7 @@ classifiers = [
 license = {file = "LICENSE"}
 requires-python = ">= 3.7"
 dependencies = [
-    "britive>=2.25.0rc3",
+    "britive>=2.25.0rc5",
     "click",
     "cryptography>=41.0.0",
     "jmespath",
