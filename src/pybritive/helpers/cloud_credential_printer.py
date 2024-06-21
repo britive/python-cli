@@ -128,6 +128,14 @@ class GenericCloudCredentialPrinter(CloudCredentialPrinter):
             self.cli.print(self.credentials, ignore_silent=True)
 
 
+class ResourcesCredentialPrinter(CloudCredentialPrinter):
+    def __init__(self, profile, silent, credentials, cli):
+        super().__init__('Resources', False, 'text', profile, silent, credentials, cli)
+
+    def print_text(self):
+        self.cli.print(self.credentials, ignore_silent=True)
+
+
 class AwsCloudCredentialPrinter(CloudCredentialPrinter):
     def __init__(self, console, mode, profile, silent, credentials, cli, aws_credentials_file):
         super().__init__('AWS', console, mode, profile, silent, credentials, cli)

@@ -27,10 +27,10 @@ def environments(ctx, output_format, tenant, token, silent, passphrase, federati
 
 @ls.command()
 @build_britive
-@britive_options(names='checked_out,output_format,tenant,token,silent,passphrase,federation_provider')
-def profiles(ctx, checked_out, output_format, tenant, token, silent, passphrase, federation_provider):
+@britive_options(names='checked_out,profile_type,output_format,tenant,token,silent,passphrase,federation_provider')
+def profiles(ctx, checked_out, profile_type, output_format, tenant, token, silent, passphrase, federation_provider):
     """List profiles for the currently authenticated identity."""
-    ctx.obj.britive.list_profiles(checked_out=checked_out)
+    ctx.obj.britive.list_profiles(checked_out=checked_out, profile_type=profile_type)
 
 
 @ls.command()
@@ -47,3 +47,11 @@ def secrets(ctx, output_format, tenant, token, silent, passphrase, federation_pr
 def approvals(ctx, output_format, tenant, token, silent, passphrase, federation_provider):
     """List approvals for the currently authenticated identity."""
     ctx.obj.britive.list_approvals()
+
+
+@ls.command()
+@build_britive
+@britive_options(names='format,tenant,token,silent,passphrase,federation_provider')
+def resources(ctx, output_format, tenant, token, silent, passphrase, federation_provider):
+    """List resources for the currently authenticated identity."""
+    ctx.obj.britive.list_resources()

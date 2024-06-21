@@ -33,6 +33,7 @@ from ..options.aws_profile import option as aws_profile
 from ..options.aws_console_duration import option as aws_console_duration
 from ..options.browser import option as browser
 from ..options.extend import option as extend
+from ..options.profile_type import option as profile_type
 
 
 options_map = {
@@ -70,7 +71,8 @@ options_map = {
     'aws_profile': aws_profile,
     'aws_console_duration': aws_console_duration,
     'browser': browser,
-    'extend': extend
+    'extend': extend,
+    'profile_type': profile_type
 }
 
 

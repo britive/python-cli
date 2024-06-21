@@ -1398,7 +1398,7 @@ __What's New:__
 
 * None
 
-### Enhancements
+__Enhancements:__
 
 * None
 
