@@ -6,9 +6,9 @@ from ..helpers.profile_argument_decorator import click_smart_profile_argument
 
 @click.command()
 @build_britive
-@britive_options(names='console,tenant,token,silent,passphrase,federation_provider')
+@britive_options(names='console,profile_type,tenant,token,silent,passphrase,federation_provider')
 @click_smart_profile_argument
-def checkin(ctx, console, tenant, token, silent, passphrase, federation_provider, profile):
+def checkin(ctx, console, profile_type, tenant, token, silent, passphrase, federation_provider, profile):
     """Checkin a profile.
 
     This command takes 1 required argument `PROFILE`. This should be a string representation of the profile
@@ -16,5 +16,6 @@ def checkin(ctx, console, tenant, token, silent, passphrase, federation_provider
     """
     ctx.obj.britive.checkin(
         profile=profile,
-        console=console
+        console=console,
+        profile_type=profile_type
     )

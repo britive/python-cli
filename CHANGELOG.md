@@ -3,6 +3,28 @@
 * As of v1.4.0 release candidates will be published in an effort to get new features out faster while still allowing
 time for full QA testing before moving the release candidate to a full release.
 
+## v1.8.0rc3 [2024-06-07]
+
+__What's New:__
+
+* Cloud PAM Anywhere - list, checkout, and checkin resources.
+
+__Enhancements:__
+
+* Added additional `clear kubeconfig` option to clear just the `pybritive` cached `kubeconfig` file.
+
+__Bug Fixes:__
+
+* None
+
+__Dependencies:__
+
+* `britive>=2.25.0rc5`
+
+__Other:__
+
+* A `ca_bundle` being configured will override, or ignore, `REQUESTS_CA_BUNDLE` and `CURL_CA_BUNDLE`
+
 ## v1.8.0rc2 [2024-06-07]
 
 __What's New:__
@@ -1398,7 +1420,7 @@ __What's New:__
 
 * None
 
-### Enhancements
+__Enhancements:__
 
 * None
 
