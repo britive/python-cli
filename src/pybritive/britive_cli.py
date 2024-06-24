@@ -113,7 +113,7 @@ class BritiveCli:
         # taking a very straightforward approach here...if user provided a token and it doesn't work just exit
         if self.token:  # static token provided or BRITIVE_API_TOKEN set
             try:
-                self.b = Britive(tenant=self.tenant_name, token=self.token, query_features=False)
+                self.b = Britive(tenant=self.tenant_name, token=self.token, query_features=True)
                 self.b.my_access.whoami()  # this is what may cause UnauthorizedRequest
             except exceptions.UnauthorizedRequest as e:
                 raise click.ClickException('Invalid API token provided.') from e
@@ -135,7 +135,7 @@ class BritiveCli:
                     token = self.credential_manager.get_token()
                     jti = self._extract_field_from_jwt(token=token, field='jti')
                     self.debug(f'got token jti of {jti} from credential manager')
-                    self.b = Britive(tenant=self.tenant_name, token=token, query_features=False)
+                    self.b = Britive(tenant=self.tenant_name, token=token, query_features=True)
                     self.b.my_access.whoami()  # this is what may cause UnauthorizedRequest
                     break
                 except exceptions.UnauthorizedRequest as e:
@@ -472,7 +472,7 @@ class BritiveCli:
                                 'env_properties': env.get('profileEnvironmentProperties', {})
                             }
                             data.append(row)
-            if not profile_type or profile_type == 'my-resources':
+            if self.b.feature_flags.get('server-access') and (not profile_type or profile_type == 'my-resources'):
                 for item in self.b.my_resources.list_profiles():
                     row = {
                         'app_name': None,
