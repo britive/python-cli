@@ -3,6 +3,29 @@
 * As of v1.4.0 release candidates will be published in an effort to get new features out faster while still allowing
 time for full QA testing before moving the release candidate to a full release.
 
+## v1.8.0rc4 [2024-06-07]
+
+__What's New:__
+
+* None
+
+__Enhancements:__
+
+* None
+
+__Bug Fixes:__
+
+* missing `profile_type` kwarg in `ls profiles`.
+* `None` type handling for `my-resources` profiles.
+
+__Dependencies:__
+
+* None
+
+__Other:__
+
+* None
+
 ## v1.8.0rc3 [2024-06-07]
 
 __What's New:__
