@@ -346,9 +346,9 @@ class BritiveCli:
                 found_resource_names.append(name)
         self.print(resources, ignore_silent=True)
 
-    def list_profiles(self, checked_out: bool = False):
+    def list_profiles(self, checked_out: bool = False, profile_type: str = None):
         self.login()
-        self._set_available_profiles()
+        self._set_available_profiles(profile_type=profile_type)
         data = []
         checked_out_profiles = {}
         if checked_out:  # only make this call if we have to
