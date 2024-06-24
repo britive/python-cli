@@ -368,10 +368,10 @@ class BritiveCli:
             profile_is_checked_out = key in checked_out_profiles
             if not checked_out or profile_is_checked_out:
                 row = {
-                    'Application': profile['app_name'],
+                    'Application': profile['app_name'] or 'Resources',
                     'Environment': profile['env_name'],
                     'Profile': profile['profile_name'],
-                    'Description': profile['profile_description'],
+                    'Description': profile['profile_description'] or 'Resource',
                     'Type': profile['app_type'],
                 }
 
@@ -986,6 +986,8 @@ class BritiveCli:
 
     @staticmethod
     def escape_profile_element(element):
+        if element is None:
+            element = 'resources'
         return element.replace('/', '\\/')
 
     @staticmethod
