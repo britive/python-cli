@@ -3,7 +3,29 @@
 * As of v1.4.0 release candidates will be published in an effort to get new features out faster while still allowing
 time for full QA testing before moving the release candidate to a full release.
 
-## v1.8.0rc4 [2024-06-07]
+## v1.8.0rc5 [2024-06-24]
+
+__What's New:__
+
+* None
+
+__Enhancements:__
+
+* None
+
+__Bug Fixes:__
+
+* check for enabled feature before listing `my-resources`.
+
+__Dependencies:__
+
+* None
+
+__Other:__
+
+* None
+
+## v1.8.0rc4 [2024-06-24]
 
 __What's New:__
 
