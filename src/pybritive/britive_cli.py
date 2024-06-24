@@ -346,9 +346,9 @@ class BritiveCli:
                 found_resource_names.append(name)
         self.print(resources, ignore_silent=True)
 
-    def list_profiles(self, checked_out: bool = False):
+    def list_profiles(self, checked_out: bool = False, profile_type: str = None):
         self.login()
-        self._set_available_profiles()
+        self._set_available_profiles(profile_type=profile_type)
         data = []
         checked_out_profiles = {}
         if checked_out:  # only make this call if we have to
@@ -368,10 +368,10 @@ class BritiveCli:
             profile_is_checked_out = key in checked_out_profiles
             if not checked_out or profile_is_checked_out:
                 row = {
-                    'Application': profile['app_name'],
+                    'Application': profile['app_name'] or 'Resources',
                     'Environment': profile['env_name'],
                     'Profile': profile['profile_name'],
-                    'Description': profile['profile_description'],
+                    'Description': profile['profile_description'] or 'Resource',
                     'Type': profile['app_type'],
                 }
 
@@ -986,6 +986,8 @@ class BritiveCli:
 
     @staticmethod
     def escape_profile_element(element):
+        if element is None:
+            element = 'resources'
         return element.replace('/', '\\/')
 
     @staticmethod
