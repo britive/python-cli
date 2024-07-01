@@ -10,7 +10,7 @@ PyBritive is intended to be used as a CLI application for communicating with the
 pip install pybritive
 ```
 
-> _NOTE: The end user is free to install the CLI into a virtual environment or in the global scope,
+> _NOTE: The end user is free to install the CLI into a virtual environment or in the global scope,_
 > _so it is available everywhere._
 
 ## Alternate Installation
