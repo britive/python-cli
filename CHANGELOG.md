@@ -3,6 +3,43 @@
 * As of v1.4.0 release candidates will be published in an effort to get new features out faster while still allowing
 time for full QA testing before moving the release candidate to a full release.
 
+## v1.8.0 [2024-07-01]
+
+> _NOTE: This will be the last [minor](https://semver.org/#summary) version before 2.0.0_
+
+__What's New:__
+
+* Added a new global config setting for CA bundle certificates.
+* Cloud PAM Anywhere - list, checkout, and checkin resources.
+* Support for step up MFA/OTP when performing a `checkout`, using the `--otp` flag.
+
+__Enhancements:__
+
+* Added additional `clear kubeconfig` option to clear just the `pybritive` cached `kubeconfig` file.
+* Added new `ca_bundle` global setting for user provided CA bundle certs.
+
+__Bug Fixes:__
+
+* check for enabled feature before listing `my-resources`.
+* Fixed `python3.7` compatibility issues.
+* Removed unexpected keyword argument from `hashlib.sha512` calls.
+* missing `profile_type` kwarg in `ls profiles`.
+* `None` type handling for `my-resources` profiles.
+* Switched `pybritive-kube-exec` to full path in for kube config.
+
+__Dependencies:__
+
+* `britive>=2.25.0`
+* Moved to minimally freezing dependencies.
+
+__Other:__
+
+* A `ca_bundle` being configured will override, or ignore, `REQUESTS_CA_BUNDLE` and `CURL_CA_BUNDLE`
+* Documentation linting/conformity updates.
+* Python linting changes.
+* Resolve dependabot issue [dependabot/7](https://github.com/britive/python-cli/security/dependabot/7).
+* Testing updates for `python3.7` compatability and warn when API token is present instead of fail.
+
 ## v1.8.0rc5 [2024-06-24]
 
 __What's New:__
