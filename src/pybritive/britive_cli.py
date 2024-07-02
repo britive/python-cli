@@ -15,6 +15,7 @@ import jwt
 import yaml
 from britive import exceptions
 from britive.britive import Britive
+from colored import Fore, Style
 from jwt.exceptions import PyJWTError
 from tabulate import tabulate
 
@@ -172,8 +173,12 @@ class BritiveCli:
         # if we get here then we need to at least grab the banner and see if it has changed
         banner = self.b.banner()
         banner_changed = Cache().save_banner(tenant=self.tenant_name, banner=banner)
+        msg_type = banner.get('messageType', 'UNKNOWN')
+        color = {'caution': Style.BOLD + Fore.red, 'warning': Style.BOLD + Fore.yellow}.get(
+            msg_type.lower(), Style.BOLD + Fore.blue
+        )
         if banner and banner_changed:
-            self.print(f'*** {banner.get("messageType", "UNKNOWN")}: {banner.get("message", "<no message>")} ***')
+            self.print(f'{color}*** {msg_type}: {banner.get("message", "<no message>")} ***{Style.reset}')
 
     def _update_sdk_user_agent(self):
         # update the user agent to include the pybritive cli version

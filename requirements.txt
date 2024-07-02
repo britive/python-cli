@@ -4,6 +4,7 @@ britive>=3.0.0
 certifi
 charset-normalizer
 click>=8.1.7
+colored
 cryptography
 google-cloud-compute
 jmespath
