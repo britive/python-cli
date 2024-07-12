@@ -3,6 +3,28 @@
 * As of v1.4.0 release candidates will be published in an effort to get new features out faster while still allowing
 time for full QA testing before moving the release candidate to a full release.
 
+## v1.8.1 [2024-07-11]
+
+__What's New:__
+
+* None
+
+__Enhancements:__
+
+* None
+
+__Bug Fixes:__
+
+* Fixed error related to `my-resources` not containing an `app_name`.
+
+__Dependencies:__
+
+* None
+
+__Other:__
+
+* None
+
 ## v1.8.0 [2024-07-01]
 
 > _NOTE: This will be the last [minor](https://semver.org/#summary) version before 2.0.0_
