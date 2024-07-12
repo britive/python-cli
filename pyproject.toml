@@ -47,7 +47,7 @@ Homepage = "https://www.britive.com"
 Documentation = "https://britive.github.io/python-cli/"
 Repository = "https://github.com/britive/python-cli.git"
 Issues = "https://github.com/britive/python-cli/issues"
-Changelog = "https://github.com/britive/python-cli/CHANGELOG.md"
+Changelog = "https://github.com/britive/python-cli/blob/main/CHANGELOG.md"
 
 [tool.setuptools]
 package-dir = {"" = "src"}

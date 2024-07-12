@@ -1139,7 +1139,7 @@ class BritiveCli:
 
         # collect relevant profile/environment combinations to which the identity is entitled
         for profile in self.available_profiles:
-            if profile['app_name'].lower() != application_name:  # kick out all the unmatched applications
+            if profile['app_name'] and profile['app_name'].lower() != application_name:  # kick out all the unmatched applications
                 continue
             if profile['profile_name'].lower() != profile_name:  # kick out the unmatched profiles
                 continue
