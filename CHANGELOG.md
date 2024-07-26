@@ -3,6 +3,28 @@
 * As of v1.4.0 release candidates will be published in an effort to get new features out faster while still allowing
 time for full QA testing before moving the release candidate to a full release.
 
+## v1.8.2 [2024-07-26]
+
+__What's New:__
+
+* None
+
+__Enhancements:__
+
+* None
+
+__Bug Fixes:__
+
+* Fixed a bug where checked out `my-resources` profiles weren't included.
+
+__Dependencies:__
+
+* None
+
+__Other:__
+
+* None
+
 ## v1.8.1 [2024-07-11]
 
 __What's New:__

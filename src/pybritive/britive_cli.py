@@ -337,11 +337,7 @@ class BritiveCli:
             name = item['resourceName']
             if name not in found_resource_names:
                 resources.append(
-                    {
-                        'resourceId': item['resourceId'],
-                        'resourceName': name,
-                        'resourceLabels': item['resourceLabels']
-                    }
+                    {'resourceId': item['resourceId'], 'resourceName': name, 'resourceLabels': item['resourceLabels']}
                 )
                 found_resource_names.append(name)
         self.print(resources, ignore_silent=True)
@@ -353,11 +349,16 @@ class BritiveCli:
         checked_out_profiles = {}
         if checked_out:  # only make this call if we have to
             now = datetime.utcnow()
-            for p in self.b.my_access.list_checked_out_profiles():
-                expiration_str = p['expiration']
+            my_access = not profile_type or profile_type == 'my-access'
+            my_resources = not profile_type or profile_type == 'my-resources'
+            list_checked_out = (self.b.my_access.list_checked_out_profiles() if my_access else []) + (
+                self.b.my_resources.list_checked_out_profiles() if my_resources else []
+            )
+            for p in list_checked_out:
+                expiration_str = p.get('expiration', p.get('expirationDuration'))
                 expiration_timestamp = datetime.fromisoformat(expiration_str.replace('Z', ''))
                 seconds_until_expiration = int((expiration_timestamp - now).total_seconds())
-                key = f'{p["papId"]}-{p["environmentId"]}'
+                key = f'{p.get("papId", p.get("profileId"))}-{p.get("environmentId", p.get("resourceId"))}'
                 checked_out_profiles[key] = {
                     'expiration': expiration_str,
                     'expires_in_seconds': seconds_until_expiration,
@@ -461,7 +462,7 @@ class BritiveCli:
                                 'app_description': app['appDescription'],
                                 'env_name': env['environmentName'],
                                 'env_id': env['environmentId'],
-                                'env_short_name':  env['alternateEnvironmentName'],
+                                'env_short_name': env['alternateEnvironmentName'],
                                 'env_description': env['environmentDescription'],
                                 'profile_name': profile['profileName'],
                                 'profile_id': profile['profileId'],
@@ -469,7 +470,7 @@ class BritiveCli:
                                 'profile_allows_programmatic': profile['programmaticAccess'],
                                 'profile_description': profile['profileDescription'],
                                 '2_part_profile_format_allowed': app['requiresHierarchicalModel'],
-                                'env_properties': env.get('profileEnvironmentProperties', {})
+                                'env_properties': env.get('profileEnvironmentProperties', {}),
                             }
                             data.append(row)
             if self.b.feature_flags.get('server-access') and (not profile_type or profile_type == 'my-resources'):
@@ -489,7 +490,7 @@ class BritiveCli:
                         'profile_allows_programmatic': True,
                         'profile_description': None,
                         '2_part_profile_format_allowed': False,
-                        'env_properties': item.get('resourceLabels', {})
+                        'env_properties': item.get('resourceLabels', {}),
                     }
                     data.append(row)
             self.available_profiles = data
@@ -587,20 +588,10 @@ class BritiveCli:
             )
         if app_type in ['OpenShift']:
             return printer.OpenShiftCredentialPrinter(
-                console=console,
-                mode=mode,
-                profile=profile,
-                credentials=credentials,
-                silent=silent,
-                cli=self
+                console=console, mode=mode, profile=profile, credentials=credentials, silent=silent, cli=self
             )
         if app_type in ['Resources']:
-            return printer.ResourcesCredentialPrinter(
-                profile=profile,
-                credentials=credentials,
-                silent=silent,
-                cli=self
-            )
+            return printer.ResourcesCredentialPrinter(profile=profile, credentials=credentials, silent=silent, cli=self)
         return printer.GenericCloudCredentialPrinter(
             console=console,
             mode=mode,
@@ -609,13 +600,11 @@ class BritiveCli:
             silent=silent,
             cli=self,
         )
+
     def _resource_checkin(self, profile):
         resource_name, profile_name = self._split_resource_profile_into_parts(profile=profile)
         self.login()
-        self.b.my_resources.checkin_by_name(
-            profile_name=profile_name,
-            resource_name=resource_name
-        )
+        self.b.my_resources.checkin_by_name(profile_name=profile_name, resource_name=resource_name)
 
     def _access_checkin(self, profile, console):
         self.login()
@@ -743,12 +732,25 @@ class BritiveCli:
             justification=justification,
             wait_time=blocktime,
             max_wait_time=maxpolltime,
-            progress_func=self.checkout_callback_printer  # callback will handle silent, isatty, etc.
+            progress_func=self.checkout_callback_printer,  # callback will handle silent, isatty, etc.
         )
         return response['credentials']
 
-    def _access_checkout(self, alias, blocktime, console, justification, otp, mode, maxpolltime, profile, passphrase,
-                         force_renew, verbose, extend):
+    def _access_checkout(
+        self,
+        alias,
+        blocktime,
+        console,
+        justification,
+        otp,
+        mode,
+        maxpolltime,
+        profile,
+        passphrase,
+        force_renew,
+        verbose,
+        extend,
+    ):
         # handle this special use case and quit
         if extend:
             self._extend_checkout(profile, console)
@@ -834,16 +836,29 @@ class BritiveCli:
             )
         return app_type, credentials, k8s_processor
 
-    def checkout(self, alias, blocktime, console, justification, otp, mode, maxpolltime, profile, passphrase,
-                 force_renew, aws_credentials_file, gcloud_key_file, verbose, extend, profile_type: str = 'my-access'):
+    def checkout(
+        self,
+        alias,
+        blocktime,
+        console,
+        justification,
+        otp,
+        mode,
+        maxpolltime,
+        profile,
+        passphrase,
+        force_renew,
+        aws_credentials_file,
+        gcloud_key_file,
+        verbose,
+        extend,
+        profile_type: str = 'my-access',
+    ):
         if self._profile_is_for_resource(profile=profile, profile_type=profile_type):
             app_type = 'Resources'
             k8s_processor = None
             credentials = self._resource_checkout(
-                blocktime=blocktime,
-                justification=justification,
-                maxpolltime=maxpolltime,
-                profile=profile
+                blocktime=blocktime, justification=justification, maxpolltime=maxpolltime, profile=profile
             )
         else:
             app_type, credentials, k8s_processor = self._access_checkout(
@@ -858,7 +873,7 @@ class BritiveCli:
                 passphrase=passphrase,
                 force_renew=force_renew,
                 verbose=verbose,
-                extend=extend
+                extend=extend,
             )
 
         # do this down here, so we know that the profile is valid and a checkout was successful
@@ -1139,7 +1154,8 @@ class BritiveCli:
 
         # collect relevant profile/environment combinations to which the identity is entitled
         for profile in self.available_profiles:
-            if profile['app_name'] and profile['app_name'].lower() != application_name:  # kick out all the unmatched applications
+            if profile['app_name'] and profile['app_name'].lower() != application_name:
+                # kick out all the unmatched applications
                 continue
             if profile['profile_name'].lower() != profile_name:  # kick out the unmatched profiles
                 continue
