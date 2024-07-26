@@ -3,6 +3,7 @@ boto3
 britive>=2.25.0
 certifi
 charset-normalizer
+colored
 click~=8.1.7
 cryptography
 google-cloud-compute

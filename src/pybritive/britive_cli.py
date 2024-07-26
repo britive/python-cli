@@ -16,6 +16,7 @@ import jmespath
 import jwt
 from tabulate import tabulate
 import yaml
+from colored import Fore, Style
 from .helpers import cloud_credential_printer as printer
 from .helpers.cache import Cache
 from .helpers.config import ConfigManager
@@ -170,8 +171,16 @@ class BritiveCli:
         # if we get here then we need to at least grab the banner and see if it has changed
         banner = self.b.banner()
         banner_changed = Cache().save_banner(tenant=self.tenant_name, banner=banner)
+        msg_type: str = (banner.get("messageType")).lower()
+        if msg_type == 'caution':
+            color: str = f'{Style.BOLD}{Fore.red}'
+        elif msg_type == 'warning':
+            color: str = f'{Style.BOLD}{Fore.yellow}'
+        else:
+            color: str = f'{Style.BOLD}{Fore.blue}'
         if banner and banner_changed:
-            self.print(f'*** {banner.get("messageType", "UNKNOWN")}: {banner.get("message", "<no message>")} ***')
+            self.print(
+                f'{color}*** {banner.get("messageType", "UNKNOWN")}: {banner.get("message", "<no message>")} ***{Style.reset}')
 
     def _update_sdk_user_agent(self):
         # update the user agent to include the pybritive cli version
