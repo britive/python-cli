@@ -7,13 +7,13 @@ browser_choices = click.Choice(
     [
         c
         for c in [
-            'mozilla',
-            'firefox',
-            'windows-default',
-            'macosx',
-            'safari',
             'chrome',
             'chromium',
+            'firefox',
+            'macosx',
+            'mozilla',
+            'safari',
+            'windows-default',
             os.getenv('PYBRITIVE_BROWSER'),
         ]
         if c
