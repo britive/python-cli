@@ -5,7 +5,7 @@ import click
 profile_type_choices = click.Choice(
     [
         'my-access',
-        'my-resources'
+        'my-resources',
     ],
     case_sensitive=False
 )

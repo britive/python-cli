@@ -3,8 +3,8 @@ import click
 
 backend_choices = click.Choice(
     [
+        'encrypted-file',
         'file',
-        'encrypted-file'
     ],
     case_sensitive=False
 )
