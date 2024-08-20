@@ -3,6 +3,28 @@
 * As of v1.4.0 release candidates will be published in an effort to get new features out faster while still allowing
 time for full QA testing before moving the release candidate to a full release.
 
+## v1.8.3 [2024-08-20]
+
+__What's New:__
+
+* None
+
+__Enhancements:__
+
+* None
+
+__Bug Fixes:__
+
+* None
+
+__Dependencies:__
+
+* `setuptools` when running in python 3.12 environments.
+
+__Other:__
+
+* None
+
 ## v1.8.2 [2024-07-26]
 
 __What's New:__
