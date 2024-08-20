@@ -27,6 +27,7 @@ dependencies = [
     "python-dateutil",
     "PyYAML",
     "requests>=2.31.0",
+    "setuptools; python_version >= '3.12'",
     "tabulate",
     "toml"
 ]
