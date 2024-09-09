@@ -11,12 +11,20 @@ authors = [{name = "Britive Inc.", email = "support@britive.com"}]
 description = "A pure Python CLI for Britive"
 readme = "README.md"
 classifiers = [
-    "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
-    "Operating System :: OS Independent"
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Internet",
+    "Topic :: Security",
+    "Topic :: Utilities",
 ]
 license = {file = "LICENSE"}
-requires-python = ">= 3.7"
+requires-python = ">= 3.8"
 dependencies = [
     "britive>=2.25.0",
     "click",

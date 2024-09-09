@@ -6,7 +6,7 @@ PyBritive is intended to be used as a CLI application for communicating with the
 
 ## Requirements
 
-* Python 3.7 or higher
+* Python 3.8 or higher
 * Active Britive tenant (or nothing is really going to work)
 
 ## Installation

@@ -15,13 +15,7 @@ class Common:
 def should_set_output_format(ctx: Context) -> bool:
     parent_command = ctx.parent.command.name
     command = ctx.command.name
-    if parent_command in ['configure', 'clear']:
-        return False
-
-    if parent_command == 'cache' and command in ['clear']:
-        return False
-
-    return True
+    return not ((parent_command in ['configure', 'clear']) or parent_command == 'cache' and command in ['clear'])
 
 
 # this wrapper exists to centralize all "common" CLI options (options that exist for all commands)
