@@ -26,16 +26,15 @@ classifiers = [
 license = {file = "LICENSE"}
 requires-python = ">= 3.8"
 dependencies = [
-    "britive>=2.25.0",
-    "click",
-    "cryptography>=41.0.0",
+    "britive>=3.0.0",
+    "click>=8.1.7",
+    "cryptography",
     "jmespath",
     "merge-args",
     "pyjwt",
     "python-dateutil",
     "PyYAML",
     "requests>=2.31.0",
-    "setuptools; python_version >= '3.12'",
     "tabulate",
     "toml"
 ]

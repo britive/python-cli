@@ -1,8 +1,8 @@
 import inspect
 import typing as t
+from importlib.metadata import version
 
 from britive.britive import Britive
-import pkg_resources
 
 
 def get_dynamic_method_parameters(method):
@@ -84,7 +84,7 @@ def command_api_patch_shell_complete(cls):
     # click < 8.0.0 does shell completion different...
     # not all the classes/decorators are available, so we cannot
     # create custom shell completions like we can with click > 8.0.0
-    major, minor = pkg_resources.get_distribution('click').version.split('.')[:2]
+    major, minor = version('click').split('.')[:2]
 
     # we cannot patch the shell_complete method because it does not exist (click 7.x doesn't have it)
     # future proofing this as well in case click 9.x changes things up a lot

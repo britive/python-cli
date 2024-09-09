@@ -29,13 +29,12 @@ def get_args():
         if opt in ('-h', '--help'):
             usage()
         if opt in ('-v', '--version'):
+            from importlib.metadata import version
             from platform import platform, python_version  # lazy load
-            from pkg_resources import get_distribution  # lazy load
-            cli_version = get_distribution('pybritive').version
-            print(
-                f'pybritive: {cli_version} / platform: {platform()} / python: {python_version()}'
-            )
-            exit()
+
+            cli_version = version('pybritive')
+            print(f'pybritive: {cli_version} / platform: {platform()} / python: {python_version()}')
+            exit(0)
 
     return args
 

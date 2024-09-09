@@ -1,11 +1,9 @@
 import click
-import pkg_resources
 from ..completers.profile import profile_completer
 import os
 import json
 
 
-click_major_version = int(pkg_resources.get_distribution('click').version.split('.')[0])
 
 
 def validate_profile(ctx, param, value):
@@ -28,8 +26,7 @@ def click_smart_profile_argument(func):
     }
     if not required:
         kwargs['callback'] = validate_profile
-    if click_major_version >= 8:
-        kwargs['shell_complete'] = profile_completer
+    kwargs['shell_complete'] = profile_completer
 
     dec = click.argument(
         'profile',
