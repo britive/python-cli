@@ -1,11 +1,13 @@
 import configparser
 import json
 import os
-from pathlib import Path
 import shutil
+from pathlib import Path
+
+import click
 import toml
 from britive.britive import Britive
-import click
+
 from ..choices.backend import backend_choices
 from ..choices.mode import mode_choices
 from ..choices.output_format import output_format_choices
@@ -205,7 +207,7 @@ class ConfigManager:
     def import_global_npm_config(self):
         self.load()
         path = str(Path(self.home) / '.britive' / 'config')  # handle os specific separators properly
-        with open(path, 'r', encoding='utf-8') as f:
+        with open(path, encoding='utf-8') as f:
             npm_config = toml.load(f)
         tenant = npm_config.get('tenantURL', '').replace('https://', '').replace('.britive-app.com', '').lower()
         output_format = npm_config.get('output_format', '').lower()
@@ -321,7 +323,7 @@ class ConfigManager:
                 self.validation_error_messages.append(error)
 
     def validate_gcp(self, section, fields):
-        for field, value in fields.items():
+        for field in fields:
             if field not in gcp_fields:
                 self.validation_error_messages.append(f'Invalid {section} field {field} provided.')
 
@@ -333,7 +335,7 @@ class ConfigManager:
                 try:
                     Britive.parse_tenant(value)
                 except Exception as e:
-                    raise click.ClickException(f'Error validating tenant name: {str(e)}')
+                    raise click.ClickException(f'Error validating tenant name: {str(e)}') from e
             if field == 'output_format' and value not in output_format_choices.choices:
                 error = f'Invalid {section} field {field} value {value} provided. Invalid value choice.'
                 self.validation_error_messages.append(error)
@@ -341,13 +343,9 @@ class ConfigManager:
     def auto_refresh_profile_cache(self):
         self.load()
         value = self.config.get('global', {}).get('auto-refresh-profile-cache', 'false')
-        if value == 'true':
-            return True
-        return False
+        return value == 'true'
 
     def auto_refresh_kube_config(self):
         self.load()
         value = self.config.get('global', {}).get('auto-refresh-kube-config', 'false')
-        if value == 'true':
-            return True
-        return False
+        return value == 'true'

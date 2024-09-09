@@ -1,25 +1,21 @@
 import configparser
 import json
 import os
-import subprocess
-from pathlib import Path
 import platform
+import subprocess
 import uuid
 import webbrowser
+from pathlib import Path
+
 import click
 
-
 # trailing spaces matter as some options do not have the trailing space
-env_options = {
-    'nix': 'export ',
-    'winps': '$Env:',
-    'wincmd': 'set '
-}
+env_options = {'nix': 'export ', 'winps': '$Env:', 'wincmd': 'set '}
 
 
-def safe_list_get(l, idx, default):
+def safe_list_get(lst, idx, default):
     try:
-        return l[idx]
+        return lst[idx]
     except IndexError:
         return default
 
@@ -163,7 +159,7 @@ class AwsCloudCredentialPrinter(CloudCredentialPrinter):
             'AccessKeyId': self.credentials['accessKeyID'],
             'SecretAccessKey': self.credentials['secretAccessKey'],
             'SessionToken': self.credentials['sessionToken'],
-            'Expiration': self.credentials['expirationTime']
+            'Expiration': self.credentials['expirationTime'],
         }
         if version:
             creds['Version'] = version
@@ -171,18 +167,16 @@ class AwsCloudCredentialPrinter(CloudCredentialPrinter):
 
     def print_env(self):
         self.cli.print(f'{self.env_command}AWS_ACCESS_KEY_ID="{self.credentials["accessKeyID"]}"', ignore_silent=True)
-        self.cli.print(f'{self.env_command}AWS_SECRET_ACCESS_KEY="{self.credentials["secretAccessKey"]}"',
-                       ignore_silent=True)
+        self.cli.print(
+            f'{self.env_command}AWS_SECRET_ACCESS_KEY="{self.credentials["secretAccessKey"]}"', ignore_silent=True
+        )
         self.cli.print(f'{self.env_command}AWS_SESSION_TOKEN="{self.credentials["sessionToken"]}"', ignore_silent=True)
         self.cli.print(f'{self.env_command}AWS_EXPIRATION="{self.credentials["expirationTime"]}"', ignore_silent=True)
 
     def print_integrate(self):
         # get path to aws credentials file
         env_path = self.aws_credentials_file
-        if not env_path:
-            path = Path.home() / '.aws' / 'credentials'  # handle os specific separators properly
-        else:
-            path = Path(env_path)
+        path = Path.home() / '.aws' / 'credentials' if not env_path else Path(env_path)
 
         # if credentials file does not yet exist, create it as an empty file
         if not path.is_file():
@@ -195,10 +189,10 @@ class AwsCloudCredentialPrinter(CloudCredentialPrinter):
 
         # add the new profile/section
         config[self.profile] = {
-            'aws_access_key_id': self.credentials["accessKeyID"],
-            'aws_secret_access_key': self.credentials["secretAccessKey"],
-            'aws_session_token': self.credentials["sessionToken"],
-            'aws_expiration': self.credentials["expirationTime"]
+            'aws_access_key_id': self.credentials['accessKeyID'],
+            'aws_secret_access_key': self.credentials['secretAccessKey'],
+            'aws_session_token': self.credentials['sessionToken'],
+            'aws_expiration': self.credentials['expirationTime'],
         }
 
         # write the new credentials file
@@ -233,7 +227,7 @@ class AzureCloudCredentialPrinter(CloudCredentialPrinter):
         creds = {
             'TenantId': self.credentials['tenantId'],
             'ClientId': self.credentials['appId'],
-            'ClientSecret': self.credentials['secretText']
+            'ClientSecret': self.credentials['secretText'],
         }
         self.cli.print(json.dumps(creds, indent=2), ignore_silent=True)
 
@@ -261,7 +255,8 @@ class GcpCloudCredentialPrinter(CloudCredentialPrinter):
         self.cli.print('', ignore_silent=True)
         self.cli.print(
             f"Run command: gcloud auth activate-service-account {self.credentials['client_email']} "
-            "--key-file <path-where-above-json-is-stored>", ignore_silent=True
+            "--key-file <path-where-above-json-is-stored>",
+            ignore_silent=True,
         )
 
     def print_gcloudauth(self):
@@ -277,7 +272,7 @@ class GcpCloudCredentialPrinter(CloudCredentialPrinter):
 
         self.cli.print(
             f"gcloud auth activate-service-account {self.credentials['client_email']} --key-file {str(path)}",
-            ignore_silent=True
+            ignore_silent=True,
         )
 
     def print_gcloudauthexec(self):
@@ -296,7 +291,7 @@ class GcpCloudCredentialPrinter(CloudCredentialPrinter):
                 self.credentials['client_email'],
                 '--key-file',
                 str(path),
-                '--verbosity=error'
+                '--verbosity=error',
             ]
 
             subprocess.run(commands, check=True)
@@ -334,9 +329,10 @@ class OpenShiftCredentialPrinter(CloudCredentialPrinter):
 
     def _perform_oidc_auth_code_grant_flow(self):
         try:
+            from urllib.parse import urlparse
+
             import requests
             from requests.adapters import HTTPAdapter
-            from urllib.parse import urlparse
 
             try:
                 from bs4 import BeautifulSoup
@@ -357,15 +353,13 @@ class OpenShiftCredentialPrinter(CloudCredentialPrinter):
             temp_url = self.credentials['url']
             temp_url = temp_url.replace('console-openshift-console', 'oauth-openshift')
             parsed_url = urlparse(temp_url)
-            base_url = parsed_url.scheme + "://" + parsed_url.netloc
+            base_url = parsed_url.scheme + '://' + parsed_url.netloc
             idp = self.credentials['idpName']
 
             session = requests.session()
 
             # set a reasonable user agent, so we can identify traffic more easily
-            session.headers.update({
-                'User-Agent': sdk_headers['User-Agent']
-            })
+            session.headers.update({'User-Agent': sdk_headers['User-Agent']})
 
             # create a custom adapter for the tenants fqdn and mount it
             # this will include the authorization header, so we can "auto"
@@ -405,7 +399,7 @@ class OpenShiftCredentialPrinter(CloudCredentialPrinter):
             if command:
                 return command
             else:
-                raise Exception(f'error: no `oc login` command found')
+                raise Exception('error: no `oc login` command found')
         except Exception as e:
             self.cli.print(f'error when attempting to perform oidc auth code grant flow: {str(e)}', ignore_silent=True)
 

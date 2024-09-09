@@ -70,10 +70,28 @@ where = ["src"]
 plugins.md013.line_length = 120
 plugins.md013.code_block_line_length = 120
 
-[tool.black]
+[tool.ruff]
+include = ["pyproject.toml", "src/**/*.py", "tests/*.py"]
 line-length = 120
-skip-string-normalization = true
 
-[tool.pylint]
-max-line-length = 120
-disable = "C0114,C0116,E0401"
+[tool.ruff.format]
+quote-style = "single"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+
+[tool.ruff.lint]
+select = [
+    "E", # pycodestyle
+    "F", # Pyflakes
+    "I", # isort
+    "PL", #pylint
+    "SIM", # flake8-simplify
+]
+
+[tool.ruff.lint.pylint]
+allow-magic-value-types = ["int", "str"]
+max-args = 16
+max-branches = 30
+max-returns = 8
+max-statements = 72

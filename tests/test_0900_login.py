@@ -1,6 +1,6 @@
-from pathlib import Path
 import os
 import warnings
+from pathlib import Path
 
 
 def test_login_interactive(runner, cli):

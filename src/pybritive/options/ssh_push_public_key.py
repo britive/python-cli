@@ -1,4 +1,5 @@
 import click
+
 from ..choices.ssh_push_public_key import ssh_push_public_key_choices
 
 
@@ -19,11 +20,12 @@ def validate(ctx, param, value):
 
 
 option = click.option(
-    '--push-public-key', '-P',
+    '--push-public-key',
+    '-P',
     type=ssh_push_public_key_choices,
     is_flag=False,
     flag_value='default',
     required=False,
     help='Whether to push an ephemeral public key to the remote server.',
-    callback=validate
+    callback=validate,
 )

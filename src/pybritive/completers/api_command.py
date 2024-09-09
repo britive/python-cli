@@ -1,6 +1,7 @@
+import contextlib
 import inspect
-import typing as t
 from importlib.metadata import version
+from typing import List
 
 from britive.britive import Britive
 
@@ -25,7 +26,7 @@ def get_dynamic_method_parameters(method):
         helper = spec[6]
         helper.pop('return', None)
 
-        for param, param_type in helper.items():
+        for param in helper:
             params[param] = {}
 
         defaults = [] if spec[3] is None else list(spec[3])
@@ -37,7 +38,8 @@ def get_dynamic_method_parameters(method):
                 default = defaults[-1 * i]
                 params[name]['default'] = '<empty string>' if default == '' else default
 
-        try:  # we don't REALLY need the doc string so if there are errors just eat them and move on
+        # we don't REALLY need the doc string so if there are errors just eat them and move on
+        with contextlib.suppress(Exception):
             doc_lines = inspect.getdoc(b)
             doc_lines = doc_lines.replace(':returns:', 'RETURNSPLIT')
             doc_lines = doc_lines.replace(':return:', 'RETURNSPLIT')
@@ -48,32 +50,23 @@ def get_dynamic_method_parameters(method):
                 name = helper[0].strip()
                 help_text = ''.join(helper[1].strip().splitlines()).replace('    ', ' ')
                 params[name]['help'] = help_text
-        except:
-            pass
 
         param_list = []
 
         for name, values in params.items():
             help_text = values.get('help') or ''
 
-            if 'default' in values.keys():  # cannot do a .get('default') as the default value could be False/None/etc.
+            if 'default' in values:  # cannot do a .get('default') as the default value could be False/None/etc.
                 preamble = f'[optional: default = {values["default"]}]'
-                if help_text == '':
-                    help_text = preamble
-                else:
-                    help_text = f'{preamble} - {help_text}'
+                help_text = preamble if help_text == '' else f'{preamble} - {help_text}'
 
-            param = {
-                'flag': f'--{name.replace("_", "-")}',
-                'help': help_text
-            }
+            param = {'flag': f'--{name.replace("_", "-")}', 'help': help_text}
 
             param_list.append(param)
 
-        param_list.append({
-            'flag': '---------------------',
-            'help': 'separator between sdk parameters and cli parameters'
-        })
+        param_list.append(
+            {'flag': '---------------------', 'help': 'separator between sdk parameters and cli parameters'}
+        )
 
         return param_list
     except Exception:
@@ -97,17 +90,17 @@ def command_api_patch_shell_complete(cls):
     if int(minor) != 1:
         return
 
-    from click.shell_completion import CompletionItem
-    from click.core import ParameterSource
     from click import Context, Option
+    from click.core import ParameterSource
+    from click.shell_completion import CompletionItem
 
     # https://stackoverflow.com/questions/43778914/python3-using-super-in-eq-methods-raises-runtimeerror-super-class
-    __class__ = cls  # provide closure cell for super()
+    __class__ = cls  # provide closure cell for super()  # noqa: F841
 
-    def shell_complete(self, ctx: Context, incomplete: str) -> t.List["CompletionItem"]:
+    def shell_complete(self, ctx: Context, incomplete: str) -> List[CompletionItem]:
         from click.shell_completion import CompletionItem  # here since this method will be monkey patched in
 
-        results: t.List["CompletionItem"] = []
+        results: List[CompletionItem] = []
 
         if incomplete and not incomplete[0].isalnum():
             method = ctx.params.get('method')
@@ -116,7 +109,8 @@ def command_api_patch_shell_complete(cls):
 
                 results.extend(
                     CompletionItem(p['flag'], help=p['help'])
-                    for p in dynamic_params if p['flag'].startswith(incomplete)
+                    for p in dynamic_params
+                    if p['flag'].startswith(incomplete)
                 )
 
             for param in self.get_params(ctx):

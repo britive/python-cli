@@ -1,9 +1,8 @@
 import os
-import typing as t
+from typing import Any, Dict
 
 from click.parser import split_arg_string
-from click.shell_completion import add_completion_class
-from click.shell_completion import ShellComplete, CompletionItem
+from click.shell_completion import CompletionItem, ShellComplete, add_completion_class
 
 # inspired by https://raw.githubusercontent.com/tibortakacs/powershell-argcomplete/master/mat.complete.ps1
 _powershell_source = """\
@@ -46,11 +45,11 @@ Register-ArgumentCompleter -Native -CommandName %(prog_name)s -ScriptBlock $%(co
 
 @add_completion_class
 class PowershellComplete(ShellComplete):
-    name = "powershell"
+    name = 'powershell'
     source_template = _powershell_source
 
     def get_completion_args(self):
-        line = os.environ["COMP_LINE"]
+        line = os.environ['COMP_LINE']
         cwords = split_arg_string(line)
         num_cwords = len(cwords)
         args = cwords[1:num_cwords]
@@ -68,15 +67,15 @@ class PowershellComplete(ShellComplete):
         value = item.value
         if ' ' in value:
             value = f'"{value}"'
-        return f"{value}"
+        return f'{value}'
 
-    def source_vars(self) -> t.Dict[str, t.Any]:
+    def source_vars(self) -> Dict[str, Any]:
         """Vars for formatting :attr:`source_template`.
         By default this provides ``complete_func``, ``complete_var``,
         and ``prog_name``.
         """
         return {
-            "complete_func": self.func_name[1:],  # remove leading _
-            "complete_var": self.complete_var,
-            "prog_name": self.prog_name
+            'complete_func': self.func_name[1:],  # remove leading _
+            'complete_var': self.complete_var,
+            'prog_name': self.prog_name,
         }

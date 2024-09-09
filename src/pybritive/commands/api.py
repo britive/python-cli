@@ -1,22 +1,17 @@
 import click
 from click import Command
-from ..helpers.build_britive import build_britive
-from ..options.britive_options import britive_options
+
 from ..completers.api_command import command_api_patch_shell_complete
 from ..helpers.api_method_argument_decorator import click_smart_api_method_argument
-
+from ..helpers.build_britive import build_britive
+from ..options.britive_options import britive_options
 
 # this holds all the click version logic to gracefully degrade functionality
 # depending on the click version
 command_api_patch_shell_complete(Command)
 
 
-@click.command(
-    context_settings=dict(
-        ignore_unknown_options=True,
-        allow_extra_args=True
-    )
-)
+@click.command(context_settings=dict(ignore_unknown_options=True, allow_extra_args=True))
 @build_britive
 @britive_options(names='query,output_format,tenant,token,silent,passphrase,federation_provider')
 @click_smart_api_method_argument  # need to gracefully handle older version of click
@@ -48,8 +43,4 @@ def api(ctx, query, output_format, tenant, token, silent, passphrase, federation
 
     """
     parameters = {ctx.args[i][2:]: ctx.args[i + 1] for i in range(0, len(ctx.args), 2)}
-    ctx.obj.britive.api(
-        method=method,
-        parameters=parameters,
-        query=query
-    )
+    ctx.obj.britive.api(method=method, parameters=parameters, query=query)

@@ -9,5 +9,5 @@ ssh_push_public_key_choices = click.Choice(
         'instance-metadata',
         'os-login',
     ],
-    case_sensitive=False
+    case_sensitive=False,
 )

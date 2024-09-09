@@ -1,3 +1,4 @@
+import contextlib
 import csv
 import hashlib
 import io
@@ -9,18 +10,20 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import click
-from britive import exceptions
-from britive.britive import Britive
 import jmespath
 import jwt
-from tabulate import tabulate
 import yaml
+from britive import exceptions
+from britive.britive import Britive
+from jwt.exceptions import PyJWTError
+from tabulate import tabulate
+
+from . import __version__
 from .helpers import cloud_credential_printer as printer
 from .helpers.cache import Cache
 from .helpers.config import ConfigManager
-from .helpers.credentials import FileCredentialManager, EncryptedFileCredentialManager
+from .helpers.credentials import EncryptedFileCredentialManager, FileCredentialManager
 from .helpers.split import profile_split
-from . import __version__
 
 default_table_format = 'fancy_grid'
 debug_enabled = os.getenv('PYBRITIVE_DEBUG')
@@ -200,7 +203,7 @@ class BritiveCli:
             ).get('username', '')
 
             return username.startswith('SAML')
-        except:
+        except PyJWTError:
             return False
 
     def logout(self):
@@ -670,7 +673,7 @@ class BritiveCli:
         except exceptions.ApprovalRequiredButNoJustificationProvided as e:
             raise click.ClickException('approval required and no justification provided.') from e
         except ValueError as e:
-            raise click.BadParameter(str(e))
+            raise click.BadParameter(str(e)) from e
         except Exception as e:
             if 'programmatic access is not enabled' in str(e).lower():
                 # attempt to automatically checkout console access instead
@@ -1057,7 +1060,7 @@ class BritiveCli:
 
             if path.exists():  # we have a valid gcloudauthexec key file, so we know there was a checkout with this mode
                 try:
-                    with open(str(path), 'r', encoding='utf-8') as f:
+                    with open(str(path), encoding='utf-8') as f:
                         credentials = json.loads(f.read())
                     commands = ['gcloud', 'auth', 'revoke', credentials['client_email'], '--verbosity=error']
                     self.debug(' '.join(commands))
@@ -1097,13 +1100,13 @@ class BritiveCli:
                 if value.startswith('file://'):
                     filepath = value.replace('file://', '')
                     path = Path(filepath)
-                    with open(str(path), 'r', encoding='utf-8') as f:
+                    with open(str(path), encoding='utf-8') as f:
                         computed_value = f.read().strip()
 
                 if value.startswith('fileb://'):
                     filepath = value.replace('fileb://', '')
                     path = Path(filepath)
-                    computed_value = open(str(path), 'rb')
+                    computed_value = open(str(path), 'rb')  # noqa: SIM115
                     open_file_keys.append(computed_key)
 
                 try:
@@ -1128,10 +1131,8 @@ class BritiveCli:
 
         # close any files we opened due to fileb:// prefix
         for key in open_file_keys:
-            try:
+            with contextlib.suppress(Exception):
                 computed_parameters[key].close()
-            except Exception:
-                pass
 
         # output the response, optionally filtering based on provided jmespath query/search
         self.print(jmespath.search(query, response) if query else response, ignore_silent=True)
@@ -1233,8 +1234,8 @@ class BritiveCli:
     @staticmethod
     def _ssh_generate_key_pair():
         # doing imports here as these packages are not a requirement to use pybritive in general
-        from cryptography.hazmat.primitives.asymmetric import rsa
         from cryptography.hazmat.primitives import serialization
+        from cryptography.hazmat.primitives.asymmetric import rsa
 
         private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
 
@@ -1255,8 +1256,8 @@ class BritiveCli:
 
         # these 3 ship with python3.x
         import glob
-        import time
         import subprocess
+        import time
 
         key_pair = self._ssh_generate_key_pair()
 
@@ -1354,8 +1355,9 @@ class BritiveCli:
 
         # requests is a hard requirement for pybritive (via britive sdk)
         # and webbrowser ships with python3.x
-        import requests
         import webbrowser
+
+        import requests
 
         # this is the one that may not be available so be careful
         try:
@@ -1381,10 +1383,10 @@ class BritiveCli:
         signin_token = None
         try:
             signin_token = json.loads(response.text)
-        except json.decoder.JSONDecodeError:
+        except json.decoder.JSONDecodeError as je:
             raise click.ClickException(
                 'Credentials have expired or another issue occurred. Please re-authenticate and try again.'
-            )
+            ) from je
 
         params = {
             'Action': 'login',
@@ -1424,8 +1426,8 @@ class BritiveCli:
         instance_name = helper[1]
         project = helper[2]
 
-        import subprocess
         import shlex
+        import subprocess
 
         command = f'gcloud compute instances list --format json --project {project}'
         instances = json.loads(subprocess.check_output(shlex.split(command)).decode('utf-8'))

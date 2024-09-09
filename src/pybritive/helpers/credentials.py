@@ -3,19 +3,19 @@ import configparser
 import hashlib
 import json
 import os
-from pathlib import Path
 import random
 import time
 import webbrowser
-import requests
+from pathlib import Path
 
-from britive.britive import Britive
 import click
-from dateutil import parser
 import jwt
+import requests
+from britive.britive import Britive
+from dateutil import parser
 from requests.adapters import HTTPAdapter, Retry
-from .encryption import StringEncryption, InvalidPassphraseException
 
+from .encryption import InvalidPassphraseException, StringEncryption
 
 interactive_login_fields_to_pop = [
     'challengeParameters',
@@ -26,7 +26,7 @@ interactive_login_fields_to_pop = [
     'username',
     'refreshToken',
     'authTime',
-    'maxSessionTimeout'
+    'maxSessionTimeout',
 ]
 
 
@@ -47,8 +47,14 @@ class CouldNotExtractExpirationTimeFromJwtException(Exception):
 
 # this base class expects self.credentials to be a dict - so sub classes need to convert to dict
 class CredentialManager:
-    def __init__(self, tenant_name: str, tenant_alias: str, cli: any, federation_provider: str = None,
-                 browser: str = os.getenv('PYBRITIVE_BROWSER')):
+    def __init__(
+        self,
+        tenant_name: str,
+        tenant_alias: str,
+        cli: any,
+        federation_provider: str = None,
+        browser: str = os.getenv('PYBRITIVE_BROWSER'),
+    ):
         self.cli = cli
         self.tenant = tenant_name
         self.alias = tenant_alias
@@ -83,10 +89,11 @@ class CredentialManager:
             # turn off ssl verification
             self.session.verify = False
             # wipe these due to this bug: https://github.com/psf/requests/issues/3829
-            os.environ['CURL_CA_BUNDLE'] = ""
-            os.environ['REQUESTS_CA_BUNDLE'] = ""
+            os.environ['CURL_CA_BUNDLE'] = ''
+            os.environ['REQUESTS_CA_BUNDLE'] = ''
             # disable the warning message
             import urllib3
+
             urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
     def perform_interactive_login(self):
@@ -104,9 +111,7 @@ class CredentialManager:
         try:
             webbrowser.get(using=self.browser).open(url)
         except webbrowser.Error:
-            self.cli.print(
-                'No web browser found. Please manually navigate to the link below and authenticate.'
-            )
+            self.cli.print('No web browser found. Please manually navigate to the link below and authenticate.')
             self.cli.print(url)
 
         time.sleep(3)
@@ -125,9 +130,7 @@ class CredentialManager:
                 try:
                     # attempt to pull the expiration time from the jwt
                     expiration_time_ms = self._extract_exp_from_jwt(
-                        token=credentials['accessToken'],
-                        verify=False,
-                        convert_to_ms=True
+                        token=credentials['accessToken'], verify=False, convert_to_ms=True
                     )
                     self.cli.debug(f'found expiration time {expiration_time_ms} from jwt')
                 except CouldNotExtractExpirationTimeFromJwtException:
@@ -157,10 +160,7 @@ class CredentialManager:
                 # so not verifying everything here is okay since we are just
                 # trying to extract the token expiration time so we can store
                 # it in the ~/.britive/pybritive.credentials[.encrypted] file
-                options={
-                    'verify_signature': verify,
-                    'verify_aud': verify
-                }
+                options={'verify_signature': verify, 'verify_aud': verify},
             )[field]
         except Exception:
             return None
@@ -174,18 +174,17 @@ class CredentialManager:
                 # so not verifying everything here is okay since we are just
                 # trying to extract the token expiration time so we can store
                 # it in the ~/.britive/pybritive.credentials[.encrypted] file
-                options={
-                    'verify_signature': verify,
-                    'verify_aud': verify
-                }
+                options={'verify_signature': verify, 'verify_aud': verify},
             )['exp']
             return expiration_time * (1000 if convert_to_ms else 1)
-        except Exception:
-            raise CouldNotExtractExpirationTimeFromJwtException
+        except Exception as e:
+            raise CouldNotExtractExpirationTimeFromJwtException from e
 
     def perform_federation_provider_authentication(self):
-        self.cli.print(f'Performing {self.federation_provider} federation provider authentication '
-                       f'against tenant {self.tenant}.')
+        self.cli.print(
+            f'Performing {self.federation_provider} federation provider authentication '
+            f'against tenant {self.tenant}.'
+        )
 
         # we need to extract the duration, if provided
         # field format is provider-[something provider specific]_[duration in seconds]
@@ -195,14 +194,13 @@ class CredentialManager:
             try:
                 duration = int(helper[1])
             except ValueError:
-                self.cli.print(f'Invalid federation provider duration {helper[1]} provided - defaulting '
-                               f'to {duration} seconds.')
+                self.cli.print(
+                    f'Invalid federation provider duration {helper[1]} provided - defaulting ' f'to {duration} seconds.'
+                )
 
         # generate the token
         generated_token = Britive.source_federation_token_from(
-            provider=helper[0],
-            tenant=self.tenant,
-            duration_seconds=duration
+            provider=helper[0], tenant=self.tenant, duration_seconds=duration
         )
 
         # obtain the provider and expiration time of the token
@@ -218,34 +216,23 @@ class CredentialManager:
                 token_expires = json.loads(token)['iam_request_headers']['x-britive-expires']
                 expiration_time = int(parser.parse(token_expires).timestamp() * 1000)
             if provider == 'oidc':
-                expiration_time = self._extract_exp_from_jwt(
-                    token=token,
-                    verify=False,
-                    convert_to_ms=True
-                )
+                expiration_time = self._extract_exp_from_jwt(token=token, verify=False, convert_to_ms=True)
         except Exception:
-            self.cli.print(f'Cannot obtain token expiration time for {self.federation_provider}. Defaulting to '
-                           f'{federation_provider_default_expiration_seconds} seconds.')
+            self.cli.print(
+                f'Cannot obtain token expiration time for {self.federation_provider}. Defaulting to '
+                f'{federation_provider_default_expiration_seconds} seconds.'
+            )
 
         # generate the credentials object and save it
-        credentials = {
-            'accessToken': generated_token,
-            'safeExpirationTime': expiration_time
-        }
+        credentials = {'accessToken': generated_token, 'safeExpirationTime': expiration_time}
 
         self.save(credentials)
         self.cli.print(f'Authenticated to tenant {self.tenant} via federation provider authentication.')
 
     def retrieve_tokens(self):
         url = f'{self.base_url}/api/auth/cli/retrieve-tokens'
-        auth_params = {
-            'authParameters': {
-                'cliToken': self.verifier
-            }
-        }
-        headers = {
-            'Content-Type': 'application/json'
-        }
+        auth_params = {'authParameters': {'cliToken': self.verifier}}
+        headers = {'Content-Type': 'application/json'}
         return self.session.post(url, headers=headers, json=auth_params)
 
     def load(self, full=False):
@@ -289,8 +276,14 @@ class CredentialManager:
 
 
 class FileCredentialManager(CredentialManager):
-    def __init__(self, tenant_name: str, tenant_alias: str, cli: any, federation_provider: str = None,
-                 browser: str = os.getenv('PYBRITIVE_BROWSER')):
+    def __init__(
+        self,
+        tenant_name: str,
+        tenant_alias: str,
+        cli: any,
+        federation_provider: str = None,
+        browser: str = os.getenv('PYBRITIVE_BROWSER'),
+    ):
         home = os.getenv('PYBRITIVE_HOME_DIR', str(Path.home()))
         self.path = str(Path(home) / '.britive' / 'pybritive.credentials')
         super().__init__(tenant_name, tenant_alias, cli, federation_provider, browser)
@@ -328,11 +321,7 @@ class FileCredentialManager(CredentialManager):
         with open(str(self.path), 'w', encoding='utf-8') as f:
             config.write(f, space_around_delimiters=False)
 
-        jti = self.extract_field_from_jwt(
-            token=(self.credentials or {}).get('accessToken'),
-            verify=False,
-            field='jti'
-        )
+        jti = self.extract_field_from_jwt(token=(self.credentials or {}).get('accessToken'), verify=False, field='jti')
         self.cli.debug(f'credentials.py::FileCredentialManager::save - set credentials to jwt id {jti}')
 
     def delete(self):
@@ -340,8 +329,15 @@ class FileCredentialManager(CredentialManager):
 
 
 class EncryptedFileCredentialManager(CredentialManager):
-    def __init__(self, tenant_name: str, tenant_alias: str, cli: any, passphrase: str = None,
-                 federation_provider: str = None, browser: str = os.getenv('PYBRITIVE_BROWSER')):
+    def __init__(
+        self,
+        tenant_name: str,
+        tenant_alias: str,
+        cli: any,
+        passphrase: str = None,
+        federation_provider: str = None,
+        browser: str = os.getenv('PYBRITIVE_BROWSER'),
+    ):
         home = os.getenv('PYBRITIVE_HOME_DIR', str(Path.home()))
         self.path = str(Path(home) / '.britive' / 'pybritive.credentials.encrypted')
         self.passphrase = passphrase
@@ -399,11 +395,7 @@ class EncryptedFileCredentialManager(CredentialManager):
         with open(str(self.path), 'w', encoding='utf-8') as f:
             config.write(f, space_around_delimiters=False)
 
-        jti = self.extract_field_from_jwt(
-            token=(self.credentials or {}).get('accessToken'),
-            verify=False,
-            field='jti'
-        )
+        jti = self.extract_field_from_jwt(token=(self.credentials or {}).get('accessToken'), verify=False, field='jti')
         self.cli.debug(f'credentials.py::FileCredentialManager::save - set credentials to jwt id {jti}')
 
     def delete(self):

@@ -26,7 +26,7 @@ class StringEncryption:
             length=32,
             salt=base64.b64decode(salt.encode()),
             iterations=100000,
-            backend=default_backend()
+            backend=default_backend(),
         )
         return base64.urlsafe_b64encode(kdf.derive(self.passphrase.encode()))
 

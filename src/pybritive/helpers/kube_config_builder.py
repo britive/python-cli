@@ -1,10 +1,12 @@
 import base64
 import os
-from pathlib import Path
 import shutil
+from pathlib import Path
+
 import yaml
-from .config import ConfigManager
+
 from ..britive_cli import BritiveCli
+from .config import ConfigManager
 
 
 def sanitize(name: str):
@@ -39,7 +41,7 @@ def merge_new_with_existing(clusters, contexts, users, filename, tenant):
     # them with the above created items
     existing_kubeconfig = {}
     if Path(filename).exists():
-        with open(filename, 'r', encoding='utf-8') as f:
+        with open(filename, encoding='utf-8') as f:
             existing_kubeconfig = yaml.safe_load(f) or {}
 
     prefix = f'{tenant}-'
@@ -73,7 +75,7 @@ def parse_profiles(profiles, aliases):
             env = BritiveCli.escape_profile_element(profile['env'])
             pro = BritiveCli.escape_profile_element(profile['profile'])
 
-            escaped_profile_str = f"{app}/{env}/{pro}".lower()
+            escaped_profile_str = f'{app}/{env}/{pro}'.lower()
             alias = aliases.get(escaped_profile_str, None)
             assigned_aliases.append(alias)
 
@@ -132,7 +134,7 @@ def build_tenant_config(tenant, cluster_names, username, cli: BritiveCli):
         if len(details['apps']) == 1:
             names = [env_profile]
         else:
-            names = [f"{sanitize(a)}-{env_profile}" for a in details['apps']]
+            names = [f'{sanitize(a)}-{env_profile}' for a in details['apps']]
 
         cert = details['cert']
         url = details['url']

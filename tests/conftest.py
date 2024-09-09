@@ -1,8 +1,10 @@
 import json
 import os
 from pathlib import Path
-from click.testing import CliRunner
+
 import pytest
+from click.testing import CliRunner
+
 from pybritive import cli_interface
 
 
@@ -19,8 +21,7 @@ def rm_tree(pth: Path):
 
 
 def prepare_dot_britive():
-    prepare = os.getenv('PYBRITIVE_PREPARE_DOT_BRITIVE', 'false')
-    if prepare == 'true':
+    if os.getenv('PYBRITIVE_PREPARE_DOT_BRITIVE', 'false') == 'true':
         local_home = os.getenv('PYBRITIVE_HOME_DIR')
         if home:
             rm_tree(Path(local_home) / '.britive')
@@ -65,7 +66,7 @@ def profile():
     path = Path(Path(local_home) / '.britive' / 'pybritive.cache')
     profiles = []
     while not profiles:
-        with open(str(path), 'r', encoding="utf-8") as f:
+        with open(str(path), 'r', encoding='utf-8') as f:
             loaded_profiles = json.loads(f.read()).get('profiles')
         if not loaded_profiles:
             runner.invoke(cli, 'cache profiles'.split(' '))
@@ -76,6 +77,5 @@ def profile():
 
 @pytest.fixture
 def unset_api_token_env_var():
-    name = 'BRITIVE_API_TOKEN'
-    if name in os.environ:
+    if os.getenv((name := 'BRITIVE_API_TOKEN')):
         del os.environ[name]

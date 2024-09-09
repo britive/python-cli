@@ -13,10 +13,11 @@ def version_callback(ctx, self, value):
 
 
 option = click.option(
-    '--version', '-v',
+    '--version',
+    '-v',
     default=None,
     callback=version_callback,
     is_eager=True,
     help='Prints the PyBritive CLI version and exits.',
-    is_flag=True
+    is_flag=True,
 )

@@ -42,9 +42,6 @@ class KubernetesExecCredentialProcessor:
             'kind': 'ExecCredential',
             'apiVersion': self.api_version,
             'spec': {},
-            'status': {
-                'expirationTimestamp': credentials['expirationTime'],
-                'token': credentials['jwt']
-            }
+            'status': {'expirationTimestamp': credentials['expirationTime'], 'token': credentials['jwt']},
         }
         return json.dumps(response)
