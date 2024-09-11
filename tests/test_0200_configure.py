@@ -8,29 +8,6 @@ def read_config():
         return f.read()
 
 
-def write_npm_config(simple=True):
-    home = conftest.home()
-    local_home = os.getenv('PYBRITIVE_HOME_DIR')
-    unit = os.getenv('PYBRITIVE_UNIT_TESTING')
-    if home and not unit:
-        path = Path(Path(local_home) / '.britive' / 'config')
-
-        tenant = os.getenv('PYBRITIVE_TEST_TENANT')
-        contents = [f'tenantURL = "https://{tenant}.britive-app.com"', 'output_format = "Table"']
-
-        alias = os.getenv('PYBRITIVE_NPM_IMPORT_PROFILE_ALIAS_VALUE')
-        if not simple and alias:
-            contents = [
-                f'tenantURL = "https://{tenant}.britive-app.com"',
-                'output_format = "Table"',
-                '',
-                '[envProfileMap]',
-                f'testalias = "{alias}"',
-            ]
-
-        path.write_text('\n'.join(contents), encoding='utf-8')
-
-
 def common_asserts(result, substring: list = None, exit_code: int = 0):
     assert result.exit_code == exit_code
     if substring:
@@ -121,23 +98,6 @@ def test_configure_global_with_invalid_tenant(runner, cli):
     assert "Invalid global field default_tenant value incorrect provided. Tenant not found." in result.output
 
 
-def test_configure_import_simple(runner, cli):
-    write_npm_config(True)
-    tenant = os.getenv('PYBRITIVE_TEST_TENANT')
-    result = runner.invoke(cli, 'configure import'.split(' '))
-    common_asserts(result, substring=[tenant])
-
-
-def test_configure_import_complex(runner, cli):
-    write_npm_config(False)
-    tenant = os.getenv('PYBRITIVE_TEST_TENANT')
-    result = runner.invoke(cli, 'configure import'.split(' '))
-    print(result.output)
-    assert f'Found tenant {tenant}.' in result.output
-    assert 'Found default output format' in result.output
-    assert 'Profile aliases exist...will retrieve profile details from the tenant.' in result.output
-    assert 'Saved alias testalias to profile' in result.output
-    common_asserts(result, substring=[tenant, '[profile-aliases]', 'testalias='])
 
 
 def test_configure_update_global_invalid_data(runner, cli):

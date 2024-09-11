@@ -5,7 +5,6 @@ import shutil
 from pathlib import Path
 
 import click
-import toml
 from britive.britive import Britive
 
 from ..choices.backend import backend_choices
@@ -202,38 +201,6 @@ class ConfigManager:
         self.profile_aliases[alias] = profile
         self.config['profile-aliases'] = self.profile_aliases
         self.save()
-
-    # returns a dict of profile aliases that need to be created after listing profiles
-    def import_global_npm_config(self):
-        self.load()
-        path = str(Path(self.home) / '.britive' / 'config')  # handle os specific separators properly
-        with open(path, encoding='utf-8') as f:
-            npm_config = toml.load(f)
-        tenant = npm_config.get('tenantURL', '').replace('https://', '').replace('.britive-app.com', '').lower()
-        output_format = npm_config.get('output_format', '').lower()
-        aws_section = npm_config.get('AWS', None)
-
-        # reset the config as we are building a new one
-        self.config = {'global': {}}
-        if tenant != '':
-            self.cli.print(f'Found tenant {tenant}.')
-            self.config['global']['default_tenant'] = tenant
-            self.config[f'tenant-{tenant}'] = {'name': tenant}
-        if output_format != '':
-            self.cli.print(f'Found default output format {output_format}.')
-            self.config['global']['output_format'] = output_format
-
-        if aws_section:
-            checkout_mode = aws_section.get('checkoutMode')
-            if checkout_mode:
-                checkout_mode = checkout_mode.lower().replace('display', '')
-                self.cli.print(f'Found aws default checkout mode of {checkout_mode}.')
-                self.config['aws'] = {'default_checkout_mode': checkout_mode}
-
-        self.save()
-        self.load(force=True)
-
-        return npm_config.get('envProfileMap', {})
 
     def backend(self):
         self.load()

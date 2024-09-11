@@ -63,9 +63,8 @@ class CredentialManager:
         self.browser = browser
         self.session = None
 
-        # not sure if we really need 32 random bytes or if any random string would work
-        # but the current britive-cli in node.js does it this way so it will be done the same
-        # way in python
+        # not sure if we really need 32 random bytes or if any random string would work, but it was carried forward from
+        # the now deprecated node.js CLI, so it remains for the time being. 
         while True:  # will break eventually when we get values that do not include --
             self.verifier = b64_encode_url_safe(bytes([random.getrandbits(8) for _ in range(0, 32)]))
             self.auth_token = b64_encode_url_safe(bytes(hashlib.sha512(self.verifier.encode('utf-8')).digest()))

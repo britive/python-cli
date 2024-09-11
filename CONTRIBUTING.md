@@ -40,8 +40,6 @@ Environment variables that should be set for testing include the following.
 
 * `PYBRITIVE_HOME_DIR` - a path to a home directory where `.britive` directory will be created
 * `PYBRITIVE_TEST_TENANT` - the tenant name to be used for testing purposes
-* `PYBRITIVE_NPM_IMPORT_PROFILE_ALIAS_VALUE` - the IDs of a profile that can be used to test the import process. This
-should be in format `"appid/envid/profileid/appname"`
 * `PYBRITIVE_ENCRYPTED_CREDENTIAL_PASSPHRASE` - the password for encrypted file credential storage
 * `PYBRITIVE_PREPARE_DOT_BRITIVE` - set to true if you want to have the `.britive` directory cleared before starting the
 tests

@@ -893,28 +893,6 @@ class BritiveCli:
             k8s_processor,
         ).print()
 
-    def import_existing_npm_config(self):
-        profile_aliases = self.config.import_global_npm_config()
-
-        if len(profile_aliases) == 0:
-            return
-        self.print('')
-        self.print('Profile aliases exist...will retrieve profile details from the tenant.')
-        self.print('')
-
-        self.login()
-        self._set_available_profiles()
-        self.print('')
-        for alias, ids in profile_aliases.items():
-            if '/' in alias:  # no need to import the aliases that aren't really aliases
-                continue
-            app, env, profile = ids.split('/')[:3]
-            for p in self.available_profiles:
-                if p['app_id'] == app and p['env_id'] == env and p['profile_id'] == profile:
-                    profile_str = f"{p['app_name']}/{p['env_name']}/{p['profile_name']}"
-                    self.config.save_profile_alias(alias, profile_str)
-                    self.print(f'Saved alias {alias} to profile {profile_str}')
-
     def configure_tenant(self, tenant, alias, output_format):
         self.config.save_tenant(tenant=tenant, alias=alias, output_format=output_format)
 

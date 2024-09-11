@@ -118,10 +118,9 @@ set REQUESTS_CA_BUNDLE="C:\Users\User\AppData\Local\corp-proxy\cacert.pem"
 Before `pybritive` can connect to a Britive tenant, it needs to know some details about that tenant.
 This is where `pybritive configure` will help us.
 
-There are 2 ways to tell `pybritive` about tenants.
+There is an easy way to tell `pybritive` about tenants.
 
-1. `pybritive configure import`: this will import an existing configuration from the Node.js version of the Britive CLI.
-2. `pybritive configure tenant`: This will prompt (or optionally the values can be passed via flags) for tenant details.
+* `pybritive configure tenant`: This will prompt (or optionally the values can be passed via flags) for tenant details.
 
 An alias for a tenant can be created in case more than 1 tenant is configured for use. This may be the case for admins
 who may have access to an EA and GA tenant.
