@@ -1,10 +1,9 @@
 import os
 
-import conftest
-
 
 def read_config():
-    with open(f'{conftest.home()}/.britive/pybritive.config', 'r', encoding='utf-8') as f:
+    local_home = os.getenv('PYBRITIVE_HOME_DIR')
+    with open(f'{local_home}/.britive/pybritive.config', 'r', encoding='utf-8') as f:
         return f.read()
 
 
@@ -95,9 +94,7 @@ def test_configure_global_with_invalid_format(runner, cli):
 
 def test_configure_global_with_invalid_tenant(runner, cli):
     result = runner.invoke(cli, 'configure global -t incorrect'.split(' '))
-    assert "Invalid global field default_tenant value incorrect provided. Tenant not found." in result.output
-
-
+    assert 'Invalid global field default_tenant value incorrect provided. Tenant not found.' in result.output
 
 
 def test_configure_update_global_invalid_data(runner, cli):
@@ -112,17 +109,16 @@ def test_configure_update_invalid_section(runner, cli):
     assert 'Cannot save config file due to invalid data provided.' in result.output
 
 
-def test_configure_update_global_correct_data(runner, cli):
-    result = runner.invoke(cli, 'configure update global output_format table-presto'.split(' '))
-    common_asserts(result, substring=['output_format=table-presto'])
-
-
 def test_configure_update_tenant_correct_data(runner, cli):
     tenant = os.getenv('PYBRITIVE_TEST_TENANT')
-    result = runner.invoke(cli, f'configure update tenant-{tenant} name pybritivetest1.dev'.split(' '))
+    result = runner.invoke(cli, f'configure update tenant-{tenant} name {tenant}'.split(' '))
     common_asserts(result, substring=['name=pybritivetest1.dev'])
-    # set it back
-    runner.invoke(cli, f'configure update tenant-{tenant} name {tenant}'.split(' '))
+
+
+def test_configure_update_global_correct_data(runner, cli):
+    tenant = os.getenv('PYBRITIVE_TEST_TENANT')
+    result = runner.invoke(cli, f'configure update global default_tenant {tenant}')
+    common_asserts(result, substring=[f'default_tenant={tenant}'])
 
 
 def test_configure_update_aws_data(runner, cli):

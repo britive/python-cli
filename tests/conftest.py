@@ -1,4 +1,3 @@
-import json
 import os
 from pathlib import Path
 
@@ -21,10 +20,8 @@ def rm_tree(pth: Path):
 
 
 def prepare_dot_britive():
-    if os.getenv('PYBRITIVE_PREPARE_DOT_BRITIVE', 'false') == 'true':
-        local_home = os.getenv('PYBRITIVE_HOME_DIR')
-        if home:
-            rm_tree(Path(local_home) / '.britive')
+    if os.getenv('PYBRITIVE_PREPARE_DOT_BRITIVE') == 'true' and (local_home := os.getenv('PYBRITIVE_HOME_DIR')):
+        rm_tree(Path(local_home) / '.britive')
 
 
 def pytest_sessionstart():
@@ -45,11 +42,6 @@ def pytest_sessionfinish():
     prepare_dot_britive()
 
 
-def home():
-    h = Path(os.getenv('PYBRITIVE_HOME_DIR', '~'))
-    return str(h)
-
-
 @pytest.fixture
 def runner():
     return CliRunner()
@@ -58,21 +50,6 @@ def runner():
 @pytest.fixture
 def cli():
     return cli_interface.cli
-
-
-@pytest.fixture
-def profile():
-    local_home = os.getenv('PYBRITIVE_HOME_DIR')
-    path = Path(Path(local_home) / '.britive' / 'pybritive.cache')
-    profiles = []
-    while not profiles:
-        with open(str(path), 'r', encoding='utf-8') as f:
-            loaded_profiles = json.loads(f.read()).get('profiles')
-        if not loaded_profiles:
-            runner.invoke(cli, 'cache profiles'.split(' '))
-            continue
-        profiles += loaded_profiles
-    return [p for p in loaded_profiles if 'AWS' in p][-1]
 
 
 @pytest.fixture
