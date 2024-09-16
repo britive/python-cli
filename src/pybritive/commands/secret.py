@@ -12,12 +12,15 @@ def secret():
 
 @secret.command()
 @build_britive
-@britive_options(names='blocktime,justification,maxpolltime,format,tenant,token,silent,passphrase,federation_provider')
+@britive_options(
+    names='blocktime,justification,otp,maxpolltime,format,tenant,token,silent,passphrase,federation_provider'
+)
 @click.argument('path')
 def view(
     ctx,
     blocktime,
     justification,
+    otp,
     maxpolltime,
     output_format,
     tenant,
@@ -35,13 +38,15 @@ def view(
     if not path.startswith('/'):
         path = f'/{path}'
 
-    ctx.obj.britive.viewsecret(path=path, blocktime=blocktime, justification=justification, maxpolltime=maxpolltime)
+    ctx.obj.britive.viewsecret(
+        path=path, blocktime=blocktime, justification=justification, otp=otp, maxpolltime=maxpolltime
+    )
 
 
 @secret.command()
 @build_britive
 @britive_options(
-    names='file,blocktime,justification,maxpolltime,format,silent,tenant,token,' 'passphrase,federation_provider'
+    names='file,blocktime,justification,otp,maxpolltime,format,silent,tenant,token,passphrase,federation_provider'
 )
 @click.argument('path')
 def download(
@@ -49,6 +54,7 @@ def download(
     file,
     blocktime,
     justification,
+    otp,
     maxpolltime,
     output_format,
     silent,
@@ -67,5 +73,5 @@ def download(
         path = f'/{path}'
 
     ctx.obj.britive.downloadsecret(
-        path=path, blocktime=blocktime, justification=justification, maxpolltime=maxpolltime, file=file
+        path=path, blocktime=blocktime, justification=justification, otp=otp, maxpolltime=maxpolltime, file=file
     )

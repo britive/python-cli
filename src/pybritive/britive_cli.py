@@ -915,18 +915,20 @@ class BritiveCli:
     def configure_global(self, default_tenant_name, output_format, backend):
         self.config.save_global(default_tenant_name=default_tenant_name, output_format=output_format, backend=backend)
 
-    def viewsecret(self, path, blocktime, justification, maxpolltime):
+    def viewsecret(self, path, blocktime, justification, otp, maxpolltime):
         self._validate_justification(justification)
         self.login()
 
         try:
             value = self.b.my_secrets.view(
-                path=path, justification=justification, wait_time=blocktime, max_wait_time=maxpolltime
+                path=path, justification=justification, otp=otp, wait_time=blocktime, max_wait_time=maxpolltime
             )
         except exceptions.AccessDenied as e:
             raise click.ClickException('user does not have access to the secret.') from e
         except exceptions.ApprovalRequiredButNoJustificationProvided as e:
             raise click.ClickException('approval required and no justification provided.') from e
+        except exceptions.StepUpAuthRequiredButNotProvided as e:
+            raise click.ClickException('Step Up Authentication required and no OTP provided.') from e
 
         # handle the generic note template type for a better UX
         if len(value) == 1 and 'Note' in value:
@@ -943,18 +945,20 @@ class BritiveCli:
         # and finally print the secret data
         self.print(value, ignore_silent=True)
 
-    def downloadsecret(self, path, blocktime, justification, maxpolltime, file):
+    def downloadsecret(self, path, blocktime, justification, otp, maxpolltime, file):
         self._validate_justification(justification)
         self.login()
 
         try:
             response = self.b.my_secrets.download(
-                path=path, justification=justification, wait_time=blocktime, max_wait_time=maxpolltime
+                path=path, justification=justification, otp=otp, wait_time=blocktime, max_wait_time=maxpolltime
             )
         except exceptions.AccessDenied as e:
             raise click.ClickException('user does not have access to the secret.') from e
         except exceptions.ApprovalRequiredButNoJustificationProvided as e:
             raise click.ClickException('approval required and no justification provided.') from e
+        except exceptions.StepUpAuthRequiredButNotProvided as e:
+            raise click.ClickException('Step Up Authentication required and no OTP provided.') from e
 
         filename_from_secret = response['filename']
         content = response['content_bytes']

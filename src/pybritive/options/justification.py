@@ -5,5 +5,5 @@ option = click.option(
     '-j',
     default=None,
     show_default=True,
-    help='Justification for the checkout approval process, if the profile checkout requires approval.',
+    help='Justification for the approval process, if a profile checkout or secret access requires approval.',
 )
