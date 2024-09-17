@@ -15,7 +15,6 @@ import jwt
 import yaml
 from britive import exceptions
 from britive.britive import Britive
-from colored import Fore, Style
 from jwt.exceptions import PyJWTError
 from tabulate import tabulate
 
@@ -25,6 +24,11 @@ from .helpers.cache import Cache
 from .helpers.config import ConfigManager
 from .helpers.credentials import EncryptedFileCredentialManager, FileCredentialManager
 from .helpers.split import profile_split
+
+try:
+    from colored import Fore, Style
+except ImportError:  # colored in < python3.9
+    from colored import fore, style
 
 default_table_format = 'fancy_grid'
 debug_enabled = os.getenv('PYBRITIVE_DEBUG')
@@ -171,14 +175,21 @@ class BritiveCli:
             return
 
         # if we get here then we need to at least grab the banner and see if it has changed
-        banner = self.b.banner()
-        banner_changed = Cache().save_banner(tenant=self.tenant_name, banner=banner)
-        msg_type = banner.get('messageType', 'UNKNOWN')
-        color = {'caution': Style.BOLD + Fore.red, 'warning': Style.BOLD + Fore.yellow}.get(
-            msg_type.lower(), Style.BOLD + Fore.blue
-        )
-        if banner and banner_changed:
-            self.print(f'{color}*** {msg_type}: {banner.get("message", "<no message>")} ***{Style.reset}')
+        if banner := self.b.banner():
+            banner_changed = Cache().save_banner(tenant=self.tenant_name, banner=banner)
+            msg_type = banner.get('messageType', 'UNKNOWN')
+            try:
+                color = {'caution': Style.BOLD + Fore.red, 'warning': Style.BOLD + Fore.yellow}.get(
+                    msg_type.lower(), Style.BOLD + Fore.blue
+                )
+                style_reset = Style.reset
+            except NameError:  # colored in < python3.9
+                color = {'caution': style.BOLD + fore.RED, 'warning': style.BOLD + fore.YELLOW}.get(
+                    msg_type.lower(), style.BOLD + fore.BLUE
+                )
+                style_reset = style.RESET
+            if banner_changed:
+                self.print(f'{color}*** {msg_type}: {banner.get("message", "<no message>")} ***{style_reset}')
 
     def _update_sdk_user_agent(self):
         # update the user agent to include the pybritive cli version
