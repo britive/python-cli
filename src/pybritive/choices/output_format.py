@@ -39,5 +39,5 @@ output_format_choices = click.Choice(
         'table-youtrack',
         'yaml',
     ],
-    case_sensitive=False
+    case_sensitive=False,
 )

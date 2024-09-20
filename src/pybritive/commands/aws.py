@@ -1,4 +1,5 @@
 import click
+
 from ..helpers.build_britive import build_britive
 from ..options.britive_options import britive_options
 
@@ -15,8 +16,4 @@ def aws():
 def console(ctx, profile, duration, browser):
     """Signs an AWS console federation URL with AWS access keys and opens the AWS console in a browser."""
 
-    ctx.obj.britive.aws_console(
-        profile=profile,
-        duration=duration,
-        browser=browser
-    )
+    ctx.obj.britive.aws_console(profile=profile, duration=duration, browser=browser)

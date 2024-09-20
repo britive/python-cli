@@ -1,9 +1,10 @@
 beautifulsoup4
 boto3
-britive>=2.25.0
+britive>=3.0.0
 certifi
 charset-normalizer
-click~=8.1.7
+click>=8.1.7
+colored
 cryptography
 google-cloud-compute
 jmespath
@@ -15,7 +16,6 @@ pytest
 python-dateutil
 PyYAML
 requests
-setuptools; python_version >= "3.12"
 tabulate
 toml
 twine

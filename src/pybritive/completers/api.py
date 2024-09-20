@@ -1,6 +1,8 @@
+import contextlib
+import inspect
+
 from britive.britive import Britive
 from click.shell_completion import CompletionItem
-import inspect
 
 
 def api_completer(ctx, param, incomplete):
@@ -31,10 +33,8 @@ def api_completer(ctx, param, incomplete):
 
         if method.lower().startswith(incomplete.lower()):
             doc_line = f'methods related to {var}'
-            try:
+            with contextlib.suppress(Exception):
                 doc_line = inspect.getdoc(getattr(b, var)).split('\n')[0]
-            except:
-                pass
             options.append(CompletionItem(method, help=doc_line))
 
     # dir only happens at non "base" levels
@@ -42,7 +42,7 @@ def api_completer(ctx, param, incomplete):
         # for each method in the class
         for func in dir(b):
             # filter out methods which are not callable and methods which are not "public"
-            if not callable(getattr(b, func)) or func.startswith("_"):
+            if not callable(getattr(b, func)) or func.startswith('_'):
                 continue
 
             method = f'{existing}.{func}'
@@ -51,12 +51,7 @@ def api_completer(ctx, param, incomplete):
             if method.lower().startswith(incomplete.lower()):
                 # grab the doc string if present
                 doc_line = f'no docs found for {method}'
-
-                try:
+                with contextlib.suppress(Exception):
                     doc_line = inspect.getdoc(getattr(b, func)).split('\n')[0]
-                except:
-                    pass
-
                 options.append(CompletionItem(method, help=doc_line))
     return options
-

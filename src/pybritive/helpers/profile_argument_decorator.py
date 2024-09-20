@@ -1,19 +1,19 @@
-import click
-import pkg_resources
-from ..completers.profile import profile_completer
-import os
 import json
+import os
 
+import click
 
-click_major_version = int(pkg_resources.get_distribution('click').version.split('.')[0])
+from ..completers.profile import profile_completer
 
 
 def validate_profile(ctx, param, value):
-    if 'KUBERNETES_EXEC_INFO' in os.environ:
+    if kube_exec_info := os.getenv('KUBERNETES_EXEC_INFO'):
         try:
-            return json.loads(os.getenv('KUBERNETES_EXEC_INFO'))['spec']['cluster']['config']['britive-profile']
-        except:
-            raise ValueError('unable to find britive profile via cluster exec-extension with name britive-profile')
+            return json.loads(kube_exec_info)['spec']['cluster']['config']['britive-profile']
+        except Exception as e:
+            raise ValueError(
+                'unable to find britive profile via cluster exec-extension with name britive-profile'
+            ) from e
     return value
 
 
@@ -23,16 +23,10 @@ def is_required():
 
 def click_smart_profile_argument(func):
     required = is_required()
-    kwargs = {
-        'required': required
-    }
+    kwargs = {'required': required}
     if not required:
         kwargs['callback'] = validate_profile
-    if click_major_version >= 8:
-        kwargs['shell_complete'] = profile_completer
+    kwargs['shell_complete'] = profile_completer
 
-    dec = click.argument(
-        'profile',
-        **kwargs
-    )
+    dec = click.argument('profile', **kwargs)
     return dec(func)

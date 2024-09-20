@@ -1,7 +1,8 @@
 import click
+
 from ..helpers.build_britive import build_britive
-from ..options.britive_options import britive_options
 from ..helpers.profile_argument_decorator import click_smart_profile_argument
+from ..options.britive_options import britive_options
 
 
 @click.command()
@@ -14,8 +15,4 @@ def checkin(ctx, console, profile_type, tenant, token, silent, passphrase, feder
     This command takes 1 required argument `PROFILE`. This should be a string representation of the profile
     that should be checked in. Format is `application name/environment name/profile name`.
     """
-    ctx.obj.britive.checkin(
-        profile=profile,
-        console=console,
-        profile_type=profile_type
-    )
+    ctx.obj.britive.checkin(profile=profile, console=console, profile_type=profile_type)

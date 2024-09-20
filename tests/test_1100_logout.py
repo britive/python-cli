@@ -1,5 +1,5 @@
-from pathlib import Path
 import os
+from pathlib import Path
 
 
 def test_logout(runner, cli):

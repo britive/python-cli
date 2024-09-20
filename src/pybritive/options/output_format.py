@@ -1,9 +1,11 @@
 import click
+
 from ..choices.output_format import output_format_choices
 
-
 option = click.option(
-    '--format', '-f', 'output_format',  # format is a reserved word so method parameter will be output_format
+    '--format',
+    '-f',
+    'output_format',  # format is a reserved word so method parameter will be output_format
     default=None,
     help=(
         'Display output format. Valid values are (json, yaml, csv, table[-format]). '
@@ -13,6 +15,5 @@ option = click.option(
     ),
     show_choices=True,
     type=output_format_choices,
-    show_default=True
-
+    show_default=True,
 )

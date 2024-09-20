@@ -1,9 +1,10 @@
 import hashlib
 import json
 import os
-from pathlib import Path
 import time
-from .encryption import StringEncryption, InvalidPassphraseException
+from pathlib import Path
+
+from .encryption import InvalidPassphraseException, StringEncryption
 
 
 class Cache:
@@ -14,24 +15,17 @@ class Cache:
         self.base_path = str(Path(home) / '.britive')
         self.path = str(Path(self.base_path) / 'pybritive.cache')  # handle os specific separators properly
         self.cache = {}
-        self.default_key_values = {
-            'profiles': [],
-            'awscredentialprocess': {},
-            'kube-exec': {},
-            'banners': {}
-        }
+        self.default_key_values = {'profiles': [], 'awscredentialprocess': {}, 'kube-exec': {}, 'banners': {}}
         self.load()
 
     def load(self):
         path = Path(self.path)
         if not path.is_file():  # cache file does not yet exist, create it as an empty file
             path.parent.mkdir(exist_ok=True, parents=True)
-            cache = {
-                'profiles': []
-            }
+            cache = {'profiles': []}
             path.write_text(json.dumps(cache, indent=2, default=str), encoding='utf-8')
 
-        with open(str(self.path), 'r', encoding='utf-8') as f:
+        with open(str(self.path), encoding='utf-8') as f:
             try:
                 self.cache = json.loads(f.read())
             except json.decoder.JSONDecodeError:
@@ -61,12 +55,7 @@ class Cache:
     def clear_kubeconfig(self):
         # delete kube config if it exists
         kubeconfig = Path(self.base_path) / 'kube' / 'config'
-        # kubeconfig.unlink(missing_ok=True)
-        # removed for now, for 3.7 compatability
-        try:
-            kubeconfig.unlink()
-        except FileNotFoundError:
-            pass
+        kubeconfig.unlink(missing_ok=True)
 
     def get_credentials(self, profile_name: str, mode: str = 'awscredentialprocess'):
         try:
@@ -105,10 +94,7 @@ class Cache:
         cached_banner_data = self.cache.get('banners', {}).get(tenant, {})
         cached_hash = cached_banner_data.get('hash', '')
         new_hash = hashlib.sha512(json.dumps(banner, default=str, sort_keys=True).encode('utf-8')).hexdigest()
-        self.cache['banners'][tenant] = {
-            'hash': new_hash,
-            'expires': int(time.time()) + (5 * 60)
-        }
+        self.cache['banners'][tenant] = {'hash': new_hash, 'expires': int(time.time()) + (5 * 60)}
         self.write()
 
         # return True if the hashes have changed, False is they are equal

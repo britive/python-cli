@@ -11,23 +11,31 @@ authors = [{name = "Britive Inc.", email = "support@britive.com"}]
 description = "A pure Python CLI for Britive"
 readme = "README.md"
 classifiers = [
-    "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
-    "Operating System :: OS Independent"
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Internet",
+    "Topic :: Security",
+    "Topic :: Utilities",
 ]
 license = {file = "LICENSE"}
-requires-python = ">= 3.7"
+requires-python = ">= 3.8"
 dependencies = [
-    "britive>=2.25.0",
-    "click",
-    "cryptography>=41.0.0",
+    "britive>=3.0.0",
+    "click>=8.1.7",
+    "colored",
+    "cryptography",
     "jmespath",
     "merge-args",
     "pyjwt",
     "python-dateutil",
     "PyYAML",
     "requests>=2.31.0",
-    "setuptools; python_version >= '3.12'",
     "tabulate",
     "toml"
 ]
@@ -63,10 +71,28 @@ where = ["src"]
 plugins.md013.line_length = 120
 plugins.md013.code_block_line_length = 120
 
-[tool.black]
+[tool.ruff]
+include = ["pyproject.toml", "src/**/*.py", "tests/*.py"]
 line-length = 120
-skip-string-normalization = true
 
-[tool.pylint]
-max-line-length = 120
-disable = "C0114,C0116,E0401"
+[tool.ruff.format]
+quote-style = "single"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+
+[tool.ruff.lint]
+select = [
+    "E", # pycodestyle
+    "F", # Pyflakes
+    "I", # isort
+    "PL", #pylint
+    "SIM", # flake8-simplify
+]
+
+[tool.ruff.lint.pylint]
+allow-magic-value-types = ["int", "str"]
+max-args = 16
+max-branches = 30
+max-returns = 8
+max-statements = 72

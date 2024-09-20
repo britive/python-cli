@@ -1,21 +1,23 @@
 import os
 import sys
+
 import click
-from .options.britive_options import britive_options
-from .commands.user import user as command_user
+
+from .commands.api import api as command_api
+from .commands.aws import aws as group_aws
+from .commands.cache import cache as group_cache
+from .commands.checkin import checkin as command_checkin
+from .commands.checkout import checkout as command_checkout
+from .commands.clear import clear as group_clear
 from .commands.configure import configure as group_configure
 from .commands.login import login as command_login
 from .commands.logout import logout as command_logout
 from .commands.ls import ls as group_ls
-from .commands.checkout import checkout as command_checkout
-from .commands.checkin import checkin as command_checkin
-from .commands.secret import secret as group_secret
-from .commands.cache import cache as group_cache
 from .commands.request import request as group_request
-from .commands.clear import clear as group_clear
-from .commands.api import api as command_api
+from .commands.secret import secret as group_secret
 from .commands.ssh import ssh as group_ssh
-from .commands.aws import aws as group_aws
+from .commands.user import user as command_user
+from .options.britive_options import britive_options
 
 
 def safe_cli():
@@ -55,5 +57,5 @@ cli.add_command(group_ssh)
 cli.add_command(group_aws)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     safe_cli()

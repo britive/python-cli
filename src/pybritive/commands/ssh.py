@@ -1,4 +1,5 @@
 import click
+
 from ..helpers.build_britive import build_britive
 from ..options.britive_options import britive_options
 
@@ -23,7 +24,7 @@ def gcp():
     """Facilitates connecting, via SSH, to private GCP Compute Instances via Identity Aware Proxy and OS Login/SSH Metadata.
 
     This command generally should be called from within an SSH config as opposed to being directly invoked.
-    """
+    """  # noqa: E501
     pass
 
 
@@ -33,10 +34,7 @@ def gcp():
 def config(ctx, push_public_key, key_source):
     """Prints the required Match directive to add to an OpenSSH config file (normally located at ~/.ssh/config.)"""
 
-    ctx.obj.britive.ssh_aws_openssh_config(
-        push_public_key=push_public_key,
-        key_source=key_source
-    )
+    ctx.obj.britive.ssh_aws_openssh_config(push_public_key=push_public_key, key_source=key_source)
 
 
 @aws.command()
@@ -53,20 +51,17 @@ def ssm_proxy(ctx, username, hostname, push_public_key, port_number, key_source)
         hostname=hostname,
         push_public_key=push_public_key,
         port_number=port_number,
-        key_source=key_source
+        key_source=key_source,
     )
 
 
 @gcp.command()
 @build_britive
 @britive_options(names='ssh_push_public_key,ssh_key_source')
-def config(ctx, push_public_key, key_source):
+def config(ctx, push_public_key, key_source):  # noqa: F811
     """Prints the required Match directive to add to an OpenSSH config file (normally located at ~/.ssh/config.)"""
 
-    ctx.obj.britive.ssh_gcp_openssh_config(
-        push_public_key=push_public_key,
-        key_source=key_source
-    )
+    ctx.obj.britive.ssh_gcp_openssh_config(push_public_key=push_public_key, key_source=key_source)
 
 
 @gcp.command()
@@ -83,5 +78,5 @@ def identity_aware_proxy(ctx, username, hostname, push_public_key, port_number, 
         hostname=hostname,
         push_public_key=push_public_key,
         port_number=port_number,
-        key_source=key_source
+        key_source=key_source,
     )

@@ -3,14 +3,15 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+*.sublime-*
+.DS_Store
+.idea*
 .in
 .out
-.idea*
-testing-variables.txt
-.DS_Store
-site/
 lock-test.py
+site/
 test.py
+testing-variables.txt
 
 # IDE
 .vscode/
