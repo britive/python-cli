@@ -206,7 +206,7 @@
 <p>PyBritive is intended to be used as a CLI application for communicating with the Britive Platform.</p>
 <h2 id="requirements">Requirements</h2>
 <ul>
-<li>Python 3.7 or higher</li>
+<li>Python 3.8 or higher</li>
 <li>Active Britive tenant (or nothing is really going to work)</li>
 </ul>
 <h2 id="installation">Installation</h2>
@@ -285,11 +285,10 @@ ca_bundle=/location/of/the/CA_BUNDLE_FILE.pem
 <h2 id="tenant-configuration">Tenant Configuration</h2>
 <p>Before <code>pybritive</code> can connect to a Britive tenant, it needs to know some details about that tenant.
 This is where <code>pybritive configure</code> will help us.</p>
-<p>There are 2 ways to tell <code>pybritive</code> about tenants.</p>
-<ol>
-<li><code>pybritive configure import</code>: this will import an existing configuration from the Node.js version of the Britive CLI.</li>
+<p>There is an easy way to tell <code>pybritive</code> about tenants.</p>
+<ul>
 <li><code>pybritive configure tenant</code>: This will prompt (or optionally the values can be passed via flags) for tenant details.</li>
-</ol>
+</ul>
 <p>An alias for a tenant can be created in case more than 1 tenant is configured for use. This may be the case for admins
 who may have access to an EA and GA tenant.</p>
 <h2 id="tenant-selection-logic">Tenant Selection Logic</h2>
@@ -911,7 +910,7 @@ meant for administrative functionality.</p>
 </tr>
 <tr>
 <td><code>--format</code>, <code>-f</code></td>
-<td>choice (<code>json</code> &#x7C; <code>yaml</code> &#x7C; <code>csv</code> &#x7C; <code>table</code> &#x7C; <code>list</code> &#x7C; <code>table-plain</code> &#x7C; <code>table-simple</code> &#x7C; <code>table-github</code> &#x7C; <code>table-grid</code> &#x7C; <code>table-simple_grid</code> &#x7C; <code>table-rounded_grid</code> &#x7C; <code>table-double_grid</code> &#x7C; <code>table-fancy_grid</code> &#x7C; <code>table-outline</code> &#x7C; <code>table-simple_outline</code> &#x7C; <code>table-rounded_outline</code> &#x7C; <code>table-double_outline</code> &#x7C; <code>table-fancy_outline</code> &#x7C; <code>table-pipe</code> &#x7C; <code>table-orgtbl</code> &#x7C; <code>table-jira</code> &#x7C; <code>table-presto</code> &#x7C; <code>table-pretty</code> &#x7C; <code>table-psql</code> &#x7C; <code>table-rst</code> &#x7C; <code>table-mediawiki</code> &#x7C; <code>table-moinmoin</code> &#x7C; <code>table-youtrack</code> &#x7C; <code>table-html</code> &#x7C; <code>table-unsafehtml</code> &#x7C; <code>table-latex</code> &#x7C; <code>table-latex_raw</code> &#x7C; <code>table-latex_booktabs</code> &#x7C; <code>table-latex_longtable</code> &#x7C; <code>table-textile</code> &#x7C; <code>table-tsv</code>)</td>
+<td>choice (<code>csv</code> &#x7C; <code>json</code> &#x7C; <code>list</code> &#x7C; <code>table</code> &#x7C; <code>table-double_grid</code> &#x7C; <code>table-double_outline</code> &#x7C; <code>table-fancy_grid</code> &#x7C; <code>table-fancy_outline</code> &#x7C; <code>table-github</code> &#x7C; <code>table-grid</code> &#x7C; <code>table-html</code> &#x7C; <code>table-jira</code> &#x7C; <code>table-latex</code> &#x7C; <code>table-latex_booktabs</code> &#x7C; <code>table-latex_longtable</code> &#x7C; <code>table-latex_raw</code> &#x7C; <code>table-mediawiki</code> &#x7C; <code>table-moinmoin</code> &#x7C; <code>table-orgtbl</code> &#x7C; <code>table-outline</code> &#x7C; <code>table-pipe</code> &#x7C; <code>table-plain</code> &#x7C; <code>table-presto</code> &#x7C; <code>table-pretty</code> &#x7C; <code>table-psql</code> &#x7C; <code>table-rounded_grid</code> &#x7C; <code>table-rounded_outline</code> &#x7C; <code>table-rst</code> &#x7C; <code>table-simple</code> &#x7C; <code>table-simple_grid</code> &#x7C; <code>table-simple_outline</code> &#x7C; <code>table-textile</code> &#x7C; <code>table-tsv</code> &#x7C; <code>table-unsafehtml</code> &#x7C; <code>table-youtrack</code> &#x7C; <code>yaml</code>)</td>
 <td>Display output format. Valid values are (json, yaml, csv, table[-format]). If <code>table</code> is used an optional table format can be specified as <code>table-format</code>. Valid table formats can be found here: https://github.com/astanin/python-tabulate#table_format. Example: <code>table-pretty</code>.</td>
 <td>None</td>
 </tr>
@@ -1011,7 +1010,7 @@ meant for administrative functionality.</p>
 </tr>
 <tr>
 <td><code>--browser</code></td>
-<td>choice (<code>mozilla</code> &#x7C; <code>firefox</code> &#x7C; <code>windows-default</code> &#x7C; <code>macosx</code> &#x7C; <code>safari</code> &#x7C; <code>chrome</code> &#x7C; <code>chromium</code> &#x7C; <code>open -a /Applications/Firefox\ Developer\ Edition.app %s</code>)</td>
+<td>choice (<code>chrome</code> &#x7C; <code>chromium</code> &#x7C; <code>firefox</code> &#x7C; <code>macosx</code> &#x7C; <code>mozilla</code> &#x7C; <code>safari</code> &#x7C; <code>windows-default</code> &#x7C; <code>open -a /Applications/Firefox\ Developer\ Edition.app %s</code>)</td>
 <td>The browser to use when opening a URL from the PyBritive CLI. Defaults to None which indicates the standard webbrowser selection process should be used. Can also source from PYBRITIVE_BROWSER.</td>
 <td>None</td>
 </tr>
@@ -1292,18 +1291,18 @@ that should be checked out. Format is <code>application name/environment name/pr
 <tr>
 <td><code>--justification</code>, <code>-j</code></td>
 <td>text</td>
-<td>Justification for the checkout approval process, if the profile checkout requires approval.</td>
+<td>Justification for the approval process, if a profile checkout or secret access requires approval.</td>
 <td>None</td>
 </tr>
 <tr>
 <td><code>--otp</code>, <code>-o</code></td>
 <td>text</td>
-<td>OTP to checkout a profile, if the profile checkout requires MFA.</td>
+<td>OTP to checkout a profile, download a secret, or view a secret, if MFA is required.</td>
 <td>None</td>
 </tr>
 <tr>
 <td><code>--mode</code>, <code>-m</code></td>
-<td>choice (<code>text</code> &#x7C; <code>json</code> &#x7C; <code>env</code> &#x7C; <code>integrate</code> &#x7C; <code>env-nix</code> &#x7C; <code>env-wincmd</code> &#x7C; <code>env-winps</code> &#x7C; <code>awscredentialprocess</code> &#x7C; <code>azlogin</code> &#x7C; <code>azps</code> &#x7C; <code>browser</code> &#x7C; <code>gcloudauth</code> &#x7C; <code>console</code> &#x7C; <code>browser-mozilla</code> &#x7C; <code>browser-firefox</code> &#x7C; <code>browser-windows-default</code> &#x7C; <code>browser-macosx</code> &#x7C; <code>browser-safari</code> &#x7C; <code>browser-chrome</code> &#x7C; <code>browser-chromium</code> &#x7C; <code>kube-exec</code> &#x7C; <code>gcloudauthexec</code> &#x7C; <code>os-oclogin</code> &#x7C; <code>os-ocloginexec</code>)</td>
+<td>choice (<code>awscredentialprocess</code> &#x7C; <code>azlogin</code> &#x7C; <code>azps</code> &#x7C; <code>browser</code> &#x7C; <code>browser-chrome</code> &#x7C; <code>browser-chromium</code> &#x7C; <code>browser-firefox</code> &#x7C; <code>browser-macosx</code> &#x7C; <code>browser-mozilla</code> &#x7C; <code>browser-safari</code> &#x7C; <code>browser-windows-default</code> &#x7C; <code>console</code> &#x7C; <code>env</code> &#x7C; <code>env-nix</code> &#x7C; <code>env-wincmd</code> &#x7C; <code>env-winps</code> &#x7C; <code>gcloudauth</code> &#x7C; <code>gcloudauthexec</code> &#x7C; <code>integrate</code> &#x7C; <code>json</code> &#x7C; <code>kube-exec</code> &#x7C; <code>os-oclogin</code> &#x7C; <code>os-ocloginexec</code> &#x7C; <code>text</code>)</td>
 <td>The way in which the checked out credentials are presented. <code>integrate</code> will place the credentials into the cloud providers local credential file (AWS only). Value <code>env</code> can optionally include terminal specific options for setting environment variables (example: env-nix for Linux/Mac, env-wincmd for Windows Command Prompt, env-winps for Windows PowerShell).<code>gcloudauth</code> will save the generated key file/credentials to the pybritive config directory and generate a gcloud auth command which can be directly evaluated. Will default to <code>json</code> if not provided.</td>
 <td>None</td>
 </tr>
@@ -1541,7 +1540,6 @@ that should be checked out. Format is <code>application name/environment name/pr
 <p><strong>Subcommands</strong></p>
 <ul>
 <li><em><a href="#pybritive-configure-global">global</a></em>: Configures global level settings for the PyBritive CLI.</li>
-<li><em><a href="#pybritive-configure-import">import</a></em>: Import an existing configuration from the Node.js/NPM version of the Britive CLI.</li>
 <li><em><a href="#pybritive-configure-tenant">tenant</a></em>: Configures tenant level settings for the PyBritive CLI.</li>
 <li><em><a href="#pybritive-configure-update">update</a></em>: Provides a mechanism to directly update any section/field/value in the config file.</li>
 </ul>
@@ -1570,7 +1568,7 @@ that should be checked out. Format is <code>application name/environment name/pr
 </tr>
 <tr>
 <td><code>--format</code>, <code>-f</code></td>
-<td>choice (<code>json</code> &#x7C; <code>yaml</code> &#x7C; <code>csv</code> &#x7C; <code>table</code> &#x7C; <code>list</code> &#x7C; <code>table-plain</code> &#x7C; <code>table-simple</code> &#x7C; <code>table-github</code> &#x7C; <code>table-grid</code> &#x7C; <code>table-simple_grid</code> &#x7C; <code>table-rounded_grid</code> &#x7C; <code>table-double_grid</code> &#x7C; <code>table-fancy_grid</code> &#x7C; <code>table-outline</code> &#x7C; <code>table-simple_outline</code> &#x7C; <code>table-rounded_outline</code> &#x7C; <code>table-double_outline</code> &#x7C; <code>table-fancy_outline</code> &#x7C; <code>table-pipe</code> &#x7C; <code>table-orgtbl</code> &#x7C; <code>table-jira</code> &#x7C; <code>table-presto</code> &#x7C; <code>table-pretty</code> &#x7C; <code>table-psql</code> &#x7C; <code>table-rst</code> &#x7C; <code>table-mediawiki</code> &#x7C; <code>table-moinmoin</code> &#x7C; <code>table-youtrack</code> &#x7C; <code>table-html</code> &#x7C; <code>table-unsafehtml</code> &#x7C; <code>table-latex</code> &#x7C; <code>table-latex_raw</code> &#x7C; <code>table-latex_booktabs</code> &#x7C; <code>table-latex_longtable</code> &#x7C; <code>table-textile</code> &#x7C; <code>table-tsv</code>)</td>
+<td>choice (<code>csv</code> &#x7C; <code>json</code> &#x7C; <code>list</code> &#x7C; <code>table</code> &#x7C; <code>table-double_grid</code> &#x7C; <code>table-double_outline</code> &#x7C; <code>table-fancy_grid</code> &#x7C; <code>table-fancy_outline</code> &#x7C; <code>table-github</code> &#x7C; <code>table-grid</code> &#x7C; <code>table-html</code> &#x7C; <code>table-jira</code> &#x7C; <code>table-latex</code> &#x7C; <code>table-latex_booktabs</code> &#x7C; <code>table-latex_longtable</code> &#x7C; <code>table-latex_raw</code> &#x7C; <code>table-mediawiki</code> &#x7C; <code>table-moinmoin</code> &#x7C; <code>table-orgtbl</code> &#x7C; <code>table-outline</code> &#x7C; <code>table-pipe</code> &#x7C; <code>table-plain</code> &#x7C; <code>table-presto</code> &#x7C; <code>table-pretty</code> &#x7C; <code>table-psql</code> &#x7C; <code>table-rounded_grid</code> &#x7C; <code>table-rounded_outline</code> &#x7C; <code>table-rst</code> &#x7C; <code>table-simple</code> &#x7C; <code>table-simple_grid</code> &#x7C; <code>table-simple_outline</code> &#x7C; <code>table-textile</code> &#x7C; <code>table-tsv</code> &#x7C; <code>table-unsafehtml</code> &#x7C; <code>table-youtrack</code> &#x7C; <code>yaml</code>)</td>
 <td>Display output format. Valid values are (json, yaml, csv, table[-format]). If <code>table</code> is used an optional table format can be specified as <code>table-format</code>. Valid table formats can be found here: https://github.com/astanin/python-tabulate#table_format. Example: <code>table-pretty</code>.</td>
 <td>None</td>
 </tr>
@@ -1582,50 +1580,8 @@ that should be checked out. Format is <code>application name/environment name/pr
 </tr>
 <tr>
 <td><code>--backend</code>, <code>-b</code></td>
-<td>choice (<code>file</code> &#x7C; <code>encrypted-file</code>)</td>
+<td>choice (<code>encrypted-file</code> &#x7C; <code>file</code>)</td>
 <td>The backend used to store temporary access tokens to authenticate against the Britive tenant.</td>
-<td>None</td>
-</tr>
-<tr>
-<td><code>--help</code></td>
-<td>boolean</td>
-<td>Show this message and exit.</td>
-<td><code>False</code></td>
-</tr>
-</tbody>
-</table>
-<h5 id="pybritive-configure-import">pybritive configure import</h5>
-<p>Import an existing configuration from the Node.js/NPM version of the Britive CLI.</p>
-<p><strong>Usage:</strong></p>
-<pre><code class="language-text">pybritive configure import [OPTIONS]
-</code></pre>
-<p><strong>Options:</strong></p>
-<table>
-<thead>
-<tr>
-<th>Name</th>
-<th>Type</th>
-<th>Description</th>
-<th>Default</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>--silent</code>, <code>-s</code></td>
-<td>boolean</td>
-<td>Enable silent mode.</td>
-<td><code>False</code></td>
-</tr>
-<tr>
-<td><code>-T</code>, <code>--token</code></td>
-<td>text</td>
-<td>API token.</td>
-<td>None</td>
-</tr>
-<tr>
-<td><code>--federation-provider</code>, <code>-P</code></td>
-<td>text</td>
-<td>Use a federation provider available in the Britive Python SDK for auto token creation. See CLI documentation at https://britive.github.io/python-cli/ for acceptable values.</td>
 <td>None</td>
 </tr>
 <tr>
@@ -1667,7 +1623,7 @@ that should be checked out. Format is <code>application name/environment name/pr
 </tr>
 <tr>
 <td><code>--format</code>, <code>-f</code></td>
-<td>choice (<code>json</code> &#x7C; <code>yaml</code> &#x7C; <code>csv</code> &#x7C; <code>table</code> &#x7C; <code>list</code> &#x7C; <code>table-plain</code> &#x7C; <code>table-simple</code> &#x7C; <code>table-github</code> &#x7C; <code>table-grid</code> &#x7C; <code>table-simple_grid</code> &#x7C; <code>table-rounded_grid</code> &#x7C; <code>table-double_grid</code> &#x7C; <code>table-fancy_grid</code> &#x7C; <code>table-outline</code> &#x7C; <code>table-simple_outline</code> &#x7C; <code>table-rounded_outline</code> &#x7C; <code>table-double_outline</code> &#x7C; <code>table-fancy_outline</code> &#x7C; <code>table-pipe</code> &#x7C; <code>table-orgtbl</code> &#x7C; <code>table-jira</code> &#x7C; <code>table-presto</code> &#x7C; <code>table-pretty</code> &#x7C; <code>table-psql</code> &#x7C; <code>table-rst</code> &#x7C; <code>table-mediawiki</code> &#x7C; <code>table-moinmoin</code> &#x7C; <code>table-youtrack</code> &#x7C; <code>table-html</code> &#x7C; <code>table-unsafehtml</code> &#x7C; <code>table-latex</code> &#x7C; <code>table-latex_raw</code> &#x7C; <code>table-latex_booktabs</code> &#x7C; <code>table-latex_longtable</code> &#x7C; <code>table-textile</code> &#x7C; <code>table-tsv</code>)</td>
+<td>choice (<code>csv</code> &#x7C; <code>json</code> &#x7C; <code>list</code> &#x7C; <code>table</code> &#x7C; <code>table-double_grid</code> &#x7C; <code>table-double_outline</code> &#x7C; <code>table-fancy_grid</code> &#x7C; <code>table-fancy_outline</code> &#x7C; <code>table-github</code> &#x7C; <code>table-grid</code> &#x7C; <code>table-html</code> &#x7C; <code>table-jira</code> &#x7C; <code>table-latex</code> &#x7C; <code>table-latex_booktabs</code> &#x7C; <code>table-latex_longtable</code> &#x7C; <code>table-latex_raw</code> &#x7C; <code>table-mediawiki</code> &#x7C; <code>table-moinmoin</code> &#x7C; <code>table-orgtbl</code> &#x7C; <code>table-outline</code> &#x7C; <code>table-pipe</code> &#x7C; <code>table-plain</code> &#x7C; <code>table-presto</code> &#x7C; <code>table-pretty</code> &#x7C; <code>table-psql</code> &#x7C; <code>table-rounded_grid</code> &#x7C; <code>table-rounded_outline</code> &#x7C; <code>table-rst</code> &#x7C; <code>table-simple</code> &#x7C; <code>table-simple_grid</code> &#x7C; <code>table-simple_outline</code> &#x7C; <code>table-textile</code> &#x7C; <code>table-tsv</code> &#x7C; <code>table-unsafehtml</code> &#x7C; <code>table-youtrack</code> &#x7C; <code>yaml</code>)</td>
 <td>Display output format. Valid values are (json, yaml, csv, table[-format]). If <code>table</code> is used an optional table format can be specified as <code>table-format</code>. Valid table formats can be found here: https://github.com/astanin/python-tabulate#table_format. Example: <code>table-pretty</code>.</td>
 <td>None</td>
 </tr>
@@ -1770,7 +1726,7 @@ that should be checked out. Format is <code>application name/environment name/pr
 </tr>
 <tr>
 <td><code>--browser</code></td>
-<td>choice (<code>mozilla</code> &#x7C; <code>firefox</code> &#x7C; <code>windows-default</code> &#x7C; <code>macosx</code> &#x7C; <code>safari</code> &#x7C; <code>chrome</code> &#x7C; <code>chromium</code> &#x7C; <code>open -a /Applications/Firefox\ Developer\ Edition.app %s</code>)</td>
+<td>choice (<code>chrome</code> &#x7C; <code>chromium</code> &#x7C; <code>firefox</code> &#x7C; <code>macosx</code> &#x7C; <code>mozilla</code> &#x7C; <code>safari</code> &#x7C; <code>windows-default</code> &#x7C; <code>open -a /Applications/Firefox\ Developer\ Edition.app %s</code>)</td>
 <td>The browser to use when opening a URL from the PyBritive CLI. Defaults to None which indicates the standard webbrowser selection process should be used. Can also source from PYBRITIVE_BROWSER.</td>
 <td>None</td>
 </tr>
@@ -1877,7 +1833,7 @@ that should be checked out. Format is <code>application name/environment name/pr
 <tbody>
 <tr>
 <td><code>--format</code>, <code>-f</code></td>
-<td>choice (<code>json</code> &#x7C; <code>yaml</code> &#x7C; <code>csv</code> &#x7C; <code>table</code> &#x7C; <code>list</code> &#x7C; <code>table-plain</code> &#x7C; <code>table-simple</code> &#x7C; <code>table-github</code> &#x7C; <code>table-grid</code> &#x7C; <code>table-simple_grid</code> &#x7C; <code>table-rounded_grid</code> &#x7C; <code>table-double_grid</code> &#x7C; <code>table-fancy_grid</code> &#x7C; <code>table-outline</code> &#x7C; <code>table-simple_outline</code> &#x7C; <code>table-rounded_outline</code> &#x7C; <code>table-double_outline</code> &#x7C; <code>table-fancy_outline</code> &#x7C; <code>table-pipe</code> &#x7C; <code>table-orgtbl</code> &#x7C; <code>table-jira</code> &#x7C; <code>table-presto</code> &#x7C; <code>table-pretty</code> &#x7C; <code>table-psql</code> &#x7C; <code>table-rst</code> &#x7C; <code>table-mediawiki</code> &#x7C; <code>table-moinmoin</code> &#x7C; <code>table-youtrack</code> &#x7C; <code>table-html</code> &#x7C; <code>table-unsafehtml</code> &#x7C; <code>table-latex</code> &#x7C; <code>table-latex_raw</code> &#x7C; <code>table-latex_booktabs</code> &#x7C; <code>table-latex_longtable</code> &#x7C; <code>table-textile</code> &#x7C; <code>table-tsv</code>)</td>
+<td>choice (<code>csv</code> &#x7C; <code>json</code> &#x7C; <code>list</code> &#x7C; <code>table</code> &#x7C; <code>table-double_grid</code> &#x7C; <code>table-double_outline</code> &#x7C; <code>table-fancy_grid</code> &#x7C; <code>table-fancy_outline</code> &#x7C; <code>table-github</code> &#x7C; <code>table-grid</code> &#x7C; <code>table-html</code> &#x7C; <code>table-jira</code> &#x7C; <code>table-latex</code> &#x7C; <code>table-latex_booktabs</code> &#x7C; <code>table-latex_longtable</code> &#x7C; <code>table-latex_raw</code> &#x7C; <code>table-mediawiki</code> &#x7C; <code>table-moinmoin</code> &#x7C; <code>table-orgtbl</code> &#x7C; <code>table-outline</code> &#x7C; <code>table-pipe</code> &#x7C; <code>table-plain</code> &#x7C; <code>table-presto</code> &#x7C; <code>table-pretty</code> &#x7C; <code>table-psql</code> &#x7C; <code>table-rounded_grid</code> &#x7C; <code>table-rounded_outline</code> &#x7C; <code>table-rst</code> &#x7C; <code>table-simple</code> &#x7C; <code>table-simple_grid</code> &#x7C; <code>table-simple_outline</code> &#x7C; <code>table-textile</code> &#x7C; <code>table-tsv</code> &#x7C; <code>table-unsafehtml</code> &#x7C; <code>table-youtrack</code> &#x7C; <code>yaml</code>)</td>
 <td>Display output format. Valid values are (json, yaml, csv, table[-format]). If <code>table</code> is used an optional table format can be specified as <code>table-format</code>. Valid table formats can be found here: https://github.com/astanin/python-tabulate#table_format. Example: <code>table-pretty</code>.</td>
 <td>None</td>
 </tr>
@@ -1937,7 +1893,7 @@ that should be checked out. Format is <code>application name/environment name/pr
 <tbody>
 <tr>
 <td><code>--format</code>, <code>-f</code></td>
-<td>choice (<code>json</code> &#x7C; <code>yaml</code> &#x7C; <code>csv</code> &#x7C; <code>table</code> &#x7C; <code>list</code> &#x7C; <code>table-plain</code> &#x7C; <code>table-simple</code> &#x7C; <code>table-github</code> &#x7C; <code>table-grid</code> &#x7C; <code>table-simple_grid</code> &#x7C; <code>table-rounded_grid</code> &#x7C; <code>table-double_grid</code> &#x7C; <code>table-fancy_grid</code> &#x7C; <code>table-outline</code> &#x7C; <code>table-simple_outline</code> &#x7C; <code>table-rounded_outline</code> &#x7C; <code>table-double_outline</code> &#x7C; <code>table-fancy_outline</code> &#x7C; <code>table-pipe</code> &#x7C; <code>table-orgtbl</code> &#x7C; <code>table-jira</code> &#x7C; <code>table-presto</code> &#x7C; <code>table-pretty</code> &#x7C; <code>table-psql</code> &#x7C; <code>table-rst</code> &#x7C; <code>table-mediawiki</code> &#x7C; <code>table-moinmoin</code> &#x7C; <code>table-youtrack</code> &#x7C; <code>table-html</code> &#x7C; <code>table-unsafehtml</code> &#x7C; <code>table-latex</code> &#x7C; <code>table-latex_raw</code> &#x7C; <code>table-latex_booktabs</code> &#x7C; <code>table-latex_longtable</code> &#x7C; <code>table-textile</code> &#x7C; <code>table-tsv</code>)</td>
+<td>choice (<code>csv</code> &#x7C; <code>json</code> &#x7C; <code>list</code> &#x7C; <code>table</code> &#x7C; <code>table-double_grid</code> &#x7C; <code>table-double_outline</code> &#x7C; <code>table-fancy_grid</code> &#x7C; <code>table-fancy_outline</code> &#x7C; <code>table-github</code> &#x7C; <code>table-grid</code> &#x7C; <code>table-html</code> &#x7C; <code>table-jira</code> &#x7C; <code>table-latex</code> &#x7C; <code>table-latex_booktabs</code> &#x7C; <code>table-latex_longtable</code> &#x7C; <code>table-latex_raw</code> &#x7C; <code>table-mediawiki</code> &#x7C; <code>table-moinmoin</code> &#x7C; <code>table-orgtbl</code> &#x7C; <code>table-outline</code> &#x7C; <code>table-pipe</code> &#x7C; <code>table-plain</code> &#x7C; <code>table-presto</code> &#x7C; <code>table-pretty</code> &#x7C; <code>table-psql</code> &#x7C; <code>table-rounded_grid</code> &#x7C; <code>table-rounded_outline</code> &#x7C; <code>table-rst</code> &#x7C; <code>table-simple</code> &#x7C; <code>table-simple_grid</code> &#x7C; <code>table-simple_outline</code> &#x7C; <code>table-textile</code> &#x7C; <code>table-tsv</code> &#x7C; <code>table-unsafehtml</code> &#x7C; <code>table-youtrack</code> &#x7C; <code>yaml</code>)</td>
 <td>Display output format. Valid values are (json, yaml, csv, table[-format]). If <code>table</code> is used an optional table format can be specified as <code>table-format</code>. Valid table formats can be found here: https://github.com/astanin/python-tabulate#table_format. Example: <code>table-pretty</code>.</td>
 <td>None</td>
 </tr>
@@ -1997,7 +1953,7 @@ that should be checked out. Format is <code>application name/environment name/pr
 <tbody>
 <tr>
 <td><code>--format</code>, <code>-f</code></td>
-<td>choice (<code>json</code> &#x7C; <code>yaml</code> &#x7C; <code>csv</code> &#x7C; <code>table</code> &#x7C; <code>list</code> &#x7C; <code>table-plain</code> &#x7C; <code>table-simple</code> &#x7C; <code>table-github</code> &#x7C; <code>table-grid</code> &#x7C; <code>table-simple_grid</code> &#x7C; <code>table-rounded_grid</code> &#x7C; <code>table-double_grid</code> &#x7C; <code>table-fancy_grid</code> &#x7C; <code>table-outline</code> &#x7C; <code>table-simple_outline</code> &#x7C; <code>table-rounded_outline</code> &#x7C; <code>table-double_outline</code> &#x7C; <code>table-fancy_outline</code> &#x7C; <code>table-pipe</code> &#x7C; <code>table-orgtbl</code> &#x7C; <code>table-jira</code> &#x7C; <code>table-presto</code> &#x7C; <code>table-pretty</code> &#x7C; <code>table-psql</code> &#x7C; <code>table-rst</code> &#x7C; <code>table-mediawiki</code> &#x7C; <code>table-moinmoin</code> &#x7C; <code>table-youtrack</code> &#x7C; <code>table-html</code> &#x7C; <code>table-unsafehtml</code> &#x7C; <code>table-latex</code> &#x7C; <code>table-latex_raw</code> &#x7C; <code>table-latex_booktabs</code> &#x7C; <code>table-latex_longtable</code> &#x7C; <code>table-textile</code> &#x7C; <code>table-tsv</code>)</td>
+<td>choice (<code>csv</code> &#x7C; <code>json</code> &#x7C; <code>list</code> &#x7C; <code>table</code> &#x7C; <code>table-double_grid</code> &#x7C; <code>table-double_outline</code> &#x7C; <code>table-fancy_grid</code> &#x7C; <code>table-fancy_outline</code> &#x7C; <code>table-github</code> &#x7C; <code>table-grid</code> &#x7C; <code>table-html</code> &#x7C; <code>table-jira</code> &#x7C; <code>table-latex</code> &#x7C; <code>table-latex_booktabs</code> &#x7C; <code>table-latex_longtable</code> &#x7C; <code>table-latex_raw</code> &#x7C; <code>table-mediawiki</code> &#x7C; <code>table-moinmoin</code> &#x7C; <code>table-orgtbl</code> &#x7C; <code>table-outline</code> &#x7C; <code>table-pipe</code> &#x7C; <code>table-plain</code> &#x7C; <code>table-presto</code> &#x7C; <code>table-pretty</code> &#x7C; <code>table-psql</code> &#x7C; <code>table-rounded_grid</code> &#x7C; <code>table-rounded_outline</code> &#x7C; <code>table-rst</code> &#x7C; <code>table-simple</code> &#x7C; <code>table-simple_grid</code> &#x7C; <code>table-simple_outline</code> &#x7C; <code>table-textile</code> &#x7C; <code>table-tsv</code> &#x7C; <code>table-unsafehtml</code> &#x7C; <code>table-youtrack</code> &#x7C; <code>yaml</code>)</td>
 <td>Display output format. Valid values are (json, yaml, csv, table[-format]). If <code>table</code> is used an optional table format can be specified as <code>table-format</code>. Valid table formats can be found here: https://github.com/astanin/python-tabulate#table_format. Example: <code>table-pretty</code>.</td>
 <td>None</td>
 </tr>
@@ -2069,7 +2025,7 @@ that should be checked out. Format is <code>application name/environment name/pr
 </tr>
 <tr>
 <td><code>--format</code>, <code>-f</code></td>
-<td>choice (<code>json</code> &#x7C; <code>yaml</code> &#x7C; <code>csv</code> &#x7C; <code>table</code> &#x7C; <code>list</code> &#x7C; <code>table-plain</code> &#x7C; <code>table-simple</code> &#x7C; <code>table-github</code> &#x7C; <code>table-grid</code> &#x7C; <code>table-simple_grid</code> &#x7C; <code>table-rounded_grid</code> &#x7C; <code>table-double_grid</code> &#x7C; <code>table-fancy_grid</code> &#x7C; <code>table-outline</code> &#x7C; <code>table-simple_outline</code> &#x7C; <code>table-rounded_outline</code> &#x7C; <code>table-double_outline</code> &#x7C; <code>table-fancy_outline</code> &#x7C; <code>table-pipe</code> &#x7C; <code>table-orgtbl</code> &#x7C; <code>table-jira</code> &#x7C; <code>table-presto</code> &#x7C; <code>table-pretty</code> &#x7C; <code>table-psql</code> &#x7C; <code>table-rst</code> &#x7C; <code>table-mediawiki</code> &#x7C; <code>table-moinmoin</code> &#x7C; <code>table-youtrack</code> &#x7C; <code>table-html</code> &#x7C; <code>table-unsafehtml</code> &#x7C; <code>table-latex</code> &#x7C; <code>table-latex_raw</code> &#x7C; <code>table-latex_booktabs</code> &#x7C; <code>table-latex_longtable</code> &#x7C; <code>table-textile</code> &#x7C; <code>table-tsv</code>)</td>
+<td>choice (<code>csv</code> &#x7C; <code>json</code> &#x7C; <code>list</code> &#x7C; <code>table</code> &#x7C; <code>table-double_grid</code> &#x7C; <code>table-double_outline</code> &#x7C; <code>table-fancy_grid</code> &#x7C; <code>table-fancy_outline</code> &#x7C; <code>table-github</code> &#x7C; <code>table-grid</code> &#x7C; <code>table-html</code> &#x7C; <code>table-jira</code> &#x7C; <code>table-latex</code> &#x7C; <code>table-latex_booktabs</code> &#x7C; <code>table-latex_longtable</code> &#x7C; <code>table-latex_raw</code> &#x7C; <code>table-mediawiki</code> &#x7C; <code>table-moinmoin</code> &#x7C; <code>table-orgtbl</code> &#x7C; <code>table-outline</code> &#x7C; <code>table-pipe</code> &#x7C; <code>table-plain</code> &#x7C; <code>table-presto</code> &#x7C; <code>table-pretty</code> &#x7C; <code>table-psql</code> &#x7C; <code>table-rounded_grid</code> &#x7C; <code>table-rounded_outline</code> &#x7C; <code>table-rst</code> &#x7C; <code>table-simple</code> &#x7C; <code>table-simple_grid</code> &#x7C; <code>table-simple_outline</code> &#x7C; <code>table-textile</code> &#x7C; <code>table-tsv</code> &#x7C; <code>table-unsafehtml</code> &#x7C; <code>table-youtrack</code> &#x7C; <code>yaml</code>)</td>
 <td>Display output format. Valid values are (json, yaml, csv, table[-format]). If <code>table</code> is used an optional table format can be specified as <code>table-format</code>. Valid table formats can be found here: https://github.com/astanin/python-tabulate#table_format. Example: <code>table-pretty</code>.</td>
 <td>None</td>
 </tr>
@@ -2129,7 +2085,7 @@ that should be checked out. Format is <code>application name/environment name/pr
 <tbody>
 <tr>
 <td><code>--format</code>, <code>-f</code></td>
-<td>choice (<code>json</code> &#x7C; <code>yaml</code> &#x7C; <code>csv</code> &#x7C; <code>table</code> &#x7C; <code>list</code> &#x7C; <code>table-plain</code> &#x7C; <code>table-simple</code> &#x7C; <code>table-github</code> &#x7C; <code>table-grid</code> &#x7C; <code>table-simple_grid</code> &#x7C; <code>table-rounded_grid</code> &#x7C; <code>table-double_grid</code> &#x7C; <code>table-fancy_grid</code> &#x7C; <code>table-outline</code> &#x7C; <code>table-simple_outline</code> &#x7C; <code>table-rounded_outline</code> &#x7C; <code>table-double_outline</code> &#x7C; <code>table-fancy_outline</code> &#x7C; <code>table-pipe</code> &#x7C; <code>table-orgtbl</code> &#x7C; <code>table-jira</code> &#x7C; <code>table-presto</code> &#x7C; <code>table-pretty</code> &#x7C; <code>table-psql</code> &#x7C; <code>table-rst</code> &#x7C; <code>table-mediawiki</code> &#x7C; <code>table-moinmoin</code> &#x7C; <code>table-youtrack</code> &#x7C; <code>table-html</code> &#x7C; <code>table-unsafehtml</code> &#x7C; <code>table-latex</code> &#x7C; <code>table-latex_raw</code> &#x7C; <code>table-latex_booktabs</code> &#x7C; <code>table-latex_longtable</code> &#x7C; <code>table-textile</code> &#x7C; <code>table-tsv</code>)</td>
+<td>choice (<code>csv</code> &#x7C; <code>json</code> &#x7C; <code>list</code> &#x7C; <code>table</code> &#x7C; <code>table-double_grid</code> &#x7C; <code>table-double_outline</code> &#x7C; <code>table-fancy_grid</code> &#x7C; <code>table-fancy_outline</code> &#x7C; <code>table-github</code> &#x7C; <code>table-grid</code> &#x7C; <code>table-html</code> &#x7C; <code>table-jira</code> &#x7C; <code>table-latex</code> &#x7C; <code>table-latex_booktabs</code> &#x7C; <code>table-latex_longtable</code> &#x7C; <code>table-latex_raw</code> &#x7C; <code>table-mediawiki</code> &#x7C; <code>table-moinmoin</code> &#x7C; <code>table-orgtbl</code> &#x7C; <code>table-outline</code> &#x7C; <code>table-pipe</code> &#x7C; <code>table-plain</code> &#x7C; <code>table-presto</code> &#x7C; <code>table-pretty</code> &#x7C; <code>table-psql</code> &#x7C; <code>table-rounded_grid</code> &#x7C; <code>table-rounded_outline</code> &#x7C; <code>table-rst</code> &#x7C; <code>table-simple</code> &#x7C; <code>table-simple_grid</code> &#x7C; <code>table-simple_outline</code> &#x7C; <code>table-textile</code> &#x7C; <code>table-tsv</code> &#x7C; <code>table-unsafehtml</code> &#x7C; <code>table-youtrack</code> &#x7C; <code>yaml</code>)</td>
 <td>Display output format. Valid values are (json, yaml, csv, table[-format]). If <code>table</code> is used an optional table format can be specified as <code>table-format</code>. Valid table formats can be found here: https://github.com/astanin/python-tabulate#table_format. Example: <code>table-pretty</code>.</td>
 <td>None</td>
 </tr>
@@ -2189,7 +2145,7 @@ that should be checked out. Format is <code>application name/environment name/pr
 <tbody>
 <tr>
 <td><code>--format</code>, <code>-f</code></td>
-<td>choice (<code>json</code> &#x7C; <code>yaml</code> &#x7C; <code>csv</code> &#x7C; <code>table</code> &#x7C; <code>list</code> &#x7C; <code>table-plain</code> &#x7C; <code>table-simple</code> &#x7C; <code>table-github</code> &#x7C; <code>table-grid</code> &#x7C; <code>table-simple_grid</code> &#x7C; <code>table-rounded_grid</code> &#x7C; <code>table-double_grid</code> &#x7C; <code>table-fancy_grid</code> &#x7C; <code>table-outline</code> &#x7C; <code>table-simple_outline</code> &#x7C; <code>table-rounded_outline</code> &#x7C; <code>table-double_outline</code> &#x7C; <code>table-fancy_outline</code> &#x7C; <code>table-pipe</code> &#x7C; <code>table-orgtbl</code> &#x7C; <code>table-jira</code> &#x7C; <code>table-presto</code> &#x7C; <code>table-pretty</code> &#x7C; <code>table-psql</code> &#x7C; <code>table-rst</code> &#x7C; <code>table-mediawiki</code> &#x7C; <code>table-moinmoin</code> &#x7C; <code>table-youtrack</code> &#x7C; <code>table-html</code> &#x7C; <code>table-unsafehtml</code> &#x7C; <code>table-latex</code> &#x7C; <code>table-latex_raw</code> &#x7C; <code>table-latex_booktabs</code> &#x7C; <code>table-latex_longtable</code> &#x7C; <code>table-textile</code> &#x7C; <code>table-tsv</code>)</td>
+<td>choice (<code>csv</code> &#x7C; <code>json</code> &#x7C; <code>list</code> &#x7C; <code>table</code> &#x7C; <code>table-double_grid</code> &#x7C; <code>table-double_outline</code> &#x7C; <code>table-fancy_grid</code> &#x7C; <code>table-fancy_outline</code> &#x7C; <code>table-github</code> &#x7C; <code>table-grid</code> &#x7C; <code>table-html</code> &#x7C; <code>table-jira</code> &#x7C; <code>table-latex</code> &#x7C; <code>table-latex_booktabs</code> &#x7C; <code>table-latex_longtable</code> &#x7C; <code>table-latex_raw</code> &#x7C; <code>table-mediawiki</code> &#x7C; <code>table-moinmoin</code> &#x7C; <code>table-orgtbl</code> &#x7C; <code>table-outline</code> &#x7C; <code>table-pipe</code> &#x7C; <code>table-plain</code> &#x7C; <code>table-presto</code> &#x7C; <code>table-pretty</code> &#x7C; <code>table-psql</code> &#x7C; <code>table-rounded_grid</code> &#x7C; <code>table-rounded_outline</code> &#x7C; <code>table-rst</code> &#x7C; <code>table-simple</code> &#x7C; <code>table-simple_grid</code> &#x7C; <code>table-simple_outline</code> &#x7C; <code>table-textile</code> &#x7C; <code>table-tsv</code> &#x7C; <code>table-unsafehtml</code> &#x7C; <code>table-youtrack</code> &#x7C; <code>yaml</code>)</td>
 <td>Display output format. Valid values are (json, yaml, csv, table[-format]). If <code>table</code> is used an optional table format can be specified as <code>table-format</code>. Valid table formats can be found here: https://github.com/astanin/python-tabulate#table_format. Example: <code>table-pretty</code>.</td>
 <td>None</td>
 </tr>
@@ -2396,7 +2352,7 @@ that should be checked out. Format is <code>application name/environment name/pr
 <tr>
 <td><code>--justification</code>, <code>-j</code></td>
 <td>text</td>
-<td>Justification for the checkout approval process, if the profile checkout requires approval.</td>
+<td>Justification for the approval process, if a profile checkout or secret access requires approval.</td>
 <td>None</td>
 </tr>
 <tr>
@@ -2556,7 +2512,13 @@ Ensure the leading <code>/</code> is provided.</p>
 <tr>
 <td><code>--justification</code>, <code>-j</code></td>
 <td>text</td>
-<td>Justification for the checkout approval process, if the profile checkout requires approval.</td>
+<td>Justification for the approval process, if a profile checkout or secret access requires approval.</td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>--otp</code>, <code>-o</code></td>
+<td>text</td>
+<td>OTP to checkout a profile, download a secret, or view a secret, if MFA is required.</td>
 <td>None</td>
 </tr>
 <tr>
@@ -2567,7 +2529,7 @@ Ensure the leading <code>/</code> is provided.</p>
 </tr>
 <tr>
 <td><code>--format</code>, <code>-f</code></td>
-<td>choice (<code>json</code> &#x7C; <code>yaml</code> &#x7C; <code>csv</code> &#x7C; <code>table</code> &#x7C; <code>list</code> &#x7C; <code>table-plain</code> &#x7C; <code>table-simple</code> &#x7C; <code>table-github</code> &#x7C; <code>table-grid</code> &#x7C; <code>table-simple_grid</code> &#x7C; <code>table-rounded_grid</code> &#x7C; <code>table-double_grid</code> &#x7C; <code>table-fancy_grid</code> &#x7C; <code>table-outline</code> &#x7C; <code>table-simple_outline</code> &#x7C; <code>table-rounded_outline</code> &#x7C; <code>table-double_outline</code> &#x7C; <code>table-fancy_outline</code> &#x7C; <code>table-pipe</code> &#x7C; <code>table-orgtbl</code> &#x7C; <code>table-jira</code> &#x7C; <code>table-presto</code> &#x7C; <code>table-pretty</code> &#x7C; <code>table-psql</code> &#x7C; <code>table-rst</code> &#x7C; <code>table-mediawiki</code> &#x7C; <code>table-moinmoin</code> &#x7C; <code>table-youtrack</code> &#x7C; <code>table-html</code> &#x7C; <code>table-unsafehtml</code> &#x7C; <code>table-latex</code> &#x7C; <code>table-latex_raw</code> &#x7C; <code>table-latex_booktabs</code> &#x7C; <code>table-latex_longtable</code> &#x7C; <code>table-textile</code> &#x7C; <code>table-tsv</code>)</td>
+<td>choice (<code>csv</code> &#x7C; <code>json</code> &#x7C; <code>list</code> &#x7C; <code>table</code> &#x7C; <code>table-double_grid</code> &#x7C; <code>table-double_outline</code> &#x7C; <code>table-fancy_grid</code> &#x7C; <code>table-fancy_outline</code> &#x7C; <code>table-github</code> &#x7C; <code>table-grid</code> &#x7C; <code>table-html</code> &#x7C; <code>table-jira</code> &#x7C; <code>table-latex</code> &#x7C; <code>table-latex_booktabs</code> &#x7C; <code>table-latex_longtable</code> &#x7C; <code>table-latex_raw</code> &#x7C; <code>table-mediawiki</code> &#x7C; <code>table-moinmoin</code> &#x7C; <code>table-orgtbl</code> &#x7C; <code>table-outline</code> &#x7C; <code>table-pipe</code> &#x7C; <code>table-plain</code> &#x7C; <code>table-presto</code> &#x7C; <code>table-pretty</code> &#x7C; <code>table-psql</code> &#x7C; <code>table-rounded_grid</code> &#x7C; <code>table-rounded_outline</code> &#x7C; <code>table-rst</code> &#x7C; <code>table-simple</code> &#x7C; <code>table-simple_grid</code> &#x7C; <code>table-simple_outline</code> &#x7C; <code>table-textile</code> &#x7C; <code>table-tsv</code> &#x7C; <code>table-unsafehtml</code> &#x7C; <code>table-youtrack</code> &#x7C; <code>yaml</code>)</td>
 <td>Display output format. Valid values are (json, yaml, csv, table[-format]). If <code>table</code> is used an optional table format can be specified as <code>table-format</code>. Valid table formats can be found here: https://github.com/astanin/python-tabulate#table_format. Example: <code>table-pretty</code>.</td>
 <td>None</td>
 </tr>
@@ -2636,7 +2598,13 @@ Ensure the leading <code>/</code> is provided.</p>
 <tr>
 <td><code>--justification</code>, <code>-j</code></td>
 <td>text</td>
-<td>Justification for the checkout approval process, if the profile checkout requires approval.</td>
+<td>Justification for the approval process, if a profile checkout or secret access requires approval.</td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>--otp</code>, <code>-o</code></td>
+<td>text</td>
+<td>OTP to checkout a profile, download a secret, or view a secret, if MFA is required.</td>
 <td>None</td>
 </tr>
 <tr>
@@ -2647,7 +2615,7 @@ Ensure the leading <code>/</code> is provided.</p>
 </tr>
 <tr>
 <td><code>--format</code>, <code>-f</code></td>
-<td>choice (<code>json</code> &#x7C; <code>yaml</code> &#x7C; <code>csv</code> &#x7C; <code>table</code> &#x7C; <code>list</code> &#x7C; <code>table-plain</code> &#x7C; <code>table-simple</code> &#x7C; <code>table-github</code> &#x7C; <code>table-grid</code> &#x7C; <code>table-simple_grid</code> &#x7C; <code>table-rounded_grid</code> &#x7C; <code>table-double_grid</code> &#x7C; <code>table-fancy_grid</code> &#x7C; <code>table-outline</code> &#x7C; <code>table-simple_outline</code> &#x7C; <code>table-rounded_outline</code> &#x7C; <code>table-double_outline</code> &#x7C; <code>table-fancy_outline</code> &#x7C; <code>table-pipe</code> &#x7C; <code>table-orgtbl</code> &#x7C; <code>table-jira</code> &#x7C; <code>table-presto</code> &#x7C; <code>table-pretty</code> &#x7C; <code>table-psql</code> &#x7C; <code>table-rst</code> &#x7C; <code>table-mediawiki</code> &#x7C; <code>table-moinmoin</code> &#x7C; <code>table-youtrack</code> &#x7C; <code>table-html</code> &#x7C; <code>table-unsafehtml</code> &#x7C; <code>table-latex</code> &#x7C; <code>table-latex_raw</code> &#x7C; <code>table-latex_booktabs</code> &#x7C; <code>table-latex_longtable</code> &#x7C; <code>table-textile</code> &#x7C; <code>table-tsv</code>)</td>
+<td>choice (<code>csv</code> &#x7C; <code>json</code> &#x7C; <code>list</code> &#x7C; <code>table</code> &#x7C; <code>table-double_grid</code> &#x7C; <code>table-double_outline</code> &#x7C; <code>table-fancy_grid</code> &#x7C; <code>table-fancy_outline</code> &#x7C; <code>table-github</code> &#x7C; <code>table-grid</code> &#x7C; <code>table-html</code> &#x7C; <code>table-jira</code> &#x7C; <code>table-latex</code> &#x7C; <code>table-latex_booktabs</code> &#x7C; <code>table-latex_longtable</code> &#x7C; <code>table-latex_raw</code> &#x7C; <code>table-mediawiki</code> &#x7C; <code>table-moinmoin</code> &#x7C; <code>table-orgtbl</code> &#x7C; <code>table-outline</code> &#x7C; <code>table-pipe</code> &#x7C; <code>table-plain</code> &#x7C; <code>table-presto</code> &#x7C; <code>table-pretty</code> &#x7C; <code>table-psql</code> &#x7C; <code>table-rounded_grid</code> &#x7C; <code>table-rounded_outline</code> &#x7C; <code>table-rst</code> &#x7C; <code>table-simple</code> &#x7C; <code>table-simple_grid</code> &#x7C; <code>table-simple_outline</code> &#x7C; <code>table-textile</code> &#x7C; <code>table-tsv</code> &#x7C; <code>table-unsafehtml</code> &#x7C; <code>table-youtrack</code> &#x7C; <code>yaml</code>)</td>
 <td>Display output format. Valid values are (json, yaml, csv, table[-format]). If <code>table</code> is used an optional table format can be specified as <code>table-format</code>. Valid table formats can be found here: https://github.com/astanin/python-tabulate#table_format. Example: <code>table-pretty</code>.</td>
 <td>None</td>
 </tr>
@@ -2766,7 +2734,7 @@ Ensure the leading <code>/</code> is provided.</p>
 <tbody>
 <tr>
 <td><code>--push-public-key</code>, <code>-P</code></td>
-<td>choice (<code>ec2-instance-connect</code> &#x7C; <code>os-login</code> &#x7C; <code>instance-metadata</code> &#x7C; <code>default</code>)</td>
+<td>choice (<code>default</code> &#x7C; <code>ec2-instance-connect</code> &#x7C; <code>instance-metadata</code> &#x7C; <code>os-login</code>)</td>
 <td>Whether to push an ephemeral public key to the remote server.</td>
 <td>None</td>
 </tr>
@@ -2814,7 +2782,7 @@ Ensure the leading <code>/</code> is provided.</p>
 </tr>
 <tr>
 <td><code>--push-public-key</code>, <code>-P</code></td>
-<td>choice (<code>ec2-instance-connect</code> &#x7C; <code>os-login</code> &#x7C; <code>instance-metadata</code> &#x7C; <code>default</code>)</td>
+<td>choice (<code>default</code> &#x7C; <code>ec2-instance-connect</code> &#x7C; <code>instance-metadata</code> &#x7C; <code>os-login</code>)</td>
 <td>Whether to push an ephemeral public key to the remote server.</td>
 <td>None</td>
 </tr>
@@ -2886,7 +2854,7 @@ Ensure the leading <code>/</code> is provided.</p>
 <tbody>
 <tr>
 <td><code>--push-public-key</code>, <code>-P</code></td>
-<td>choice (<code>ec2-instance-connect</code> &#x7C; <code>os-login</code> &#x7C; <code>instance-metadata</code> &#x7C; <code>default</code>)</td>
+<td>choice (<code>default</code> &#x7C; <code>ec2-instance-connect</code> &#x7C; <code>instance-metadata</code> &#x7C; <code>os-login</code>)</td>
 <td>Whether to push an ephemeral public key to the remote server.</td>
 <td>None</td>
 </tr>
@@ -2934,7 +2902,7 @@ Ensure the leading <code>/</code> is provided.</p>
 </tr>
 <tr>
 <td><code>--push-public-key</code>, <code>-P</code></td>
-<td>choice (<code>ec2-instance-connect</code> &#x7C; <code>os-login</code> &#x7C; <code>instance-metadata</code> &#x7C; <code>default</code>)</td>
+<td>choice (<code>default</code> &#x7C; <code>ec2-instance-connect</code> &#x7C; <code>instance-metadata</code> &#x7C; <code>os-login</code>)</td>
 <td>Whether to push an ephemeral public key to the remote server.</td>
 <td>None</td>
 </tr>
@@ -3060,5 +3028,5 @@ Ensure the leading <code>/</code> is provided.</p>
 
 <!--
 MkDocs version : 1.6.0
-Build Date UTC : 2024-07-10 18:47:07.563974+00:00
+Build Date UTC : 2024-09-20 21:15:15.567708+00:00
 -->
