@@ -7,5 +7,5 @@ profile_type_choices = click.Choice(
         'my-access',
         'my-resources',
     ],
-    case_sensitive=False
+    case_sensitive=False,
 )

@@ -1,8 +1,7 @@
-from gettext import gettext as _
 import re
+from gettext import gettext as _
 
-from click.shell_completion import add_completion_class, BashComplete
-
+from click.shell_completion import BashComplete, add_completion_class
 
 # inspired by https://github.com/pallets-eco/click-bash4.2-completion
 _bash_42_source = """\
@@ -41,7 +40,8 @@ _bash_42_source = """\
 
 @add_completion_class
 class _PatchedBashComplete(BashComplete):
-    """ Patched Shell completion for Bash """
+    """Patched Shell completion for Bash"""
+
     source_template = _bash_42_source
     name = 'bash'  # this will override the default bash provided by click
 
@@ -49,22 +49,13 @@ class _PatchedBashComplete(BashComplete):
     def _check_version(self) -> None:
         import subprocess
 
-        output = subprocess.run(
-            ["bash", "-c", "echo ${BASH_VERSION}"], stdout=subprocess.PIPE, check=False
-        )
-        match = re.search(r"^(\d+)\.(\d+)\.\d+", output.stdout.decode())
+        output = subprocess.run(['bash', '-c', 'echo ${BASH_VERSION}'], stdout=subprocess.PIPE, check=False)
+        match = re.search(r'^(\d+)\.(\d+)\.\d+', output.stdout.decode())
 
         if match is not None:
             major, minor = match.groups()
 
-            if major < "4" or major == "4" and minor < "2":
-                raise RuntimeError(
-                    _(
-                        "Shell completion is not supported for Bash"
-                        " versions older than 4.2."
-                    )
-                )
+            if major < '4' or major == '4' and minor < '2':
+                raise RuntimeError(_('Shell completion is not supported for Bash versions older than 4.2.'))
         else:
-            raise RuntimeError(
-                _("Couldn't detect Bash version, shell completion is not supported.")
-            )
+            raise RuntimeError(_("Couldn't detect Bash version, shell completion is not supported."))

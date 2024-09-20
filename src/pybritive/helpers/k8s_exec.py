@@ -1,21 +1,14 @@
+from sys import argv, exit
+
+
 def get_args():
     from getopt import getopt  # lazy load
-    from sys import argv  # lazy load
-    options = getopt(argv[1:], 't:T:p:F:hv', [
-        'tenant=',
-        'token=',
-        'passphrase=',
-        'federation-provider=',
-        'help',
-        'version'
-    ])[0]
 
-    args = {
-        'tenant': None,
-        'token': None,
-        'passphrase': None,
-        'federation_provider': None
-    }
+    options = getopt(
+        argv[1:], 't:T:p:F:hv', ['tenant=', 'token=', 'passphrase=', 'federation-provider=', 'help', 'version']
+    )[0]
+
+    args = {'tenant': None, 'token': None, 'passphrase': None, 'federation_provider': None}
 
     for opt, arg in options:
         if opt in ('-t', '--tenant'):
@@ -29,21 +22,19 @@ def get_args():
         if opt in ('-h', '--help'):
             usage()
         if opt in ('-v', '--version'):
+            from importlib.metadata import version
             from platform import platform, python_version  # lazy load
-            from pkg_resources import get_distribution  # lazy load
-            cli_version = get_distribution('pybritive').version
-            print(
-                f'pybritive: {cli_version} / platform: {platform()} / python: {python_version()}'
-            )
-            exit()
+
+            cli_version = version('pybritive')
+            print(f'pybritive: {cli_version} / platform: {platform()} / python: {python_version()}')
+            exit(0)
 
     return args
 
 
 def usage():
-    from sys import argv  # lazy load
-    print(f"Usage : {argv[0]} [-t/--tenant, -T/--token, -t/--passphrase, -F/--federation-provider]")
-    exit()
+    print(f'Usage : {argv[0]} [-t/--tenant, -T/--token, -t/--passphrase, -F/--federation-provider]')
+    exit(0)
 
 
 def main():
@@ -54,12 +45,11 @@ def main():
     k8s_processor = KubernetesExecCredentialProcessor()
 
     from .cache import Cache  # lazy load
-    creds = Cache(passphrase=args['passphrase']).get_credentials(
-        profile_name=k8s_processor.profile,
-        mode='kube-exec'
-    )
+
+    creds = Cache(passphrase=args['passphrase']).get_credentials(profile_name=k8s_processor.profile, mode='kube-exec')
     if creds:
         from datetime import datetime  # lazy load
+
         expiration = datetime.fromisoformat(creds['expirationTime'].replace('Z', ''))
         now = datetime.utcnow()
         if now > expiration:  # creds have expired so set to none so new one get checked out
@@ -77,7 +67,7 @@ def main():
             passphrase=args['passphrase'],
             federation_provider=args['federation_provider'],
             silent=True,
-            from_helper_console_script=True
+            from_helper_console_script=True,
         )
         b.config.get_tenant()  # have to load the config here as that work is generally done elsewhere
         b.checkout(

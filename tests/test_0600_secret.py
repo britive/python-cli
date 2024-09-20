@@ -22,12 +22,7 @@ def test_download(runner, cli):
     with open(filename, 'r', encoding='utf-8') as f:
         assert 'test' in f.read()
     path = Path(filename)
-    # path.unlink(missing_ok=True)
-    # removed for now, for 3.7 compatability
-    try:
-        path.unlink()
-    except FileNotFoundError:
-        pass
+    path.unlink(missing_ok=True)
 
 
 def test_download_filename_provided(runner, cli):
@@ -38,9 +33,4 @@ def test_download_filename_provided(runner, cli):
     with open(filename, 'r', encoding='utf-8') as f:
         assert 'test' in f.read()
     path = Path(filename)
-    # path.unlink(missing_ok=True)
-    # removed for now, for 3.7 compatability
-    try:
-        path.unlink()
-    except FileNotFoundError:
-        pass
+    path.unlink(missing_ok=True)

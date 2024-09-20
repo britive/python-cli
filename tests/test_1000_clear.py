@@ -1,6 +1,6 @@
+import json
 import os
 from pathlib import Path
-import json
 
 
 def test_clear_cache(runner, cli):
@@ -10,7 +10,7 @@ def test_clear_cache(runner, cli):
     with open(str(path), 'r', encoding='utf-8') as f:
         data = json.loads(f.read())
     assert result.exit_code == 0
-    assert 'profiles' in data.keys()
+    assert 'profiles' in data
     assert len(data['profiles']) == 0
 
 

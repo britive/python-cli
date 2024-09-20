@@ -1,7 +1,33 @@
-# Change Log
+# Changelog
 
-* As of v1.4.0 release candidates will be published in an effort to get new features out faster while still allowing
-time for full QA testing before moving the release candidate to a full release.
+> As of v1.4.0, release candidates will be published in an effort to get new features out faster while still allowing
+> time for full QA testing before moving the release candidate to a full release.
+
+## v2.0.0 [2024-09-09]
+
+__What's New:__
+
+* Added colors to banner output.
+* Added Step Up authentication to `my_secrets`
+
+__Enhancements:__
+
+* Switched to `ruff` for style linting and code-quality checking.
+
+__Bug Fixes:__
+
+* Fixed issue with global `default_tenant` test. 
+
+__Dependencies:__
+
+* Dropped `python3.7` support.
+* Dropped `pkg_resources` dependency.
+* Upgrade `britive` to `>=3.0.0`
+* Upgrade `click` to `>=8.1.7`
+
+__Other:__
+
+* Dropped legacy `import` functionality for the now long deprecated Node.js CLI.
 
 ## v1.8.3 [2024-08-20]
 

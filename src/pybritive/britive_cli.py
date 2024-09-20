@@ -1,27 +1,34 @@
+import contextlib
 import csv
-from datetime import datetime
-from datetime import timedelta
-from datetime import timezone
 import hashlib
 import io
 import json
 import os
-from pathlib import Path
 import sys
 import uuid
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
+
 import click
-from britive import exceptions
-from britive.britive import Britive
 import jmespath
 import jwt
-from tabulate import tabulate
 import yaml
+from britive import exceptions
+from britive.britive import Britive
+from jwt.exceptions import PyJWTError
+from tabulate import tabulate
+
+from . import __version__
 from .helpers import cloud_credential_printer as printer
 from .helpers.cache import Cache
 from .helpers.config import ConfigManager
-from .helpers.credentials import FileCredentialManager, EncryptedFileCredentialManager
+from .helpers.credentials import EncryptedFileCredentialManager, FileCredentialManager
 from .helpers.split import profile_split
-from . import __version__
+
+try:
+    from colored import Fore, Style
+except ImportError:  # colored in < python3.9
+    from colored import fore, style
 
 default_table_format = 'fancy_grid'
 debug_enabled = os.getenv('PYBRITIVE_DEBUG')
@@ -168,10 +175,21 @@ class BritiveCli:
             return
 
         # if we get here then we need to at least grab the banner and see if it has changed
-        banner = self.b.banner()
-        banner_changed = Cache().save_banner(tenant=self.tenant_name, banner=banner)
-        if banner and banner_changed:
-            self.print(f'*** {banner.get("messageType", "UNKNOWN")}: {banner.get("message", "<no message>")} ***')
+        if banner := self.b.banner():
+            banner_changed = Cache().save_banner(tenant=self.tenant_name, banner=banner)
+            msg_type = banner.get('messageType', 'UNKNOWN')
+            try:
+                color = {'caution': Style.BOLD + Fore.red, 'warning': Style.BOLD + Fore.yellow}.get(
+                    msg_type.lower(), Style.BOLD + Fore.blue
+                )
+                style_reset = Style.reset
+            except NameError:  # colored in < python3.9
+                color = {'caution': style.BOLD + fore.RED, 'warning': style.BOLD + fore.YELLOW}.get(
+                    msg_type.lower(), style.BOLD + fore.BLUE
+                )
+                style_reset = style.RESET
+            if banner_changed:
+                self.print(f'{color}*** {msg_type}: {banner.get("message", "<no message>")} ***{style_reset}')
 
     def _update_sdk_user_agent(self):
         # update the user agent to include the pybritive cli version
@@ -201,7 +219,7 @@ class BritiveCli:
             ).get('username', '')
 
             return username.startswith('SAML')
-        except:
+        except PyJWTError:
             return False
 
     def logout(self):
@@ -671,7 +689,7 @@ class BritiveCli:
         except exceptions.ApprovalRequiredButNoJustificationProvided as e:
             raise click.ClickException('approval required and no justification provided.') from e
         except ValueError as e:
-            raise click.BadParameter(str(e))
+            raise click.BadParameter(str(e)) from e
         except Exception as e:
             if 'programmatic access is not enabled' in str(e).lower():
                 # attempt to automatically checkout console access instead
@@ -891,46 +909,26 @@ class BritiveCli:
             k8s_processor,
         ).print()
 
-    def import_existing_npm_config(self):
-        profile_aliases = self.config.import_global_npm_config()
-
-        if len(profile_aliases) == 0:
-            return
-        self.print('')
-        self.print('Profile aliases exist...will retrieve profile details from the tenant.')
-        self.print('')
-
-        self.login()
-        self._set_available_profiles()
-        self.print('')
-        for alias, ids in profile_aliases.items():
-            if '/' in alias:  # no need to import the aliases that aren't really aliases
-                continue
-            app, env, profile = ids.split('/')[:3]
-            for p in self.available_profiles:
-                if p['app_id'] == app and p['env_id'] == env and p['profile_id'] == profile:
-                    profile_str = f"{p['app_name']}/{p['env_name']}/{p['profile_name']}"
-                    self.config.save_profile_alias(alias, profile_str)
-                    self.print(f'Saved alias {alias} to profile {profile_str}')
-
     def configure_tenant(self, tenant, alias, output_format):
         self.config.save_tenant(tenant=tenant, alias=alias, output_format=output_format)
 
     def configure_global(self, default_tenant_name, output_format, backend):
         self.config.save_global(default_tenant_name=default_tenant_name, output_format=output_format, backend=backend)
 
-    def viewsecret(self, path, blocktime, justification, maxpolltime):
+    def viewsecret(self, path, blocktime, justification, otp, maxpolltime):
         self._validate_justification(justification)
         self.login()
 
         try:
             value = self.b.my_secrets.view(
-                path=path, justification=justification, wait_time=blocktime, max_wait_time=maxpolltime
+                path=path, justification=justification, otp=otp, wait_time=blocktime, max_wait_time=maxpolltime
             )
         except exceptions.AccessDenied as e:
             raise click.ClickException('user does not have access to the secret.') from e
         except exceptions.ApprovalRequiredButNoJustificationProvided as e:
             raise click.ClickException('approval required and no justification provided.') from e
+        except exceptions.StepUpAuthRequiredButNotProvided as e:
+            raise click.ClickException('Step Up Authentication required and no OTP provided.') from e
 
         # handle the generic note template type for a better UX
         if len(value) == 1 and 'Note' in value:
@@ -947,18 +945,20 @@ class BritiveCli:
         # and finally print the secret data
         self.print(value, ignore_silent=True)
 
-    def downloadsecret(self, path, blocktime, justification, maxpolltime, file):
+    def downloadsecret(self, path, blocktime, justification, otp, maxpolltime, file):
         self._validate_justification(justification)
         self.login()
 
         try:
             response = self.b.my_secrets.download(
-                path=path, justification=justification, wait_time=blocktime, max_wait_time=maxpolltime
+                path=path, justification=justification, otp=otp, wait_time=blocktime, max_wait_time=maxpolltime
             )
         except exceptions.AccessDenied as e:
             raise click.ClickException('user does not have access to the secret.') from e
         except exceptions.ApprovalRequiredButNoJustificationProvided as e:
             raise click.ClickException('approval required and no justification provided.') from e
+        except exceptions.StepUpAuthRequiredButNotProvided as e:
+            raise click.ClickException('Step Up Authentication required and no OTP provided.') from e
 
         filename_from_secret = response['filename']
         content = response['content_bytes']
@@ -1058,7 +1058,7 @@ class BritiveCli:
 
             if path.exists():  # we have a valid gcloudauthexec key file, so we know there was a checkout with this mode
                 try:
-                    with open(str(path), 'r', encoding='utf-8') as f:
+                    with open(str(path), encoding='utf-8') as f:
                         credentials = json.loads(f.read())
                     commands = ['gcloud', 'auth', 'revoke', credentials['client_email'], '--verbosity=error']
                     self.debug(' '.join(commands))
@@ -1098,13 +1098,13 @@ class BritiveCli:
                 if value.startswith('file://'):
                     filepath = value.replace('file://', '')
                     path = Path(filepath)
-                    with open(str(path), 'r', encoding='utf-8') as f:
+                    with open(str(path), encoding='utf-8') as f:
                         computed_value = f.read().strip()
 
                 if value.startswith('fileb://'):
                     filepath = value.replace('fileb://', '')
                     path = Path(filepath)
-                    computed_value = open(str(path), 'rb')
+                    computed_value = open(str(path), 'rb')  # noqa: SIM115
                     open_file_keys.append(computed_key)
 
                 try:
@@ -1129,10 +1129,8 @@ class BritiveCli:
 
         # close any files we opened due to fileb:// prefix
         for key in open_file_keys:
-            try:
+            with contextlib.suppress(Exception):
                 computed_parameters[key].close()
-            except Exception:
-                pass
 
         # output the response, optionally filtering based on provided jmespath query/search
         self.print(jmespath.search(query, response) if query else response, ignore_silent=True)
@@ -1234,8 +1232,8 @@ class BritiveCli:
     @staticmethod
     def _ssh_generate_key_pair():
         # doing imports here as these packages are not a requirement to use pybritive in general
-        from cryptography.hazmat.primitives.asymmetric import rsa
         from cryptography.hazmat.primitives import serialization
+        from cryptography.hazmat.primitives.asymmetric import rsa
 
         private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
 
@@ -1256,8 +1254,8 @@ class BritiveCli:
 
         # these 3 ship with python3.x
         import glob
-        import time
         import subprocess
+        import time
 
         key_pair = self._ssh_generate_key_pair()
 
@@ -1271,23 +1269,13 @@ class BritiveCli:
                 file = key.split('/')[-1].split('.')[0]
                 expiration = int(file.split('-')[2])
                 if expiration < now:
-                    # Path(key).unlink(missing_ok=True)
-                    # removed for now, for 3.7 compatability
-                    try:
-                        Path(key).unlink()
-                    except FileNotFoundError:
-                        pass
+                    Path(key).unlink(missing_ok=True)
 
             pem_file = ssh_dir / f'random-{uuid.uuid4().hex}-{now + 60}.pem'
         elif key_source == 'static':
             # clean up the specific key if it exists, so we can create a new one
             pem_file = ssh_dir / f'{hostname}.{username}.pem'
-            # pem_file.unlink(missing_ok=True)
-            # removed for now, for 3.7 compatability
-            try:
-                pem_file.unlink()
-            except FileNotFoundError:
-                pass
+            pem_file.unlink(missing_ok=True)
         else:
             raise ValueError(f'invalid --key-source value {key_source}')
 
@@ -1365,8 +1353,9 @@ class BritiveCli:
 
         # requests is a hard requirement for pybritive (via britive sdk)
         # and webbrowser ships with python3.x
-        import requests
         import webbrowser
+
+        import requests
 
         # this is the one that may not be available so be careful
         try:
@@ -1392,10 +1381,10 @@ class BritiveCli:
         signin_token = None
         try:
             signin_token = json.loads(response.text)
-        except json.decoder.JSONDecodeError:
+        except json.decoder.JSONDecodeError as je:
             raise click.ClickException(
                 'Credentials have expired or another issue occurred. Please re-authenticate and try again.'
-            )
+            ) from je
 
         params = {
             'Action': 'login',
@@ -1435,8 +1424,8 @@ class BritiveCli:
         instance_name = helper[1]
         project = helper[2]
 
-        import subprocess
         import shlex
+        import subprocess
 
         command = f'gcloud compute instances list --format json --project {project}'
         instances = json.loads(subprocess.check_output(shlex.split(command)).decode('utf-8'))
@@ -1521,12 +1510,7 @@ class BritiveCli:
                         '--quiet',
                     ]
                     subprocess.run(commands, check=False)
-                    # key_file.unlink(missing_ok=True)
-                    # removed for now, for 3.7 compatability
-                    try:
-                        key_file.unlink()
-                    except FileNotFoundError:
-                        pass
+                    key_file.unlink(missing_ok=True)
 
         commands = [
             'gcloud',

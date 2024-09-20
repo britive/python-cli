@@ -1,7 +1,8 @@
 import click
+
 from ..helpers.build_britive import build_britive
-from ..options.britive_options import britive_options
 from ..helpers.profile_argument_decorator import click_smart_profile_argument
+from ..options.britive_options import britive_options
 
 
 @click.group()
@@ -25,10 +26,7 @@ def submit(ctx, justification, tenant, token, silent, passphrase, federation_pro
     that should be checked out. Format is `application name/environment name/profile name`.
     """
 
-    ctx.obj.britive.request_submit(
-        profile=profile,
-        justification=justification
-    )
+    ctx.obj.britive.request_submit(profile=profile, justification=justification)
 
 
 @request.command()
@@ -44,9 +42,7 @@ def withdraw(ctx, tenant, token, silent, passphrase, federation_provider, profil
     that should be checked out. Format is `application name/environment name/profile name`.
     """
 
-    ctx.obj.britive.request_withdraw(
-        profile=profile
-    )
+    ctx.obj.britive.request_withdraw(profile=profile)
 
 
 @request.command()
@@ -59,10 +55,8 @@ def approve(ctx, tenant, token, silent, passphrase, federation_provider, request
     This command takes 1 required argument `request-id`. Find the `request-id` via `ls approvals`.
     """
 
-    ctx.obj.britive.request_disposition(
-        request_id=request_id,
-        decision='approve'
-    )
+    ctx.obj.britive.request_disposition(request_id=request_id, decision='approve')
+
 
 @request.command()
 @build_britive
@@ -74,7 +68,4 @@ def reject(ctx, tenant, token, silent, passphrase, federation_provider, request_
     This command takes 1 required argument `request-id`. Find the `request-id` via `ls approvals`.
     """
 
-    ctx.obj.britive.request_disposition(
-        request_id=request_id,
-        decision='reject'
-    )
+    ctx.obj.britive.request_disposition(request_id=request_id, decision='reject')
