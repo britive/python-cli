@@ -3,6 +3,28 @@
 > As of v1.4.0, release candidates will be published in an effort to get new features out faster while still allowing
 > time for full QA testing before moving the release candidate to a full release.
 
+## v2.0.1 [2025-01-17]
+
+__What's New:__
+
+* None
+
+__Enhancements:__
+
+* None
+
+__Bug Fixes:__
+
+* None
+
+__Dependencies:__
+
+* Pinned `britive` to major version 3.
+
+__Other:__
+
+* None
+
 ## v2.0.0 [2024-09-09]
 
 __What's New:__
@@ -16,7 +38,7 @@ __Enhancements:__
 
 __Bug Fixes:__
 
-* Fixed issue with global `default_tenant` test. 
+* Fixed issue with global `default_tenant` test.
 
 __Dependencies:__
 
