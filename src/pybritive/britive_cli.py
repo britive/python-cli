@@ -622,7 +622,7 @@ class BritiveCli:
     def _resource_checkin(self, profile):
         resource_name, profile_name = self._split_resource_profile_into_parts(profile=profile)
         self.login()
-        self.b.my_resources.checkin_by_name(profile_name=profile_name, resource_name=resource_name)
+        self.b.my_resources.checkin_by_name(profile_name=profile_name[0], resource_name=resource_name)
 
     def _access_checkin(self, profile, console):
         self.login()
@@ -667,7 +667,9 @@ class BritiveCli:
         else:
             self._access_checkin(profile=profile, console=console)
 
-    def _checkout(self, profile_name, env_name, app_name, programmatic, blocktime, maxpolltime, justification, otp):
+    def _checkout(
+        self, profile_name, env_name, app_name, programmatic, blocktime, maxpolltime, justification, otp, mode=None
+    ):
         try:
             self.login()
 
@@ -687,6 +689,8 @@ class BritiveCli:
                 progress_func=self.checkout_callback_printer,  # callback will handle silent, isatty, etc.
             )
         except exceptions.ApprovalRequiredButNoJustificationProvided as e:
+            if mode == 'awscredentialprocess':
+                raise e
             raise click.ClickException('approval required and no justification provided.') from e
         except ValueError as e:
             raise click.BadParameter(str(e)) from e
@@ -696,7 +700,7 @@ class BritiveCli:
                 # this is a cli only feature - not available in the sdk
                 self.print('no programmatic access available - checking out console access instead')
                 return self._checkout(
-                    profile_name, env_name, app_name, False, blocktime, maxpolltime, justification, otp
+                    profile_name, env_name, app_name, False, blocktime, maxpolltime, justification, otp, mode
                 )
             raise e
 
@@ -831,6 +835,7 @@ class BritiveCli:
             'maxpolltime': maxpolltime,
             'justification': justification,
             'otp': otp,
+            'mode': mode,
         }
 
         if not cached_credentials_found:  # nothing found in cache, cache is expired, or not a cachable mode
