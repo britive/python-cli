@@ -732,7 +732,9 @@ class BritiveCli:
         real_profile_name = self.config.profile_aliases.get(profile.lower(), profile).lower()
         if real_profile_name.startswith(self.resource_profile_prefix):
             real_profile_name = real_profile_name.replace(self.resource_profile_prefix, '')
-        return real_profile_name.split('/')
+        resource_name, profile_name = real_profile_name.split('/', maxsplit=1)
+        profile_name = profile_name.split('/')
+        return resource_name, profile_name
 
     def _profile_is_for_resource(self, profile, profile_type):
         if profile_type == 'my-resources':
@@ -745,8 +747,9 @@ class BritiveCli:
         resource_name, profile_name = self._split_resource_profile_into_parts(profile=profile)
         response = self.b.my_resources.checkout_by_name(
             resource_name=resource_name,
-            profile_name=profile_name,
+            profile_name=profile_name[0],
             include_credentials=True,
+            response_template=profile_name[1] if len(profile_name) > 1 else None,
             justification=justification,
             wait_time=blocktime,
             max_wait_time=maxpolltime,
