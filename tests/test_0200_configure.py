@@ -1,13 +1,14 @@
 import os
+from typing import Optional
 
 
 def read_config():
     local_home = os.getenv('PYBRITIVE_HOME_DIR')
-    with open(f'{local_home}/.britive/pybritive.config', 'r', encoding='utf-8') as f:
+    with open(f'{local_home}/.britive/pybritive.config', encoding='utf-8') as f:
         return f.read()
 
 
-def common_asserts(result, substring: list = None, exit_code: int = 0):
+def common_asserts(result, substring: Optional[list] = None, exit_code: int = 0):
     assert result.exit_code == exit_code
     if substring:
         if isinstance(substring, str):

@@ -55,7 +55,7 @@ class _PatchedBashComplete(BashComplete):
         if match is not None:
             major, minor = match.groups()
 
-            if major < '4' or major == '4' and minor < '2':
+            if major < '4' or (major == '4' and minor < '2'):
                 raise RuntimeError(_('Shell completion is not supported for Bash versions older than 4.2.'))
         else:
             raise RuntimeError(_("Couldn't detect Bash version, shell completion is not supported."))

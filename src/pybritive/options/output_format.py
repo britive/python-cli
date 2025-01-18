@@ -1,6 +1,6 @@
 import click
 
-from ..choices.output_format import output_format_choices
+from pybritive.choices.output_format import output_format_choices
 
 option = click.option(
     '--format',

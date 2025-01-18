@@ -3,14 +3,15 @@ import json
 import os
 import shutil
 from pathlib import Path
+from typing import Optional
 
 import click
-from britive.britive import Britive
+from britive.helpers.utils import parse_tenant
 
-from ..choices.backend import backend_choices
-from ..choices.mode import mode_choices
-from ..choices.output_format import output_format_choices
-from ..helpers.split import profile_split
+from pybritive.choices.backend import backend_choices
+from pybritive.choices.mode import mode_choices
+from pybritive.choices.output_format import output_format_choices
+from pybritive.helpers.split import profile_split
 
 
 def extract_tenant(tenant_key):
@@ -55,7 +56,7 @@ gcp_fields = ['gcloud_default_account']
 
 
 class ConfigManager:
-    def __init__(self, cli: object, tenant_name: str = None):
+    def __init__(self, cli: object, tenant_name: Optional[str] = None):
         self.tenant_name = tenant_name
         self.home = os.getenv('PYBRITIVE_HOME_DIR', str(Path.home()))
         self.base_path = str(Path(self.home) / '.britive')
@@ -82,7 +83,7 @@ class ConfigManager:
         else:  # otherwise we can remove all items in the directory and the directory itself
             shutil.rmtree(str(path), ignore_errors=True)
 
-    def get_output_format(self, output_format: str = None):
+    def get_output_format(self, output_format: Optional[str] = None):
         return coalesce(
             output_format,
             self.get_tenant().get('output_format'),
@@ -144,7 +145,7 @@ class ConfigManager:
                     'Tenant not provided, no default tenant set, and more than one tenant exists.'
                 )
             # nothing given but only 1 tenant so assume that is what should be used
-            provided_tenant_name = list(self.tenants)[0]
+            provided_tenant_name = next(iter(self.tenants))
 
         # if we get here then we now have a tenant name we can check to ensure exists
         if provided_tenant_name not in self.aliases_and_names and not name:
@@ -164,7 +165,7 @@ class ConfigManager:
         with open(str(self.path), 'w', encoding='utf-8') as f:
             config.write(f, space_around_delimiters=False)
 
-    def save_tenant(self, tenant: str, alias: str = None, output_format: str = None):
+    def save_tenant(self, tenant: str, alias: Optional[str] = None, output_format: Optional[str] = None):
         self.load()
         if not alias:
             alias = tenant
@@ -175,7 +176,12 @@ class ConfigManager:
             self.config[f'tenant-{alias}']['output_format'] = output_format
         self.save()
 
-    def save_global(self, default_tenant_name: str = None, output_format: str = None, backend: str = None):
+    def save_global(
+        self,
+        default_tenant_name: Optional[str] = None,
+        output_format: Optional[str] = None,
+        backend: Optional[str] = None,
+    ):
         self.load()
         if not default_tenant_name and not output_format and not backend:
             return
@@ -194,8 +200,7 @@ class ConfigManager:
         aliases = self.config.get('profile-aliases', {})
         if reverse_keys:
             return {v: k for k, v in aliases.items()}
-        else:
-            return aliases
+        return aliases
 
     def save_profile_alias(self, alias, profile):
         self.profile_aliases[alias] = profile
@@ -300,9 +305,9 @@ class ConfigManager:
                 self.validation_error_messages.append(f'Invalid {section} field {field} provided.')
             if field == 'name':
                 try:
-                    Britive.parse_tenant(value)
+                    parse_tenant(value)
                 except Exception as e:
-                    raise click.ClickException(f'Error validating tenant name: {str(e)}') from e
+                    raise click.ClickException(f'Error validating tenant name: {e!s}') from e
             if field == 'output_format' and value not in output_format_choices.choices:
                 error = f'Invalid {section} field {field} value {value} provided. Invalid value choice.'
                 self.validation_error_messages.append(error)

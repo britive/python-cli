@@ -1,6 +1,6 @@
 import click
 
-from ..choices.browser import browser_choices
+from pybritive.choices.browser import browser_choices
 
 option = click.option(
     '--browser',

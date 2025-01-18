@@ -8,6 +8,7 @@ import sys
 import uuid
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from typing import Optional
 
 import click
 import jmespath
@@ -15,6 +16,8 @@ import jwt
 import yaml
 from britive import exceptions
 from britive.britive import Britive
+from britive.helpers.utils import parse_tenant
+from colored import Fore, Style
 from jwt.exceptions import PyJWTError
 from tabulate import tabulate
 
@@ -25,11 +28,6 @@ from .helpers.config import ConfigManager
 from .helpers.credentials import EncryptedFileCredentialManager, FileCredentialManager
 from .helpers.split import profile_split
 
-try:
-    from colored import Fore, Style
-except ImportError:  # colored in < python3.9
-    from colored import fore, style
-
 default_table_format = 'fancy_grid'
 debug_enabled = os.getenv('PYBRITIVE_DEBUG')
 default_browser = os.getenv('PYBRITIVE_BROWSER')
@@ -38,11 +36,11 @@ default_browser = os.getenv('PYBRITIVE_BROWSER')
 class BritiveCli:
     def __init__(
         self,
-        tenant_name: str = None,
-        token: str = None,
+        tenant_name: Optional[str] = None,
+        token: Optional[str] = None,
         silent: bool = False,
-        passphrase: str = None,
-        federation_provider: str = None,
+        passphrase: Optional[str] = None,
+        federation_provider: Optional[str] = None,
         from_helper_console_script: bool = False,
     ):
         self.silent = silent
@@ -124,7 +122,7 @@ class BritiveCli:
                 self.b.my_access.whoami()  # this is what may cause UnauthorizedRequest
             except exceptions.UnauthorizedRequest as e:
                 raise click.ClickException('Invalid API token provided.') from e
-            except exceptions.InvalidRequest as e:
+            except exceptions.generic.BritiveGenericException as e:
                 if '400 - e1000 - bad request' in str(e).lower():  # this is for SCIM token
                     pass
                 else:
@@ -148,7 +146,7 @@ class BritiveCli:
                 except exceptions.UnauthorizedRequest as e:
                     if '401 - e0000' in str(e).lower():
                         self.debug(f'attempt {counter} of 3 - login failed')
-                        self.debug(f'login error message was {str(e)}')
+                        self.debug(f'login error message was {e!s}')
 
                         # we know the token is invalid since we got that API response
                         # so we don't need to actually logout, just clear the token from
@@ -178,16 +176,10 @@ class BritiveCli:
         if banner := self.b.banner():
             banner_changed = Cache().save_banner(tenant=self.tenant_name, banner=banner)
             msg_type = banner.get('messageType', 'UNKNOWN')
-            try:
-                color = {'caution': Style.BOLD + Fore.red, 'warning': Style.BOLD + Fore.yellow}.get(
-                    msg_type.lower(), Style.BOLD + Fore.blue
-                )
-                style_reset = Style.reset
-            except NameError:  # colored in < python3.9
-                color = {'caution': style.BOLD + fore.RED, 'warning': style.BOLD + fore.YELLOW}.get(
-                    msg_type.lower(), style.BOLD + fore.BLUE
-                )
-                style_reset = style.RESET
+            color = {'caution': Style.BOLD + Fore.red, 'warning': Style.BOLD + Fore.yellow}.get(
+                msg_type.lower(), Style.BOLD + Fore.blue
+            )
+            style_reset = Style.reset
             if banner_changed:
                 self.print(f'{color}*** {msg_type}: {banner.get("message", "<no message>")} ***{style_reset}')
 
@@ -245,7 +237,7 @@ class BritiveCli:
             if self._is_saml_user(token):
                 params['type'] = 'sso'
 
-            b.delete(f'https://{Britive.parse_tenant(self.tenant_name)}/api/auth', params=params)
+            b.delete(f'https://{parse_tenant(self.tenant_name)}/api/auth', params=params)
             self._cleanup_credentials()
 
     def debug(self, data: object, ignore_silent: bool = False):
@@ -330,7 +322,7 @@ class BritiveCli:
     def list_approvals(self):
         self.login()
         approvals = []
-        for approval in self.b.my_access.list_approvals():
+        for approval in self.b.my_approvals.list():
             approval.pop('resource', None)
             approval.pop('consumer', None)
             approval.pop('timeToApprove', None)
@@ -360,7 +352,7 @@ class BritiveCli:
                 found_resource_names.append(name)
         self.print(resources, ignore_silent=True)
 
-    def list_profiles(self, checked_out: bool = False, profile_type: str = None):
+    def list_profiles(self, checked_out: bool = False, profile_type: Optional[str] = None):
         self.login()
         self._set_available_profiles(profile_type=profile_type)
         data = []
@@ -466,7 +458,7 @@ class BritiveCli:
             data.append(row)
         self.print(data, ignore_silent=True)
 
-    def _set_available_profiles(self, from_cache_command=False, profile_type: str = None):
+    def _set_available_profiles(self, from_cache_command=False, profile_type: Optional[str] = None):
         if not self.available_profiles:
             data = []
             if not profile_type or profile_type == 'my-access':
@@ -549,7 +541,7 @@ class BritiveCli:
                 profiles=profiles, config=self.config, username=self.b.my_access.whoami()['username'], cli=self
             )
         except Exception as e:  # do NOT fail the CLI invocation because of this
-            self.print(f'error auto-generating the Britive managed kube config file: {str(e)}')
+            self.print(f'error auto-generating the Britive managed kube config file: {e!s}')
 
     def _get_app_type(self, application_id):
         self._set_available_profiles()
@@ -715,8 +707,7 @@ class BritiveCli:
             parts = [parts[0], parts[0], parts[1]]
         if len(parts) != 3:
             raise click.ClickException('Provided profile string does not have the required parts.')
-        parts_dict = {'app': parts[0], 'env': parts[1], 'profile': parts[2]}
-        return parts_dict
+        return {'app': parts[0], 'env': parts[1], 'profile': parts[2]}
 
     def _extend_checkout(self, profile, console):
         self.login()
@@ -779,7 +770,7 @@ class BritiveCli:
         # handle this special use case and quit
         if extend:
             self._extend_checkout(profile, console)
-            return
+            return None
 
         credentials = None
         app_type = None
@@ -1056,7 +1047,7 @@ class BritiveCli:
         profile_hash = hashlib.sha256(string=profile.encode('utf-8')).hexdigest()
         return f'gcloudauthexec-{profile_hash}.json'
 
-    def clear_gcloud_auth_key_files(self, profile: str = None):
+    def clear_gcloud_auth_key_files(self, profile: Optional[str] = None):
         if profile:  # we want to attempt a gcloud cli command
             import subprocess  # lazy load as this will not always be needed
 
@@ -1086,7 +1077,7 @@ class BritiveCli:
                         self.debug(' '.join(commands))
                         subprocess.run(commands, check=True)
                 except Exception as e:
-                    self.print(f'could not reset gcloud CLI active account due to issue: {str(e)}')
+                    self.print(f'could not reset gcloud CLI active account due to issue: {e!s}')
         self.config.clear_gcloud_auth_key_files(profile=profile)
 
     def api(self, method, parameters: dict, query=None):
@@ -1186,7 +1177,7 @@ class BritiveCli:
             raise click.ClickException('multiple matching profiles found - cannot determine which profile to use')
 
         # and now we can check to ensure we have only 1 environment
-        found_profile_id = list(found_profiles)[0]
+        found_profile_id = next(iter(found_profiles))
         possible_environments = found_profiles[found_profile_id]
         if len(possible_environments) == 0:
             raise click.ClickException('no profile found with the provided application, environment, and profile names')
@@ -1273,7 +1264,7 @@ class BritiveCli:
         if key_source == 'ssh-agent':
             # cleanup any old ssh keys that were randomly generated
             now = int(time.time())
-            for key in glob.glob(f'{str(ssh_dir)}/random-*'):
+            for key in glob.glob(f'{ssh_dir!s}/random-*'):
                 file = key.split('/')[-1].split('.')[0]
                 expiration = int(file.split('-')[2])
                 if expiration < now:
@@ -1342,7 +1333,7 @@ class BritiveCli:
 
             if key_source == 'static':
                 ssh_dir = Path(self.config.path).parent.absolute() / 'ssh'
-                lines.append(f'\tIdentityFile {str(ssh_dir)}/%h.%r.pem')
+                lines.append(f'\tIdentityFile {ssh_dir!s}/%h.%r.pem')
         else:
             line = '\tProxyCommand eval $(pybritive ssh aws ssm-proxy --hostname %h --username %r --port-number %p)'
             lines.append(line)
@@ -1412,9 +1403,9 @@ class BritiveCli:
         self.login()
 
         if decision == 'approve':
-            self.b.my_access.approve_request(request_id=request_id)
+            self.b.my_approvals.approve_request(request_id=request_id)
         if decision == 'reject':
-            self.b.my_access.reject_request(request_id=request_id)
+            self.b.my_approvals.reject_request(request_id=request_id)
 
     def clear_cached_aws_credentials(self, profile):
         # start with the profile name that was passed in from the command
@@ -1510,7 +1501,7 @@ class BritiveCli:
                         '--project',
                         project,
                         '--metadata-from-file',
-                        f'ssh-keys={str(key_file)}',
+                        f'ssh-keys={key_file!s}',
                         '--zone',
                         zone,
                         '--verbosity=error',
@@ -1546,7 +1537,7 @@ class BritiveCli:
 
             if key_source == 'static':
                 ssh_dir = Path(self.config.path).parent.absolute() / 'ssh'
-                lines.append(f'\tIdentityFile {str(ssh_dir)}/%h.%r.pem')
+                lines.append(f'\tIdentityFile {ssh_dir!s}/%h.%r.pem')
         else:
             line = (
                 '\tProxyCommand eval $(pybritive ssh gcp identity-aware-proxy --hostname %h --username %r '

@@ -1,6 +1,6 @@
 import click
 
-from ..choices.ssh_push_public_key import ssh_push_public_key_choices
+from pybritive.choices.ssh_push_public_key import ssh_push_public_key_choices
 
 
 def validate(ctx, param, value):

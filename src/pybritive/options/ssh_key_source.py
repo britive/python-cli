@@ -1,6 +1,6 @@
 import click
 
-from ..choices.ssh_key_source import ssh_key_source_choices
+from pybritive.choices.ssh_key_source import ssh_key_source_choices
 
 option = click.option(
     '--key-source',

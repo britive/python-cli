@@ -1,5 +1,5 @@
 import os
-from typing import Any, Dict
+from typing import Any
 
 from click.parser import split_arg_string
 from click.shell_completion import CompletionItem, ShellComplete, add_completion_class
@@ -69,7 +69,7 @@ class PowershellComplete(ShellComplete):
             value = f'"{value}"'
         return f'{value}'
 
-    def source_vars(self) -> Dict[str, Any]:
+    def source_vars(self) -> dict[str, Any]:
         """Vars for formatting :attr:`source_template`.
         By default this provides ``complete_func``, ``complete_var``,
         and ``prog_name``.

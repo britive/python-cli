@@ -1,9 +1,9 @@
 import click
 
-from ..choices.backend import backend_choices
-from ..choices.output_format import output_format_choices
-from ..helpers.build_britive import build_britive
-from ..options.britive_options import britive_options
+from pybritive.choices.backend import backend_choices
+from pybritive.choices.output_format import output_format_choices
+from pybritive.helpers.build_britive import build_britive
+from pybritive.options.britive_options import britive_options
 
 
 @click.group()
