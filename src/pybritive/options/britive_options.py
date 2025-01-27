@@ -32,6 +32,8 @@ from pybritive.options.ssh_port import option as ssh_port
 from pybritive.options.ssh_push_public_key import option as ssh_push_public_key
 from pybritive.options.ssh_username import option as ssh_username
 from pybritive.options.tenant import option as tenant
+from pybritive.options.ticket_id import option as ticket_id
+from pybritive.options.ticket_type import option as ticket_type
 from pybritive.options.token import option as token
 from pybritive.options.verbose import option as verbose
 from pybritive.options.version import option as version
@@ -50,6 +52,8 @@ options_map = {
     'configure_alias': configure_alias,
     'configure_prompt': configure_prompt,
     'justification': justification,
+    'ticket_type': ticket_type,
+    'ticket_id': ticket_id,
     'otp': otp,
     'silent': silent,
     'console': console,

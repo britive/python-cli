@@ -13,9 +13,9 @@ def request():
 
 @request.command()
 @build_britive
-@britive_options(names='justification,tenant,token,silent,passphrase,federation_provider')
+@britive_options(names='ticket_type,ticket_id,justification,tenant,token,silent,passphrase,federation_provider')
 @click_smart_profile_argument
-def submit(ctx, justification, tenant, token, silent, passphrase, federation_provider, profile):
+def submit(ctx, ticket_type, ticket_id, justification, tenant, token, silent, passphrase, federation_provider, profile):
     """Submit a request to checkout a profile.
 
     Only applicable for profiles which require approval. This command will NOT block/wait until the request is
@@ -26,7 +26,9 @@ def submit(ctx, justification, tenant, token, silent, passphrase, federation_pro
     that should be checked out. Format is `application name/environment name/profile name`.
     """
 
-    ctx.obj.britive.request_submit(profile=profile, justification=justification)
+    ctx.obj.britive.request_submit(
+        profile=profile, justification=justification, ticket_id=ticket_id, ticket_type=ticket_type
+    )
 
 
 @request.command()

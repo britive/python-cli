@@ -660,7 +660,18 @@ class BritiveCli:
             self._access_checkin(profile=profile, console=console)
 
     def _checkout(
-        self, profile_name, env_name, app_name, programmatic, blocktime, maxpolltime, justification, otp, mode=None
+        self,
+        app_name,
+        blocktime,
+        env_name,
+        justification,
+        maxpolltime,
+        otp,
+        profile_name,
+        programmatic,
+        ticket_id,
+        ticket_type,
+        mode=None,
     ):
         try:
             self.login()
@@ -670,15 +681,17 @@ class BritiveCli:
             )
 
             return self.b.my_access.checkout(
-                profile_id=ids['profile_id'],
                 environment_id=ids['environment_id'],
-                programmatic=programmatic,
                 include_credentials=True,
-                wait_time=blocktime,
-                max_wait_time=maxpolltime,
                 justification=justification,
+                max_wait_time=maxpolltime,
                 otp=otp,
+                profile_id=ids['profile_id'],
+                programmatic=programmatic,
                 progress_func=self.checkout_callback_printer,  # callback will handle silent, isatty, etc.
+                ticket_id=ticket_id,
+                ticket_type=ticket_type,
+                wait_time=blocktime,
             )
         except exceptions.ApprovalRequiredButNoJustificationProvided as e:
             if mode == 'awscredentialprocess':
@@ -692,7 +705,17 @@ class BritiveCli:
                 # this is a cli only feature - not available in the sdk
                 self.print('no programmatic access available - checking out console access instead')
                 return self._checkout(
-                    profile_name, env_name, app_name, False, blocktime, maxpolltime, justification, otp, mode
+                    app_name,
+                    blocktime,
+                    env_name,
+                    justification,
+                    maxpolltime,
+                    otp,
+                    profile_name,
+                    False,
+                    ticket_id,
+                    ticket_type,
+                    mode,
                 )
             raise e
 
@@ -713,9 +736,9 @@ class BritiveCli:
         self.login()
         parts = self._split_profile_into_parts(profile)
         self.b.my_access.extend_checkout_by_name(
-            profile_name=parts['profile'],
-            environment_name=parts['env'],
             application_name=parts['app'],
+            environment_name=parts['env'],
+            profile_name=parts['profile'],
             programmatic=not console,
         )
 
@@ -737,18 +760,20 @@ class BritiveCli:
         real_profile_name = self.config.profile_aliases.get(profile.lower(), profile).lower()
         return real_profile_name.startswith(f'{self.resource_profile_prefix}')
 
-    def _resource_checkout(self, blocktime, justification, maxpolltime, profile):
+    def _resource_checkout(self, blocktime, justification, maxpolltime, profile, ticket_id, ticket_type):
         self.login()
         resource_name, profile_name = self._split_resource_profile_into_parts(profile=profile)
         response = self.b.my_resources.checkout_by_name(
-            resource_name=resource_name,
-            profile_name=profile_name[0],
             include_credentials=True,
-            response_template=profile_name[1] if len(profile_name) > 1 else None,
             justification=justification,
-            wait_time=blocktime,
             max_wait_time=maxpolltime,
+            profile_name=profile_name[0],
             progress_func=self.checkout_callback_printer,  # callback will handle silent, isatty, etc.
+            resource_name=resource_name,
+            response_template=profile_name[1] if len(profile_name) > 1 else None,
+            ticket_id=ticket_id,
+            ticket_type=ticket_type,
+            wait_time=blocktime,
         )
         return response['credentials']
 
@@ -757,15 +782,17 @@ class BritiveCli:
         alias,
         blocktime,
         console,
-        justification,
-        otp,
-        mode,
-        maxpolltime,
-        profile,
-        passphrase,
-        force_renew,
-        verbose,
         extend,
+        force_renew,
+        justification,
+        maxpolltime,
+        mode,
+        otp,
+        passphrase,
+        profile,
+        ticket_id,
+        ticket_type,
+        verbose,
     ):
         # handle this special use case and quit
         if extend:
@@ -818,15 +845,17 @@ class BritiveCli:
 
         # create this params once so we can use it multiple places
         params = {
-            'profile_name': parts['profile'],
-            'env_name': parts['env'],
             'app_name': parts['app'],
-            'programmatic': not console,
             'blocktime': blocktime,
-            'maxpolltime': maxpolltime,
+            'env_name': parts['env'],
             'justification': justification,
-            'otp': otp,
+            'maxpolltime': maxpolltime,
             'mode': mode,
+            'otp': otp,
+            'profile_name': parts['profile'],
+            'programmatic': not console,
+            'ticket_id': ticket_id,
+            'ticket_type': ticket_type,
         }
 
         if not cached_credentials_found:  # nothing found in cache, cache is expired, or not a cachable mode
@@ -856,41 +885,50 @@ class BritiveCli:
     def checkout(
         self,
         alias,
+        aws_credentials_file,
         blocktime,
         console,
-        justification,
-        otp,
-        mode,
-        maxpolltime,
-        profile,
-        passphrase,
-        force_renew,
-        aws_credentials_file,
-        gcloud_key_file,
-        verbose,
         extend,
+        force_renew,
+        gcloud_key_file,
+        justification,
+        maxpolltime,
+        mode,
+        otp,
+        passphrase,
+        profile,
+        verbose,
+        ticket_id: Optional[str] = None,
+        ticket_type: Optional[str] = None,
         profile_type: str = 'my-access',
     ):
         if self._profile_is_for_resource(profile=profile, profile_type=profile_type):
             app_type = 'Resources'
             k8s_processor = None
             credentials = self._resource_checkout(
-                blocktime=blocktime, justification=justification, maxpolltime=maxpolltime, profile=profile
+                blocktime=blocktime,
+                justification=justification,
+                maxpolltime=maxpolltime,
+                profile=profile,
+                ticket_id=ticket_id,
+                ticket_type=ticket_type,
             )
         else:
             app_type, credentials, k8s_processor = self._access_checkout(
                 alias=alias,
                 blocktime=blocktime,
                 console=console,
-                justification=justification,
-                otp=otp,
-                mode=mode,
-                maxpolltime=maxpolltime,
-                profile=profile,
-                passphrase=passphrase,
-                force_renew=force_renew,
-                verbose=verbose,
                 extend=extend,
+                force_renew=force_renew,
+                justification=justification,
+                maxpolltime=maxpolltime,
+                mode=mode,
+                otp=otp,
+                passphrase=passphrase,
+                profile=profile,
+                ticket_id=ticket_id,
+                ticket_type=ticket_type,
+                verbose=verbose,
             )
 
         # do this down here, so we know that the profile is valid and a checkout was successful
@@ -1016,7 +1054,7 @@ class BritiveCli:
     def configure_update(self, section, field, value):
         self.config.update(section=section, field=field, value=value)
 
-    def request_submit(self, profile, justification):
+    def request_submit(self, profile, justification, ticket_id, ticket_type):
         self._validate_justification(justification)
         self.login()
         parts = self._split_profile_into_parts(profile)
@@ -1026,10 +1064,12 @@ class BritiveCli:
         )
 
         self.b.my_access.request_approval(
-            profile_id=ids['profile_id'],
-            environment_id=ids['environment_id'],
             block_until_disposition=False,
+            environment_id=ids['environment_id'],
             justification=justification,
+            profile_id=ids['profile_id'],
+            ticket_id=ticket_id,
+            ticket_type=ticket_type,
         )
 
     def request_withdraw(self, profile):
