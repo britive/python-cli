@@ -1,6 +1,6 @@
 import click
 
-from ..choices.backend import backend_choices
+from pybritive.choices.backend import backend_choices
 
 option = click.option(
     '--backend',

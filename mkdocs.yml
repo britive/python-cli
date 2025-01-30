@@ -7,8 +7,8 @@ nav:
       - GitHub Repo: https://github.com/britive/python-cli
 theme: readthedocs
 repo_url: https://github.com/britive/python-cli
-edit_uri: ''
-copyright: 2024 Britive, Inc.
+edit_uri: ""
+copyright: 2025 Britive, Inc.
 markdown_extensions:
   - attr_list
   - mkdocs-click

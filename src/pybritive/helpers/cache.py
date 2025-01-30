@@ -3,12 +3,13 @@ import json
 import os
 import time
 from pathlib import Path
+from typing import Optional
 
 from .encryption import InvalidPassphraseException, StringEncryption
 
 
 class Cache:
-    def __init__(self, passphrase: str = None):
+    def __init__(self, passphrase: Optional[str] = None):
         self.passphrase = passphrase
         self.string_encryptor = StringEncryption(passphrase=self.passphrase)
         home = os.getenv('PYBRITIVE_HOME_DIR', str(Path.home()))

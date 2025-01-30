@@ -205,7 +205,7 @@ class AwsCloudCredentialPrinter(CloudCredentialPrinter):
 
 class AzureCloudCredentialPrinter(CloudCredentialPrinter):
     def __init__(self, console, mode, profile, silent, credentials, cli):
-        key = list(credentials.keys())[0]
+        key = next(iter(credentials))
         if key != 'url':  # console url is handled differently than programmatic keys so account for it here
             credentials = json.loads(credentials[key])
         super().__init__('Azure', console, mode, profile, silent, credentials, cli)
@@ -245,7 +245,7 @@ class AzureCloudCredentialPrinter(CloudCredentialPrinter):
 
 class GcpCloudCredentialPrinter(CloudCredentialPrinter):
     def __init__(self, console, mode, profile, silent, credentials, cli, gcloud_key_file):
-        key = list(credentials.keys())[0]
+        key = next(iter(credentials))
         credentials = json.loads(credentials[key]) if key != 'url' else credentials
         super().__init__('GCP', console, mode, profile, silent, credentials, cli)
         self.gcloud_key_file = gcloud_key_file
@@ -271,7 +271,7 @@ class GcpCloudCredentialPrinter(CloudCredentialPrinter):
         path.write_text(json.dumps(self.credentials, indent=2), encoding='utf-8')
 
         self.cli.print(
-            f"gcloud auth activate-service-account {self.credentials['client_email']} --key-file {str(path)}",
+            f"gcloud auth activate-service-account {self.credentials['client_email']} --key-file {path!s}",
             ignore_silent=True,
         )
 
@@ -296,7 +296,7 @@ class GcpCloudCredentialPrinter(CloudCredentialPrinter):
 
             subprocess.run(commands, check=True)
         except Exception as e:
-            self.cli.print(f'error running `gcloud auth activate-service-account ...`: {str(e)}')
+            self.cli.print(f'error running `gcloud auth activate-service-account ...`: {e!s}')
 
 
 class KubernetesCredentialPrinter(CloudCredentialPrinter):
@@ -398,10 +398,10 @@ class OpenShiftCredentialPrinter(CloudCredentialPrinter):
 
             if command:
                 return command
-            else:
-                raise Exception('error: no `oc login` command found')
+
+            raise Exception('error: no `oc login` command found')
         except Exception as e:
-            self.cli.print(f'error when attempting to perform oidc auth code grant flow: {str(e)}', ignore_silent=True)
+            self.cli.print(f'error when attempting to perform oidc auth code grant flow: {e!s}', ignore_silent=True)
 
     def print_os(self):
         if self.mode_modifier == 'oclogin':
@@ -412,6 +412,6 @@ class OpenShiftCredentialPrinter(CloudCredentialPrinter):
             try:
                 subprocess.run(command.split(' '), check=True)
             except Exception as e:
-                self.cli.print(f'error running `gcloud auth activate-service-account ...`: {str(e)}')
+                self.cli.print(f'error running `gcloud auth activate-service-account ...`: {e!s}')
         else:
             raise ValueError(f'--mode modifier {self.mode_modifier} for mode {self.mode} not supported')

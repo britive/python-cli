@@ -1,6 +1,6 @@
 import click
 
-from ..choices.profile_type import profile_type_choices
+from pybritive.choices.profile_type import profile_type_choices
 
 option = click.option(
     '--profile-type',

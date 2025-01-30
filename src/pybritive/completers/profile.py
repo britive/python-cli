@@ -1,5 +1,5 @@
-from ..helpers.cache import Cache
-from ..helpers.config import ConfigManager
+from pybritive.helpers.cache import Cache
+from pybritive.helpers.config import ConfigManager
 
 
 def profile_completer(ctx, param, incomplete):

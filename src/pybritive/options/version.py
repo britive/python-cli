@@ -9,7 +9,7 @@ def version_callback(ctx, self, value):
     if value:
         cli_version = version('pybritive')
         click.echo(f'pybritive: {cli_version} / platform: {platform.platform()} / python: {platform.python_version()}')
-        raise click.exceptions.Exit()
+        raise click.exceptions.Exit
 
 
 option = click.option(
