@@ -1,7 +1,6 @@
 import contextlib
 import inspect
 from importlib.metadata import version
-from typing import List
 
 from britive.britive import Britive
 
@@ -97,10 +96,10 @@ def command_api_patch_shell_complete(cls):
     # https://stackoverflow.com/questions/43778914/python3-using-super-in-eq-methods-raises-runtimeerror-super-class
     __class__ = cls  # provide closure cell for super()  # noqa: F841
 
-    def shell_complete(self, ctx: Context, incomplete: str) -> List[CompletionItem]:
+    def shell_complete(self, ctx: Context, incomplete: str) -> list[CompletionItem]:
         from click.shell_completion import CompletionItem  # here since this method will be monkey patched in
 
-        results: List[CompletionItem] = []
+        results: list[CompletionItem] = []
 
         if incomplete and not incomplete[0].isalnum():
             method = ctx.params.get('method')

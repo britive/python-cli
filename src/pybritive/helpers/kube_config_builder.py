@@ -5,14 +5,14 @@ from pathlib import Path
 
 import yaml
 
-from ..britive_cli import BritiveCli
+from pybritive.britive_cli import BritiveCli
+
 from .config import ConfigManager
 
 
 def sanitize(name: str):
-    name = name.lower()
     # name = name.replace(' ', '_').replace('/', "_").replace('\\', '_')
-    return name
+    return name.lower()
 
 
 def check_env_var(filename, cli: BritiveCli):
@@ -95,9 +95,9 @@ def valid_cert(cert: str, profile: str, cli: BritiveCli):
     try:
         decoded_cert = base64.b64decode(cert).decode('utf-8')
         if not decoded_cert.startswith('-----BEGIN CERTIFICATE-----'):
-            raise ValueError()
+            raise ValueError
         if not decoded_cert.strip().endswith('-----END CERTIFICATE-----'):
-            raise ValueError()
+            raise ValueError
         return True
     except Exception:
         cli.print(f'could not properly decode certificate authority data for profile {profile} - skipping this cluster')

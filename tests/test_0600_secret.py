@@ -19,7 +19,7 @@ def test_download(runner, cli):
     result = runner.invoke(cli, 'secret download /pybritive-test-file'.split(' '))
     message = 'wrote contents of secret file to'
     common_asserts(result, message)
-    with open(filename, 'r', encoding='utf-8') as f:
+    with open(filename, encoding='utf-8') as f:
         assert 'test' in f.read()
     path = Path(filename)
     path.unlink(missing_ok=True)
@@ -30,7 +30,7 @@ def test_download_filename_provided(runner, cli):
     result = runner.invoke(cli, f'secret download /pybritive-test-file -F {filename}'.split(' '))
     message = 'wrote contents of secret file to'
     common_asserts(result, message)
-    with open(filename, 'r', encoding='utf-8') as f:
+    with open(filename, encoding='utf-8') as f:
         assert 'test' in f.read()
     path = Path(filename)
     path.unlink(missing_ok=True)

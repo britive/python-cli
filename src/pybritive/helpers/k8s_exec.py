@@ -59,7 +59,7 @@ def main():
             exit()
 
     if not creds:
-        from ..britive_cli import BritiveCli  # lazy load for performance purposes
+        from pybritive.britive_cli import BritiveCli  # lazy load for performance purposes
 
         b = BritiveCli(
             tenant_name=args['tenant'],

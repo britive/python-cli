@@ -3,7 +3,7 @@ import os
 
 import click
 
-from ..completers.profile import profile_completer
+from pybritive.completers.profile import profile_completer
 
 
 def validate_profile(ctx, param, value):

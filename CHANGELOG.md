@@ -3,6 +3,29 @@
 > As of v1.4.0, release candidates will be published in an effort to get new features out faster while still allowing
 > time for full QA testing before moving the release candidate to a full release.
 
+## v2.1.0-rc.0 [2025-01-27]
+
+__What's New:__
+
+* `pybritive-aws-cred-process` can now prompt users for `otp` or `justification` when needed.
+* `my_resource` profile checkouts can now specify a `response_template` by appending `/{template name}` to the profile.
+
+__Enhancements:__
+
+* Added ITSM `--ticket-type` `--ticket-id` options.
+
+__Bug Fixes:__
+
+* None
+
+__Dependencies:__
+
+* `britive~=4.0`
+
+__Other:__
+
+* Python 3.8 is EOL, so support is dropped.
+
 ## v2.0.1 [2025-01-17]
 
 __What's New:__

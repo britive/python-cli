@@ -1,6 +1,7 @@
 import base64
 import os
 import uuid
+from typing import Optional
 
 from cryptography.fernet import Fernet, InvalidToken
 from cryptography.hazmat.backends import default_backend
@@ -13,7 +14,7 @@ class InvalidPassphraseException(Exception):
 
 
 class StringEncryption:
-    def __init__(self, passphrase: str = None):
+    def __init__(self, passphrase: Optional[str] = None):
         self.passphrase = passphrase or str(uuid.getnode())  # TODO change?
 
     @staticmethod
@@ -42,4 +43,4 @@ class StringEncryption:
             key = self._key(b64salt)
             return Fernet(key).decrypt(base64.b64decode(ciphertext.encode())).decode('utf-8')
         except InvalidToken as e:
-            raise InvalidPassphraseException() from e
+            raise InvalidPassphraseException from e

@@ -5,7 +5,7 @@ import click
 from click import Context
 from merge_args import merge_args
 
-from ..britive_cli import BritiveCli
+from pybritive.britive_cli import BritiveCli
 
 
 @dataclass
@@ -16,7 +16,7 @@ class Common:
 def should_set_output_format(ctx: Context) -> bool:
     parent_command = ctx.parent.command.name
     command = ctx.command.name
-    return not ((parent_command in ['configure', 'clear']) or parent_command == 'cache' and command in ['clear'])
+    return not ((parent_command in ['configure', 'clear']) or (parent_command == 'cache' and command in ['clear']))
 
 
 # this wrapper exists to centralize all "common" CLI options (options that exist for all commands)

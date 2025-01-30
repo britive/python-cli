@@ -54,5 +54,5 @@ def cli():
 
 @pytest.fixture
 def unset_api_token_env_var():
-    if os.getenv((name := 'BRITIVE_API_TOKEN')):
+    if os.getenv(name := 'BRITIVE_API_TOKEN'):
         del os.environ[name]

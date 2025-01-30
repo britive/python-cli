@@ -7,11 +7,13 @@ import random
 import time
 import webbrowser
 from pathlib import Path
+from typing import Optional
 
 import click
 import jwt
 import requests
 from britive.britive import Britive
+from britive.helpers.utils import parse_tenant
 from dateutil import parser
 from requests.adapters import HTTPAdapter, Retry
 
@@ -52,19 +54,19 @@ class CredentialManager:
         tenant_name: str,
         tenant_alias: str,
         cli: any,
-        federation_provider: str = None,
+        federation_provider: Optional[str] = None,
         browser: str = os.getenv('PYBRITIVE_BROWSER'),
     ):
         self.cli = cli
         self.tenant = tenant_name
         self.alias = tenant_alias
-        self.base_url = f'https://{Britive.parse_tenant(tenant_name)}'
+        self.base_url = f'https://{parse_tenant(tenant_name)}'
         self.federation_provider = federation_provider
         self.browser = browser
         self.session = None
 
         # not sure if we really need 32 random bytes or if any random string would work, but it was carried forward from
-        # the now deprecated node.js CLI, so it remains for the time being. 
+        # the now deprecated node.js CLI, so it remains for the time being.
         while True:  # will break eventually when we get values that do not include --
             self.verifier = b64_encode_url_safe(bytes([random.getrandbits(8) for _ in range(0, 32)]))
             self.auth_token = b64_encode_url_safe(bytes(hashlib.sha512(self.verifier.encode('utf-8')).digest()))
@@ -117,7 +119,7 @@ class CredentialManager:
         num_tries = 1
         while True:
             if num_tries > 60:
-                raise InteractiveLoginTimeout()
+                raise InteractiveLoginTimeout
             response = self.retrieve_tokens()
 
             if response.status_code >= 400:
@@ -125,7 +127,6 @@ class CredentialManager:
                 num_tries += 1
             else:
                 credentials = response.json()['authenticationResult']
-
                 try:
                     # attempt to pull the expiration time from the jwt
                     expiration_time_ms = self._extract_exp_from_jwt(
@@ -194,7 +195,7 @@ class CredentialManager:
                 duration = int(helper[1])
             except ValueError:
                 self.cli.print(
-                    f'Invalid federation provider duration {helper[1]} provided - defaulting ' f'to {duration} seconds.'
+                    f'Invalid federation provider duration {helper[1]} provided - defaulting to {duration} seconds.'
                 )
 
         # generate the token
@@ -260,8 +261,7 @@ class CredentialManager:
             else:
                 self.perform_interactive_login()
 
-        token = self._get_token()
-        return token
+        return self._get_token()
 
     def has_valid_credentials(self):
         if not self.credentials or self.credentials == {}:
@@ -280,7 +280,7 @@ class FileCredentialManager(CredentialManager):
         tenant_name: str,
         tenant_alias: str,
         cli: any,
-        federation_provider: str = None,
+        federation_provider: Optional[str] = None,
         browser: str = os.getenv('PYBRITIVE_BROWSER'),
     ):
         home = os.getenv('PYBRITIVE_HOME_DIR', str(Path.home()))
@@ -333,8 +333,8 @@ class EncryptedFileCredentialManager(CredentialManager):
         tenant_name: str,
         tenant_alias: str,
         cli: any,
-        passphrase: str = None,
-        federation_provider: str = None,
+        passphrase: Optional[str] = None,
+        federation_provider: Optional[str] = None,
         browser: str = os.getenv('PYBRITIVE_BROWSER'),
     ):
         home = os.getenv('PYBRITIVE_HOME_DIR', str(Path.home()))
