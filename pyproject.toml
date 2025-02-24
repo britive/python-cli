@@ -28,7 +28,7 @@ requires-python = ">= 3.9"
 dependencies = [
     "britive~=4.0",
     "click>=8.1.7",
-    "colored",
+    "colored>=2.2.5",
     "cryptography",
     "jmespath",
     "merge-args",

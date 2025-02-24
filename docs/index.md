@@ -180,7 +180,7 @@ Below is the list of application types in which a 2 part format is acceptable.
 The list can be generated (assuming the caller has the required permissions) on demand with the following command.
 
 ```sh
-pybritive api applications.catalog \
+pybritive api application_management.applications.catalog \
     --query '[*].{"application type": name,"2 part format allowed":requiresHierarchicalModel}' \
     --format table
 ```
@@ -403,16 +403,16 @@ Usage examples of: (`pybritive api method --parameter1 value1 --parameter2 value
 
 ```sh
 # list all users in the britive tenant
-pybritive api users.list
+pybritive api identity_management.users.list
 
 # create a tag
-pybritive api tags.create --name testtag --description "test tag"
+pybritive api identity_management.tags.create --name testtag --description "test tag"
 
 # list all users and output just the email address of each user via jmespath query
-pybritive api users.list --query '[].email'
+pybritive api identity_management.users.list --query '[].email'
 
 # create a profile
-pybritive api profiles.create --application-id <id> --name testprofile
+pybritive api application_management.profiles.create --application-id <id> --name testprofile
 
 # create a secret
 pybritive api secrets_manager.secrets.create --name test --vault-id <id> --value '{"Note": {"secret1": "abc"}}'
