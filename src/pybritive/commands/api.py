@@ -33,13 +33,13 @@ def api(ctx, query, output_format, tenant, token, silent, passphrase, federation
 
     * generic: pybritive api method --parameter1 value1 --parameter2 value2 [--parameterX valueX]
 
-    * pybritive api users.list
+    * pybritive api identity_management.users.list
 
-    * pybritive api tags.create --name testtag --description "test tag"
+    * pybritive api identity_management.tags.create --name testtag --description "test tag"
 
-    * pybritive api users.list --query '[].email'
+    * pybritive api identity_management.users.list --query '[].email'
 
-    * pybritive api profiles.create --application-id <id> --name testprofile
+    * pybritive api application_management.profiles.create --application-id <id> --name testprofile
 
     """
     parameters = {ctx.args[i][2:]: ctx.args[i + 1] for i in range(0, len(ctx.args), 2)}
