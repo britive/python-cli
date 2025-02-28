@@ -120,7 +120,7 @@ def get_args():
     options = getopt(
         argv[1:],
         't:T:p:f:P:F:hv',
-        ['tenant=', 'token=', 'passphrase=', 'force-renew=', 'profile=', 'federation-provider=help', 'version'],
+        ['tenant=', 'token=', 'passphrase=', 'force-renew=', 'profile=', 'federation-provider=', 'help', 'version'],
     )[0]
 
     args = {
