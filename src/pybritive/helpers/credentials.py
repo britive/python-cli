@@ -12,8 +12,10 @@ from typing import Optional
 import click
 import jwt
 import requests
-from britive.britive import Britive
-from britive.helpers.utils import parse_tenant
+from britive.helpers.utils import (
+    parse_tenant,
+    source_federation_token,
+)
 from dateutil import parser
 from requests.adapters import HTTPAdapter, Retry
 
@@ -182,8 +184,7 @@ class CredentialManager:
 
     def perform_federation_provider_authentication(self):
         self.cli.print(
-            f'Performing {self.federation_provider} federation provider authentication '
-            f'against tenant {self.tenant}.'
+            f'Performing {self.federation_provider} federation provider authentication against tenant {self.tenant}.'
         )
 
         # we need to extract the duration, if provided
@@ -199,9 +200,7 @@ class CredentialManager:
                 )
 
         # generate the token
-        generated_token = Britive.source_federation_token_from(
-            provider=helper[0], tenant=self.tenant, duration_seconds=duration
-        )
+        generated_token = source_federation_token(provider=helper[0], tenant=self.tenant, duration_seconds=duration)
 
         # obtain the provider and expiration time of the token
         provider, token = generated_token.split('::')
