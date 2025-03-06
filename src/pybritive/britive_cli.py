@@ -162,7 +162,6 @@ class BritiveCli:
         should_get_profiles = any([self.config.auto_refresh_profile_cache(), self.config.auto_refresh_kube_config()])
         if explicit and should_get_profiles:
             self._set_available_profiles()  # will handle calling cache_profiles() and construct_kube_config()
-
         self._display_banner()
 
     def _display_banner(self):
@@ -343,7 +342,11 @@ class BritiveCli:
         self.login()
         found_resource_names = []
         resources = []
-        for item in self.b.my_resources.list_profiles():
+        if resource_profile_limit := int(self.config.my_resources_retrieval_limit):
+            profiles = self.b.my_resources.list(size=resource_profile_limit)['data']
+        else:
+            profiles = self.b.my_resources.list_profiles()
+        for item in profiles:
             name = item['resourceName']
             if name not in found_resource_names:
                 resources.append(
@@ -389,7 +392,6 @@ class BritiveCli:
                 if profile_is_checked_out:
                     row['Expiration'] = checked_out_profiles[key]['expiration']
                     total_seconds = checked_out_profiles[key]['expires_in_seconds']
-
                     hours, remainder = divmod(total_seconds, 3600)
                     minutes, seconds = divmod(remainder, 60)
                     time_format = f'{hours:02d}:{minutes:02d}:{seconds:02d}'
@@ -406,7 +408,7 @@ class BritiveCli:
                     if profile['2_part_profile_format_allowed']:
                         row.pop('Environment', None)
                 elif self.output_format == 'json':
-                    row['Name'] = f"{row['Application']}/{row['Environment']}/{row['Profile']}"
+                    row['Name'] = f'{row["Application"]}/{row["Environment"]}/{row["Profile"]}'
 
                 data.append(row)
 
@@ -484,7 +486,12 @@ class BritiveCli:
                             }
                             data.append(row)
             if self.b.feature_flags.get('server-access') and (not profile_type or profile_type == 'my-resources'):
-                for item in self.b.my_resources.list_profiles():
+                if not (resource_profile_limit := int(self.config.my_resources_retrieval_limit)):
+                    profiles = self.b.my_resources.list_profiles()
+                else:
+                    profiles = self.b.my_resources.list(size=resource_profile_limit)
+                    profiles = profiles['data']
+                for item in profiles:
                     row = {
                         'app_name': None,
                         'app_id': None,
@@ -761,21 +768,25 @@ class BritiveCli:
         return real_profile_name.startswith(f'{self.resource_profile_prefix}')
 
     def _resource_checkout(self, blocktime, justification, maxpolltime, profile, ticket_id, ticket_type):
-        self.login()
-        resource_name, profile_name = self._split_resource_profile_into_parts(profile=profile)
-        response = self.b.my_resources.checkout_by_name(
-            include_credentials=True,
-            justification=justification,
-            max_wait_time=maxpolltime,
-            profile_name=profile_name[0],
-            progress_func=self.checkout_callback_printer,  # callback will handle silent, isatty, etc.
-            resource_name=resource_name,
-            response_template=profile_name[1] if len(profile_name) > 1 else None,
-            ticket_id=ticket_id,
-            ticket_type=ticket_type,
-            wait_time=blocktime,
-        )
-        return response['credentials']
+        try:
+            self.login()
+            resource_name, profile_name = self._split_resource_profile_into_parts(profile=profile)
+            return self.b.my_resources.checkout_by_name(
+                include_credentials=True,
+                justification=justification,
+                max_wait_time=maxpolltime,
+                profile_name=profile_name[0],
+                progress_func=self.checkout_callback_printer,  # callback will handle silent, isatty, etc.
+                resource_name=resource_name,
+                response_template=profile_name[1] if len(profile_name) > 1 else None,
+                ticket_id=ticket_id,
+                ticket_type=ticket_type,
+                wait_time=blocktime,
+            )['credentials']
+        except exceptions.ApprovalRequiredButNoJustificationProvided as e:
+            raise click.ClickException('approval required and no justification provided.') from e
+        except exceptions.StepUpAuthRequiredButNotProvided as e:
+            raise click.ClickException('Step Up Authentication required and no OTP provided.') from e
 
     def _access_checkout(
         self,

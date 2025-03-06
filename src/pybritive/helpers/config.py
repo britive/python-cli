@@ -46,6 +46,7 @@ global_fields = [
     'auto-refresh-profile-cache',
     'auto-refresh-kube-config',
     'ca_bundle',
+    'my_resources_retrieval_limit',
 ]
 
 tenant_fields = ['name', 'output_format', 'sso_idp']
@@ -73,6 +74,7 @@ class ConfigManager:
         self.validation_error_messages = []
         self.gcloud_key_file_path: str = str(Path(self.path).parent / 'pybritive-gcloud-key-files')
         self.global_ca_bundle = None
+        self.my_resources_retrieval_limit = None
 
     def clear_gcloud_auth_key_files(self, profile=None):
         path = Path(self.gcloud_key_file_path)
@@ -122,6 +124,7 @@ class ConfigManager:
         self.aliases_and_names = {**self.tenants, **self.tenants_by_name}
         self.profile_aliases = self.config.get('profile-aliases', {})
         self.global_ca_bundle = self.config.get('ca_bundle', {})
+        self.my_resources_retrieval_limit = self.config.get('global', {}).get('my_resources_retrieval_limit', '0')
         self.loaded = True
 
     def get_tenant(self):
@@ -276,6 +279,9 @@ class ConfigManager:
                 if not Path.is_file(ca_bundle_file_path):
                     error = f'Invalid {field} file {ca_bundle_file_path}. File does not exist.'
                     self.validation_error_messages.append(error)
+            if field in ['my_access_retrieval_limit', 'my_resources_retrieval_limit'] and not value.isnumeric():
+                error = f'Invalid {section} field {field} value {value} provided. Must be an integer.'
+                self.validation_error_messages.append(error)
 
     def validate_profile_aliases(self, section, fields):
         for field, value in fields.items():
