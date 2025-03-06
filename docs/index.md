@@ -758,13 +758,13 @@ The cache will not be updated over time. In order to update the cache more regul
 Note that this config flag is NOT available directly via `pybritive configure global ...`.
 
 ```sh
-pybritive configure update global auto-refresh-profile-cache true
+pybritive configure update global auto_refresh_profile_cache true
 ```
 
 To turn the feature off run
 
 ```sh
-pybritive configure update global auto-refresh-profile-cache false
+pybritive configure update global auto_refresh_profile_cache false
 pybritive cache clear
 ```
 
