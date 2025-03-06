@@ -160,8 +160,8 @@ def get_args():
 
 def usage():
     print(
-        f'Usage : {argv[0]} --profile <profile> [-t/--tenant, -T/--token, -p/--passphrase, -f/--force-renew, '
-        f'-F/--federation-provider]'
+        f'Usage : {argv[0]} -P/--profile <profile> [-t/--tenant, -T/--token, -p/--passphrase, -f/--force-renew,'
+        ' -F/--federation-provider]'
     )
     raise SystemExit
 

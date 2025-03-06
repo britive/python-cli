@@ -713,6 +713,8 @@ class BritiveCli:
             if mode == 'awscredentialprocess':
                 raise e
             raise click.ClickException('approval required and no justification provided.') from e
+        except exceptions.StepUpAuthRequiredButNotProvided as e:
+            raise click.ClickException('Step Up Authentication required and no OTP provided.') from e
         except ValueError as e:
             raise click.BadParameter(str(e)) from e
         except Exception as e:
