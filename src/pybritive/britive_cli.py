@@ -464,27 +464,36 @@ class BritiveCli:
         if not self.available_profiles:
             data = []
             if not profile_type or profile_type == 'my-access':
-                for app in self.b.my_access.list_profiles():
-                    for profile in app.get('profiles', []):
-                        for env in profile.get('environments', []):
-                            row = {
-                                'app_name': app['appName'],
-                                'app_id': app['appContainerId'],
-                                'app_type': app['catalogAppName'],
-                                'app_description': app['appDescription'],
-                                'env_name': env['environmentName'],
-                                'env_id': env['environmentId'],
-                                'env_short_name': env['alternateEnvironmentName'],
-                                'env_description': env['environmentDescription'],
-                                'profile_name': profile['profileName'],
-                                'profile_id': profile['profileId'],
-                                'profile_allows_console': profile['consoleAccess'],
-                                'profile_allows_programmatic': profile['programmaticAccess'],
-                                'profile_description': profile['profileDescription'],
-                                '2_part_profile_format_allowed': app['requiresHierarchicalModel'],
-                                'env_properties': env.get('profileEnvironmentProperties', {}),
-                            }
-                            data.append(row)
+                access_profile_limit = int(self.config.my_access_retrieval_limit)
+                access_data = self.b.my_access.list(size=access_profile_limit)
+                apps = {app['appContainerId']: app for app in access_data['apps']}
+                envs = {env['environmentId']: env for env in access_data['environments']}
+                accs = {
+                    p: {'env_id': v, 'types': [t['accessType'] for t in access_data['accesses'] if t['papId'] == p]}
+                    for p, v in {(a['papId'], a['environmentId']) for a in access_data['accesses']}
+                }
+                for profile in access_data['profiles']:
+                    acc = accs.get(profile['papId'], {})
+                    env = envs.get(acc.get('env_id'), {})  # Get environment info or default to empty dict
+                    app = apps.get(profile['appContainerId'], {})
+                    row = {
+                        'app_name': profile['catalogAppDisplayName'],
+                        'app_id': profile['appContainerId'],
+                        'app_type': profile['catalogAppName'],
+                        'app_description': app.get('appDescription'),
+                        'env_name': env.get('environmentName', ''),  # Pull from `environments`
+                        'env_id': env.get('environmentId', ''),  # Pull from `environments`
+                        'env_short_name': env.get('alternateEnvironmentName', ''),  # Pull from `environments`
+                        'env_description': env.get('environmentDescription', ''),  # Pull from `environments`
+                        'profile_name': profile['papName'],
+                        'profile_id': profile['papId'],
+                        'profile_allows_console': 'CONSOLE' in acc.get('types'),
+                        'profile_allows_programmatic': 'PROGRAMMATIC' in acc.get('types'),
+                        'profile_description': profile['papDescription'],
+                        '2_part_profile_format_allowed': app['requiresHierarchicalModel'],
+                        'env_properties': env.get('profileEnvironmentProperties', {}),  # Pull from `environments`
+                    }
+                    data.append(row)
             if self.b.feature_flags.get('server-access') and (not profile_type or profile_type == 'my-resources'):
                 if not (resource_profile_limit := int(self.config.my_resources_retrieval_limit)):
                     profiles = self.b.my_resources.list_profiles()
@@ -1466,7 +1475,7 @@ class BritiveCli:
         # profile name as well - it will not hurt anything to try to clear
         # both versions
         parts = self._split_profile_into_parts(profile)
-        Cache().clear_credentials(profile_name=f"{parts['app']}/{parts['env']}/{parts['profile']}")
+        Cache().clear_credentials(profile_name=f'{parts["app"]}/{parts["env"]}/{parts["profile"]}')
 
     def ssh_gcp_identity_aware_proxy(self, username, hostname, push_public_key, port_number, key_source):
         self.silent = True
