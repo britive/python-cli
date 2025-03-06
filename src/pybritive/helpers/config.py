@@ -40,12 +40,14 @@ def coalesce(*arg):
 non_tenant_sections = ['global', 'profile-aliases', 'aws', 'gcp']
 
 global_fields = [
+    'auto_refresh_kube_config',
+    'auto_refresh_profile_cache',
+    'ca_bundle',
+    'credential_backend',
     'default_tenant',
     'output_format',
-    'credential_backend',
-    'auto-refresh-profile-cache',
-    'auto-refresh-kube-config',
-    'ca_bundle',
+    'my_access_retrieval_limit',
+    'my_resources_retrieval_limit',
 ]
 
 tenant_fields = ['name', 'output_format', 'sso_idp']
@@ -73,6 +75,8 @@ class ConfigManager:
         self.validation_error_messages = []
         self.gcloud_key_file_path: str = str(Path(self.path).parent / 'pybritive-gcloud-key-files')
         self.global_ca_bundle = None
+        self.my_access_retrieval_limit = None
+        self.my_resources_retrieval_limit = None
 
     def clear_gcloud_auth_key_files(self, profile=None):
         path = Path(self.gcloud_key_file_path)
@@ -121,7 +125,9 @@ class ConfigManager:
                     self.tenants_by_name[name] = item
         self.aliases_and_names = {**self.tenants, **self.tenants_by_name}
         self.profile_aliases = self.config.get('profile-aliases', {})
-        self.global_ca_bundle = self.config.get('ca_bundle', {})
+        self.global_ca_bundle = self.config.get('global', {}).get('ca_bundle')
+        self.my_access_retrieval_limit = self.config.get('global', {}).get('my_access_retrieval_limit', '0')
+        self.my_resources_retrieval_limit = self.config.get('global', {}).get('my_resources_retrieval_limit', '0')
         self.loaded = True
 
     def get_tenant(self):
@@ -260,10 +266,10 @@ class ConfigManager:
             if field == 'credential_backend' and value not in backend_choices.choices:
                 error = f'Invalid {section} field {field} value {value} provided. Invalid value choice.'
                 self.validation_error_messages.append(error)
-            if field == 'auto-refresh-profile-cache' and value not in ['true', 'false']:
+            if field.replace('-', '_') == 'auto_refresh_profile_cache' and value not in ['true', 'false']:
                 error = f'Invalid {section} field {field} value {value} provided. Invalid value choice.'
                 self.validation_error_messages.append(error)
-            if field == 'auto-refresh-kube-config' and value not in ['true', 'false']:
+            if field.replace('-', '_') == 'auto_refresh_kube_config' and value not in ['true', 'false']:
                 error = f'Invalid {section} field {field} value {value} provided. Invalid value choice.'
                 self.validation_error_messages.append(error)
             if field == 'default_tenant':
@@ -276,6 +282,9 @@ class ConfigManager:
                 if not Path.is_file(ca_bundle_file_path):
                     error = f'Invalid {field} file {ca_bundle_file_path}. File does not exist.'
                     self.validation_error_messages.append(error)
+            if field in ['my_access_retrieval_limit', 'my_resources_retrieval_limit'] and not value.isnumeric():
+                error = f'Invalid {section} field {field} value {value} provided. Must be an integer.'
+                self.validation_error_messages.append(error)
 
     def validate_profile_aliases(self, section, fields):
         for field, value in fields.items():
@@ -314,10 +323,14 @@ class ConfigManager:
 
     def auto_refresh_profile_cache(self):
         self.load()
-        value = self.config.get('global', {}).get('auto-refresh-profile-cache', 'false')
+        value = self.config.get('global', {}).get(
+            'auto_refresh_profile_cache', self.config.get('global', {}).get('auto-refresh-profile-cache', 'false')
+        )
         return value == 'true'
 
     def auto_refresh_kube_config(self):
         self.load()
-        value = self.config.get('global', {}).get('auto-refresh-kube-config', 'false')
+        value = self.config.get('global', {}).get(
+            'auto_refresh_kube_config', self.config.get('global', {}).get('auto-refresh-kube-config', 'false')
+        )
         return value == 'true'

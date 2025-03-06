@@ -162,7 +162,6 @@ class BritiveCli:
         should_get_profiles = any([self.config.auto_refresh_profile_cache(), self.config.auto_refresh_kube_config()])
         if explicit and should_get_profiles:
             self._set_available_profiles()  # will handle calling cache_profiles() and construct_kube_config()
-
         self._display_banner()
 
     def _display_banner(self):
@@ -343,7 +342,11 @@ class BritiveCli:
         self.login()
         found_resource_names = []
         resources = []
-        for item in self.b.my_resources.list_profiles():
+        if resource_profile_limit := int(self.config.my_resources_retrieval_limit):
+            profiles = self.b.my_resources.list(size=resource_profile_limit)['data']
+        else:
+            profiles = self.b.my_resources.list_profiles()
+        for item in profiles:
             name = item['resourceName']
             if name not in found_resource_names:
                 resources.append(
@@ -389,7 +392,6 @@ class BritiveCli:
                 if profile_is_checked_out:
                     row['Expiration'] = checked_out_profiles[key]['expiration']
                     total_seconds = checked_out_profiles[key]['expires_in_seconds']
-
                     hours, remainder = divmod(total_seconds, 3600)
                     minutes, seconds = divmod(remainder, 60)
                     time_format = f'{hours:02d}:{minutes:02d}:{seconds:02d}'
@@ -406,7 +408,7 @@ class BritiveCli:
                     if profile['2_part_profile_format_allowed']:
                         row.pop('Environment', None)
                 elif self.output_format == 'json':
-                    row['Name'] = f"{row['Application']}/{row['Environment']}/{row['Profile']}"
+                    row['Name'] = f'{row["Application"]}/{row["Environment"]}/{row["Profile"]}'
 
                 data.append(row)
 
@@ -462,29 +464,43 @@ class BritiveCli:
         if not self.available_profiles:
             data = []
             if not profile_type or profile_type == 'my-access':
-                for app in self.b.my_access.list_profiles():
-                    for profile in app.get('profiles', []):
-                        for env in profile.get('environments', []):
-                            row = {
-                                'app_name': app['appName'],
-                                'app_id': app['appContainerId'],
-                                'app_type': app['catalogAppName'],
-                                'app_description': app['appDescription'],
-                                'env_name': env['environmentName'],
-                                'env_id': env['environmentId'],
-                                'env_short_name': env['alternateEnvironmentName'],
-                                'env_description': env['environmentDescription'],
-                                'profile_name': profile['profileName'],
-                                'profile_id': profile['profileId'],
-                                'profile_allows_console': profile['consoleAccess'],
-                                'profile_allows_programmatic': profile['programmaticAccess'],
-                                'profile_description': profile['profileDescription'],
-                                '2_part_profile_format_allowed': app['requiresHierarchicalModel'],
-                                'env_properties': env.get('profileEnvironmentProperties', {}),
-                            }
-                            data.append(row)
+                access_profile_limit = int(self.config.my_access_retrieval_limit)
+                access_data = self.b.my_access.list(size=access_profile_limit)
+                apps = {app['appContainerId']: app for app in access_data['apps']}
+                envs = {env['environmentId']: env for env in access_data['environments']}
+                accs = {
+                    p: {'env_id': v, 'types': [t['accessType'] for t in access_data['accesses'] if t['papId'] == p]}
+                    for p, v in {(a['papId'], a['environmentId']) for a in access_data['accesses']}
+                }
+                for profile in access_data['profiles']:
+                    acc = accs.get(profile['papId'], {})
+                    env = envs.get(acc.get('env_id'), {})  # Get environment info or default to empty dict
+                    app = apps.get(profile['appContainerId'], {})
+                    row = {
+                        'app_name': profile['catalogAppDisplayName'],
+                        'app_id': profile['appContainerId'],
+                        'app_type': profile['catalogAppName'],
+                        'app_description': app.get('appDescription'),
+                        'env_name': env.get('environmentName', ''),  # Pull from `environments`
+                        'env_id': env.get('environmentId', ''),  # Pull from `environments`
+                        'env_short_name': env.get('alternateEnvironmentName', ''),  # Pull from `environments`
+                        'env_description': env.get('environmentDescription', ''),  # Pull from `environments`
+                        'profile_name': profile['papName'],
+                        'profile_id': profile['papId'],
+                        'profile_allows_console': 'CONSOLE' in acc.get('types'),
+                        'profile_allows_programmatic': 'PROGRAMMATIC' in acc.get('types'),
+                        'profile_description': profile['papDescription'],
+                        '2_part_profile_format_allowed': app['requiresHierarchicalModel'],
+                        'env_properties': env.get('profileEnvironmentProperties', {}),  # Pull from `environments`
+                    }
+                    data.append(row)
             if self.b.feature_flags.get('server-access') and (not profile_type or profile_type == 'my-resources'):
-                for item in self.b.my_resources.list_profiles():
+                if not (resource_profile_limit := int(self.config.my_resources_retrieval_limit)):
+                    profiles = self.b.my_resources.list_profiles()
+                else:
+                    profiles = self.b.my_resources.list(size=resource_profile_limit)
+                    profiles = profiles['data']
+                for item in profiles:
                     row = {
                         'app_name': None,
                         'app_id': None,
@@ -697,6 +713,8 @@ class BritiveCli:
             if mode == 'awscredentialprocess':
                 raise e
             raise click.ClickException('approval required and no justification provided.') from e
+        except exceptions.StepUpAuthRequiredButNotProvided as e:
+            raise click.ClickException('Step Up Authentication required and no OTP provided.') from e
         except ValueError as e:
             raise click.BadParameter(str(e)) from e
         except Exception as e:
@@ -761,21 +779,25 @@ class BritiveCli:
         return real_profile_name.startswith(f'{self.resource_profile_prefix}')
 
     def _resource_checkout(self, blocktime, justification, maxpolltime, profile, ticket_id, ticket_type):
-        self.login()
-        resource_name, profile_name = self._split_resource_profile_into_parts(profile=profile)
-        response = self.b.my_resources.checkout_by_name(
-            include_credentials=True,
-            justification=justification,
-            max_wait_time=maxpolltime,
-            profile_name=profile_name[0],
-            progress_func=self.checkout_callback_printer,  # callback will handle silent, isatty, etc.
-            resource_name=resource_name,
-            response_template=profile_name[1] if len(profile_name) > 1 else None,
-            ticket_id=ticket_id,
-            ticket_type=ticket_type,
-            wait_time=blocktime,
-        )
-        return response['credentials']
+        try:
+            self.login()
+            resource_name, profile_name = self._split_resource_profile_into_parts(profile=profile)
+            return self.b.my_resources.checkout_by_name(
+                include_credentials=True,
+                justification=justification,
+                max_wait_time=maxpolltime,
+                profile_name=profile_name[0],
+                progress_func=self.checkout_callback_printer,  # callback will handle silent, isatty, etc.
+                resource_name=resource_name,
+                response_template=profile_name[1] if len(profile_name) > 1 else None,
+                ticket_id=ticket_id,
+                ticket_type=ticket_type,
+                wait_time=blocktime,
+            )['credentials']
+        except exceptions.ApprovalRequiredButNoJustificationProvided as e:
+            raise click.ClickException('approval required and no justification provided.') from e
+        except exceptions.StepUpAuthRequiredButNotProvided as e:
+            raise click.ClickException('Step Up Authentication required and no OTP provided.') from e
 
     def _access_checkout(
         self,
@@ -1455,7 +1477,7 @@ class BritiveCli:
         # profile name as well - it will not hurt anything to try to clear
         # both versions
         parts = self._split_profile_into_parts(profile)
-        Cache().clear_credentials(profile_name=f"{parts['app']}/{parts['env']}/{parts['profile']}")
+        Cache().clear_credentials(profile_name=f'{parts["app"]}/{parts["env"]}/{parts["profile"]}')
 
     def ssh_gcp_identity_aware_proxy(self, username, hostname, push_public_key, port_number, key_source):
         self.silent = True
