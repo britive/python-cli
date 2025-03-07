@@ -342,8 +342,8 @@ class BritiveCli:
         self.login()
         found_resource_names = []
         resources = []
-        if resource_profile_limit := int(self.config.my_resources_retrieval_limit):
-            profiles = self.b.my_resources.list(size=resource_profile_limit)['data']
+        if resource_limit := int(self.config.my_resources_retrieval_limit):
+            profiles = self.b.my_resources.list(size=resource_limit)['data']
         else:
             profiles = self.b.my_resources.list_profiles()
         for item in profiles:
@@ -464,41 +464,47 @@ class BritiveCli:
         if not self.available_profiles:
             data = []
             if not profile_type or profile_type == 'my-access':
-                access_profile_limit = int(self.config.my_access_retrieval_limit)
-                access_data = self.b.my_access.list(size=access_profile_limit)
-                apps = {app['appContainerId']: app for app in access_data['apps']}
-                envs = {env['environmentId']: env for env in access_data['environments']}
-                accs = {
-                    p: {'env_id': v, 'types': [t['accessType'] for t in access_data['accesses'] if t['papId'] == p]}
-                    for p, v in {(a['papId'], a['environmentId']) for a in access_data['accesses']}
-                }
-                for profile in access_data['profiles']:
-                    acc = accs.get(profile['papId'], {})
-                    env = envs.get(acc.get('env_id'), {})  # Get environment info or default to empty dict
-                    app = apps.get(profile['appContainerId'], {})
+                access_limit = int(self.config.my_access_retrieval_limit)
+                increase = 0
+                while (access_data := self.b.my_access.list(size=access_limit + increase))['count'] > len(
+                    access_data['accesses']
+                ) and len({a['papId'] for a in access_data['accesses']}) < access_limit:
+                    increase += max(25, round(access_data['count'] * 0.25))
+                access_output = []
+                for access in access_data['accesses']:
+                    appContainerId = access['appContainerId']
+                    environmentId = access['environmentId']
+                    papId = access['papId']
+                    app = next((a for a in access_data.get('apps', []) if a['appContainerId'] == appContainerId), {})
+                    environment = next(
+                        (e for e in access_data.get('environments', []) if e['environmentId'] == environmentId), {}
+                    )
+                    profile = next((p for p in access_data.get('profiles', []) if p['papId'] == papId), {})
                     row = {
-                        'app_name': profile['catalogAppDisplayName'],
-                        'app_id': profile['appContainerId'],
-                        'app_type': profile['catalogAppName'],
-                        'app_description': app.get('appDescription'),
-                        'env_name': env.get('environmentName', ''),  # Pull from `environments`
-                        'env_id': env.get('environmentId', ''),  # Pull from `environments`
-                        'env_short_name': env.get('alternateEnvironmentName', ''),  # Pull from `environments`
-                        'env_description': env.get('environmentDescription', ''),  # Pull from `environments`
+                        'app_name': app['catalogAppName'],
+                        'app_id': appContainerId,
+                        'app_type': app['catalogAppDisplayName'],
+                        'app_description': app['appDescription'],
+                        'env_name': environment['environmentName'],
+                        'env_id': environmentId,
+                        'env_short_name': environment['alternateEnvironmentName'],
+                        'env_description': environment['environmentDescription'],
                         'profile_name': profile['papName'],
-                        'profile_id': profile['papId'],
-                        'profile_allows_console': 'CONSOLE' in acc.get('types'),
-                        'profile_allows_programmatic': 'PROGRAMMATIC' in acc.get('types'),
+                        'profile_id': papId,
+                        'profile_allows_console': app.get('consoleAccess', False),
+                        'profile_allows_programmatic': app.get('programmaticAccess', False),
                         'profile_description': profile['papDescription'],
-                        '2_part_profile_format_allowed': app['requiresHierarchicalModel'],
-                        'env_properties': env.get('profileEnvironmentProperties', {}),  # Pull from `environments`
+                        '2_part_profile_format_allowed': app['supportsMultipleProfilesCheckoutConsole'],
+                        'env_properties': environment.get('profileEnvironmentProperties', {}),
                     }
-                    data.append(row)
+                    if row not in access_output:
+                        access_output.append(row)
+                data += access_output[:access_limit]
             if self.b.feature_flags.get('server-access') and (not profile_type or profile_type == 'my-resources'):
-                if not (resource_profile_limit := int(self.config.my_resources_retrieval_limit)):
+                if not (resource_limit := int(self.config.my_resources_retrieval_limit)):
                     profiles = self.b.my_resources.list_profiles()
                 else:
-                    profiles = self.b.my_resources.list(size=resource_profile_limit)
+                    profiles = self.b.my_resources.list(size=resource_limit)
                     profiles = profiles['data']
                 for item in profiles:
                     row = {
