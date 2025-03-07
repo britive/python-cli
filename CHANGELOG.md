@@ -3,6 +3,28 @@
 > As of v1.4.0, release candidates will be published in an effort to get new features out faster while still allowing
 > time for full QA testing before moving the release candidate to a full release.
 
+## v2.1.0-rc.5 [2025-03-06]
+
+__What's New:__
+
+* None
+
+__Enhancements:__
+
+* Return the desired quantity of actual profiles when using `my_access_retrieval_limit`.
+
+__Bug Fixes:__
+
+* None
+
+__Dependencies:__
+
+* None
+
+__Other:__
+
+* None
+
 ## v2.1.0-rc.4 [2025-03-06]
 
 __What's New:__
