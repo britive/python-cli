@@ -113,6 +113,60 @@ __windows (cmd):__
 set REQUESTS_CA_BUNDLE="C:\Users\User\AppData\Local\corp-proxy\cacert.pem"
 ```
 
+### Global Settings
+
+#### `credential_backend`
+
+The backend used to store temporary access tokens to authenticate against the Britive tenant.
+
+_Allowed value:_ `encrypted-file` or `file`
+
+#### `default_tenant`
+
+The name of the tenant used by default: [tenant].britive-app.com.
+
+_Allowed value:_ the name of a configured tenant alias, e.g. `[tenant-sigma]` would be `sigma`.
+
+#### `output_format`
+
+Display output format.
+
+If `table` is used, an optional table format can be specified as `table-format`, formats can be found here: [table_format](https://github.com/astanin/python-tabulate#table_format).
+
+_Allowed value:_ `json`, `yaml`, `csv`, or `table[-format]`
+
+> _NOTE:_ the following global config settings are NOT available directly via `pybritive configure global`
+
+#### `auto_refresh_kube_config`
+
+Auto refresh the cached Britive managed kube config.
+
+_Allowed value:_ `true` or `false`
+
+#### `auto_refresh_profile_cache`
+
+Auto refresh the cached Britive profiles.
+
+_Allowed value:_ `true` or `false`
+
+#### `ca_bundle`
+
+The custom TLS certificate to use when making HTTP requests.
+
+_Allowed value:_ the path to a custom TLS certificate, e.g. `/location/of/the/CA_BUNDLE_FILE.pem`
+
+#### `my_access_retrieval_limit`
+
+Limit the number of "My Access" profiles to be retrieved.
+
+_Allowed value:_ an integer greater than `0`
+
+#### `my_resources_retrieval_limit`
+
+Limit the number of "My Resources" items to be retrieved.
+
+_Allowed value:_ an integer greater than `0`
+
 ## Tenant Configuration
 
 Before `pybritive` can connect to a Britive tenant, it needs to know some details about that tenant.
@@ -758,13 +812,13 @@ The cache will not be updated over time. In order to update the cache more regul
 Note that this config flag is NOT available directly via `pybritive configure global ...`.
 
 ```sh
-pybritive configure update global auto-refresh-profile-cache true
+pybritive configure update global auto_refresh_profile_cache true
 ```
 
 To turn the feature off run
 
 ```sh
-pybritive configure update global auto-refresh-profile-cache false
+pybritive configure update global auto_refresh_profile_cache false
 pybritive cache clear
 ```
 
