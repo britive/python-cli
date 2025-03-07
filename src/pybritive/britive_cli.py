@@ -499,7 +499,7 @@ class BritiveCli:
                     }
                     if row not in access_output:
                         access_output.append(row)
-                data += access_output[:access_limit]
+                data += access_output[:access_limit] if access_limit else access_output
             if self.b.feature_flags.get('server-access') and (not profile_type or profile_type == 'my-resources'):
                 if not (resource_limit := int(self.config.my_resources_retrieval_limit)):
                     profiles = self.b.my_resources.list_profiles()

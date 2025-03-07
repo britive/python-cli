@@ -3,6 +3,28 @@
 > As of v1.4.0, release candidates will be published in an effort to get new features out faster while still allowing
 > time for full QA testing before moving the release candidate to a full release.
 
+## v2.1.0-rc.6 [2025-03-06]
+
+__What's New:__
+
+* None
+
+__Enhancements:__
+
+* None
+
+__Bug Fixes:__
+
+* Return all profiles if not limited with `my_access_retrieval_limit`.
+
+__Dependencies:__
+
+* `britive>=4.1.2,<5.0`
+
+__Other:__
+
+* None
+
 ## v2.1.0-rc.5 [2025-03-06]
 
 __What's New:__
