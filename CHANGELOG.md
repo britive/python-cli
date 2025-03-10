@@ -3,6 +3,34 @@
 > As of v1.4.0, release candidates will be published in an effort to get new features out faster while still allowing
 > time for full QA testing before moving the release candidate to a full release.
 
+## v2.1.0 [2025-03-10]
+
+__What's New:__
+
+* `pybritive-aws-cred-process` can now prompt users for `otp` or `justification` when needed.
+* `my_resource` profile checkouts can now specify a `response_template` by appending `/{template name}` to the profile.
+* Added "Global Settings" section to docs site.
+
+__Enhancements:__
+
+* Added ITSM `--ticket-type` `--ticket-id` options.
+* Additional `global` config settings: `my_[access|resources]_retrieval_limit` to limit size of retrieved items.
+
+__Bug Fixes:__
+
+* Fixed missing `exceptions.StepUpAuthRequiredButNotProvided` catch during `checkout`.
+
+__Dependencies:__
+
+* `britive>=4.1.2,<5.0`
+* `colored>=2.2.5`
+
+__Other:__
+
+* Python 3.8 is EOL, so support is dropped.
+* Allow `_` uniformity for `auto_refresh_[kube_config|profile_cache]` in `global` config.
+* Tests and Documentation updates for SDK alignment.
+
 ## v2.1.0-rc.7 [2025-03-10]
 
 __What's New:__
