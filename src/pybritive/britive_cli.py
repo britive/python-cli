@@ -243,7 +243,7 @@ class BritiveCli:
         if debug_enabled:
             self.print(data=data, ignore_silent=ignore_silent)
 
-    # will be passed to the britive checkout_by_name progress_func parameter when appropriate
+    # will be passed to the britive checkout progress_func parameter when appropriate
     def checkout_callback_printer(self, message: str):
         if self.silent or not sys.stdout.isatty():
             return
@@ -474,8 +474,7 @@ class BritiveCli:
                 envs = {e['environmentId']: e for e in access_data.get('environments', [])}
                 profiles = {p['papId']: p for p in access_data.get('profiles', [])}
                 accesses = [
-                    tuple([a['appContainerId'], a['environmentId'], a['papId']])
-                    for a in access_data.get('accesses', [])
+                    ([a['appContainerId'], a['environmentId'], a['papId']]) for a in access_data.get('accesses', [])
                 ]
                 access_output = []
                 for app_id, env_id, profile_id in accesses:
@@ -572,6 +571,14 @@ class BritiveCli:
         for profile in self.available_profiles:
             if profile['app_id'] == application_id:
                 return profile['app_type']
+        if self.config.my_access_retrieval_limit:
+            return next(
+                iter(
+                    a['catalogAppName']
+                    for a in self.b.get(f'{self.b.base_url}/access/apps/')
+                    if a['appContainerId'] == application_id
+                )
+            )
         raise click.ClickException(f'Application {application_id} not found')
 
     def __get_cloud_credential_printer(
@@ -1242,6 +1249,34 @@ class BritiveCli:
 
         # let's first check to ensure we have only 1 profile
         if len(found_profiles) == 0:
+            if self.config.my_access_retrieval_limit:
+                try:
+                    app_id = next(
+                        iter(
+                            a['appContainerId']
+                            for a in self.b.get(f'{self.b.base_url}/access/apps/')
+                            if a['catalogAppDisplayName'].lower() == application_name
+                        )
+                    )
+                    env_id = next(
+                        iter(
+                            e['environmentId']
+                            for e in self.b.get(f'{self.b.base_url}/access/apps/{app_id}/environments/')
+                            if e['environmentName'].lower() == environment_name
+                            or e['environmentId'] == environment_name
+                            or e['alternateEnvironmentName'].lower() == environment_name
+                        )
+                    )
+                    pap_id = next(
+                        iter(
+                            p['papId']
+                            for p in self.b.get(f'{self.b.base_url}/access/apps/{app_id}/environments/{env_id}/paps')
+                            if p['papName'].lower() == profile_name
+                        )
+                    )
+                    return {'profile_id': pap_id, 'environment_id': env_id}
+                except StopIteration:
+                    pass
             raise click.ClickException('no profile found with the provided application, environment, and profile names')
         if len(found_profiles) > 1:
             raise click.ClickException('multiple matching profiles found - cannot determine which profile to use')
