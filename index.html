@@ -54,6 +54,26 @@
     </li>
         </ul>
     </li>
+    <li class="toctree-l3"><a class="reference internal" href="#global-settings">Global Settings</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#credential_backend">credential_backend</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#default_tenant">default_tenant</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#output_format">output_format</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#auto_refresh_kube_config">auto_refresh_kube_config</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#auto_refresh_profile_cache">auto_refresh_profile_cache</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#ca_bundle">ca_bundle</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#my_access_retrieval_limit">my_access_retrieval_limit</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#my_resources_retrieval_limit">my_resources_retrieval_limit</a>
+    </li>
+        </ul>
+    </li>
         </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#tenant-configuration">Tenant Configuration</a>
@@ -282,6 +302,35 @@ ca_bundle=/location/of/the/CA_BUNDLE_FILE.pem
 <p><strong>windows (cmd):</strong></p>
 <pre><code class="language-bat">set REQUESTS_CA_BUNDLE=&quot;C:\Users\User\AppData\Local\corp-proxy\cacert.pem&quot;
 </code></pre>
+<h3 id="global-settings">Global Settings</h3>
+<h4 id="credential_backend"><code>credential_backend</code></h4>
+<p>The backend used to store temporary access tokens to authenticate against the Britive tenant.</p>
+<p><em>Allowed value:</em> <code>encrypted-file</code> or <code>file</code></p>
+<h4 id="default_tenant"><code>default_tenant</code></h4>
+<p>The name of the tenant used by default: [tenant].britive-app.com.</p>
+<p><em>Allowed value:</em> the name of a configured tenant alias, e.g. <code>[tenant-sigma]</code> would be <code>sigma</code>.</p>
+<h4 id="output_format"><code>output_format</code></h4>
+<p>Display output format.</p>
+<p>If <code>table</code> is used, an optional table format can be specified as <code>table-format</code>, formats can be found here: <a href="https://github.com/astanin/python-tabulate#table_format">table_format</a>.</p>
+<p><em>Allowed value:</em> <code>json</code>, <code>yaml</code>, <code>csv</code>, or <code>table[-format]</code></p>
+<blockquote>
+<p><em>NOTE:</em> the following global config settings are NOT available directly via <code>pybritive configure global</code></p>
+</blockquote>
+<h4 id="auto_refresh_kube_config"><code>auto_refresh_kube_config</code></h4>
+<p>Auto refresh the cached Britive managed kube config.</p>
+<p><em>Allowed value:</em> <code>true</code> or <code>false</code></p>
+<h4 id="auto_refresh_profile_cache"><code>auto_refresh_profile_cache</code></h4>
+<p>Auto refresh the cached Britive profiles.</p>
+<p><em>Allowed value:</em> <code>true</code> or <code>false</code></p>
+<h4 id="ca_bundle"><code>ca_bundle</code></h4>
+<p>The custom TLS certificate to use when making HTTP requests.</p>
+<p><em>Allowed value:</em> the path to a custom TLS certificate, e.g. <code>/location/of/the/CA_BUNDLE_FILE.pem</code></p>
+<h4 id="my_access_retrieval_limit"><code>my_access_retrieval_limit</code></h4>
+<p>Limit the number of "My Access" profiles to be retrieved.</p>
+<p><em>Allowed value:</em> an integer greater than <code>0</code></p>
+<h4 id="my_resources_retrieval_limit"><code>my_resources_retrieval_limit</code></h4>
+<p>Limit the number of "My Resources" items to be retrieved.</p>
+<p><em>Allowed value:</em> an integer greater than <code>0</code></p>
 <h2 id="tenant-configuration">Tenant Configuration</h2>
 <p>Before <code>pybritive</code> can connect to a Britive tenant, it needs to know some details about that tenant.
 This is where <code>pybritive configure</code> will help us.</p>
@@ -338,7 +387,7 @@ impacted.</p>
 <li>Google Workspace</li>
 </ul>
 <p>The list can be generated (assuming the caller has the required permissions) on demand with the following command.</p>
-<pre><code class="language-sh">pybritive api applications.catalog \
+<pre><code class="language-sh">pybritive api application_management.applications.catalog \
     --query '[*].{&quot;application type&quot;: name,&quot;2 part format allowed&quot;:requiresHierarchicalModel}' \
     --format table
 </code></pre>
@@ -508,16 +557,16 @@ meant for administrative functionality.</p>
 <h3 id="api-examples"><code>api</code> examples</h3>
 <p>Usage examples of: (<code>pybritive api method --parameter1 value1 --parameter2 value2 [--parameterX valueX]</code>)</p>
 <pre><code class="language-sh"># list all users in the britive tenant
-pybritive api users.list
+pybritive api identity_management.users.list
 
 # create a tag
-pybritive api tags.create --name testtag --description &quot;test tag&quot;
+pybritive api identity_management.tags.create --name testtag --description &quot;test tag&quot;
 
 # list all users and output just the email address of each user via jmespath query
-pybritive api users.list --query '[].email'
+pybritive api identity_management.users.list --query '[].email'
 
 # create a profile
-pybritive api profiles.create --application-id &lt;id&gt; --name testprofile
+pybritive api application_management.profiles.create --application-id &lt;id&gt; --name testprofile
 
 # create a secret
 pybritive api secrets_manager.secrets.create --name test --vault-id &lt;id&gt; --value '{&quot;Note&quot;: {&quot;secret1&quot;: &quot;abc&quot;}}'
@@ -793,10 +842,10 @@ completion (this is due to the fact the completion logic doesn't have any contex
 as the tenant may not be provided yet).</p>
 <p>The cache will not be updated over time. In order to update the cache more regularly run the following command.
 Note that this config flag is NOT available directly via <code>pybritive configure global ...</code>.</p>
-<pre><code class="language-sh">pybritive configure update global auto-refresh-profile-cache true
+<pre><code class="language-sh">pybritive configure update global auto_refresh_profile_cache true
 </code></pre>
 <p>To turn the feature off run</p>
-<pre><code class="language-sh">pybritive configure update global auto-refresh-profile-cache false
+<pre><code class="language-sh">pybritive configure update global auto_refresh_profile_cache false
 pybritive cache clear
 </code></pre>
 <h2 id="pybritive-with-the-aws-credential_process"><code>pybritive</code> with the AWS <code>credential_process</code></h2>
@@ -876,16 +925,16 @@ meant for administrative functionality.</p>
 <p>generic: pybritive api method --parameter1 value1 --parameter2 value2 [--parameterX valueX]</p>
 </li>
 <li>
-<p>pybritive api users.list</p>
+<p>pybritive api identity_management.users.list</p>
 </li>
 <li>
-<p>pybritive api tags.create --name testtag --description "test tag"</p>
+<p>pybritive api identity_management.tags.create --name testtag --description "test tag"</p>
 </li>
 <li>
-<p>pybritive api users.list --query '[].email'</p>
+<p>pybritive api identity_management.users.list --query '[].email'</p>
 </li>
 <li>
-<p>pybritive api profiles.create --application-id <id> --name testprofile</p>
+<p>pybritive api application_management.profiles.create --application-id <id> --name testprofile</p>
 </li>
 </ul>
 <p><strong>Usage:</strong></p>
@@ -1292,6 +1341,18 @@ that should be checked out. Format is <code>application name/environment name/pr
 <td><code>--justification</code>, <code>-j</code></td>
 <td>text</td>
 <td>Justification for the approval process, if a profile checkout or secret access requires approval.</td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>--ticket-type</code></td>
+<td>text</td>
+<td>Ticket type for the ITSM process, if a profile requires a ticket.</td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>--ticket-id</code></td>
+<td>text</td>
+<td>Ticket ID for the ITSM process, if a profile requires a ticket.</td>
 <td>None</td>
 </tr>
 <tr>
@@ -2350,6 +2411,18 @@ that should be checked out. Format is <code>application name/environment name/pr
 </thead>
 <tbody>
 <tr>
+<td><code>--ticket-type</code></td>
+<td>text</td>
+<td>Ticket type for the ITSM process, if a profile requires a ticket.</td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>--ticket-id</code></td>
+<td>text</td>
+<td>Ticket ID for the ITSM process, if a profile requires a ticket.</td>
+<td>None</td>
+</tr>
+<tr>
 <td><code>--justification</code>, <code>-j</code></td>
 <td>text</td>
 <td>Justification for the approval process, if a profile checkout or secret access requires approval.</td>
@@ -2988,7 +3061,7 @@ Ensure the leading <code>/</code> is provided.</p>
 
   <div role="contentinfo">
     <!-- Copyright etc -->
-      <p>2024 Britive, Inc.</p>
+      <p>2025 Britive, Inc.</p>
   </div>
 
   Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
@@ -3028,5 +3101,5 @@ Ensure the leading <code>/</code> is provided.</p>
 
 <!--
 MkDocs version : 1.6.0
-Build Date UTC : 2025-02-20 14:52:01.392307+00:00
+Build Date UTC : 2025-03-10 21:26:53.604912+00:00
 -->
