@@ -470,32 +470,34 @@ class BritiveCli:
                     access_data['accesses']
                 ) and len({a['papId'] for a in access_data['accesses']}) < access_limit:
                     increase += max(25, round(access_data['count'] * 0.25))
+                apps = {a['appContainerId']: a for a in access_data.get('apps', [])}
+                envs = {e['environmentId']: e for e in access_data.get('environments', [])}
+                profiles = {p['papId']: p for p in access_data.get('profiles', [])}
+                accesses = [
+                    tuple([a['appContainerId'], a['environmentId'], a['papId']])
+                    for a in access_data.get('accesses', [])
+                ]
                 access_output = []
-                for access in access_data['accesses']:
-                    appContainerId = access['appContainerId']
-                    environmentId = access['environmentId']
-                    papId = access['papId']
-                    app = next((a for a in access_data.get('apps', []) if a['appContainerId'] == appContainerId), {})
-                    environment = next(
-                        (e for e in access_data.get('environments', []) if e['environmentId'] == environmentId), {}
-                    )
-                    profile = next((p for p in access_data.get('profiles', []) if p['papId'] == papId), {})
+                for app_id, env_id, profile_id in accesses:
+                    app = apps[app_id]
+                    env = envs[env_id]
+                    profile = profiles[profile_id]
                     row = {
-                        'app_name': app['catalogAppName'],
-                        'app_id': appContainerId,
-                        'app_type': app['catalogAppDisplayName'],
+                        'app_name': app['catalogAppDisplayName'],
+                        'app_id': app_id,
+                        'app_type': app['catalogAppName'],
                         'app_description': app['appDescription'],
-                        'env_name': environment['environmentName'],
-                        'env_id': environmentId,
-                        'env_short_name': environment['alternateEnvironmentName'],
-                        'env_description': environment['environmentDescription'],
+                        'env_name': env['environmentName'],
+                        'env_id': env_id,
+                        'env_short_name': env['alternateEnvironmentName'],
+                        'env_description': env['environmentDescription'],
                         'profile_name': profile['papName'],
-                        'profile_id': papId,
+                        'profile_id': profile_id,
                         'profile_allows_console': app.get('consoleAccess', False),
                         'profile_allows_programmatic': app.get('programmaticAccess', False),
                         'profile_description': profile['papDescription'],
                         '2_part_profile_format_allowed': app['supportsMultipleProfilesCheckoutConsole'],
-                        'env_properties': environment.get('profileEnvironmentProperties', {}),
+                        'env_properties': env.get('profileEnvironmentProperties', {}),
                     }
                     if row not in access_output:
                         access_output.append(row)
