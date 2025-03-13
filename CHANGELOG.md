@@ -3,6 +3,29 @@
 > As of v1.4.0, release candidates will be published in an effort to get new features out faster while still allowing
 > time for full QA testing before moving the release candidate to a full release.
 
+## v2.1.1 [2025-03-13]
+
+__What's New:__
+
+* None
+
+__Enhancements:__
+
+* None
+
+__Bug Fixes:__
+
+* Skip `construct_kube_config` if `env_properties` is missing.
+* Retrieve `profileEnvironmentProperties` from `my_access.list_profiles` if the new API doesn't return the data.
+
+__Dependencies:__
+
+* None
+
+__Other:__
+
+* None
+
 ## v2.1.0 [2025-03-10]
 
 __What's New:__

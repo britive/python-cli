@@ -460,10 +460,32 @@ class BritiveCli:
             data.append(row)
         self.print(data, ignore_silent=True)
 
+    # temporary fix till the new API is updated to return `profileEnvironmentProperties`
+    def _get_missing_env_properties(
+        self, app_id: str, app_type: str, env_id: str, profile_id: str, from_cache_command: bool
+    ) -> dict:
+        if app_type.lower() == 'kubernetes' and (from_cache_command or self.config.auto_refresh_kube_config()):
+            if not self.listed_profiles:
+                self.listed_profiles = self.b.my_access.list_profiles()
+            return next(
+                (
+                    env['profileEnvironmentProperties']
+                    for app in self.listed_profiles
+                    if app['appContainerId'] == app_id
+                    for profile in app.get('profiles', [])
+                    if profile['profileId'] == profile_id
+                    for env in profile.get('environments', [])
+                    if env['environmentId'] == env_id
+                ),
+                {},
+            )
+        return {}
+
     def _set_available_profiles(self, from_cache_command=False, profile_type: Optional[str] = None):
         if not self.available_profiles:
             data = []
             if not profile_type or profile_type == 'my-access':
+                self.listed_profiles = None
                 access_limit = int(self.config.my_access_retrieval_limit)
                 increase = 0
                 while (access_data := self.b.my_access.list(size=access_limit + increase))['count'] > len(
@@ -496,7 +518,10 @@ class BritiveCli:
                         'profile_allows_programmatic': app.get('programmaticAccess', False),
                         'profile_description': profile['papDescription'],
                         '2_part_profile_format_allowed': app['supportsMultipleProfilesCheckoutConsole'],
-                        'env_properties': env.get('profileEnvironmentProperties', {}),
+                        'env_properties': env['profileEnvironmentProperties']
+                        or self._get_missing_env_properties(
+                            app_id, app['catalogAppName'], env_id, profile_id, from_cache_command
+                        ),
                     }
                     if row not in access_output:
                         access_output.append(row)
@@ -542,7 +567,7 @@ class BritiveCli:
 
         profiles = []
         for p in self.available_profiles:
-            if p['app_type'].lower() == 'kubernetes':
+            if p['app_type'].lower() == 'kubernetes' and p['env_properties']:
                 props = p['env_properties']
                 url = props.get('apiServerUrl')
                 cert = props.get('certificateAuthorityData')
