@@ -542,7 +542,7 @@ class BritiveCli:
 
         profiles = []
         for p in self.available_profiles:
-            if p['app_type'].lower() == 'kubernetes':
+            if p['app_type'].lower() == 'kubernetes' and p['env_properties']:
                 props = p['env_properties']
                 url = props.get('apiServerUrl')
                 cert = props.get('certificateAuthorityData')
