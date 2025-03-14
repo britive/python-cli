@@ -258,7 +258,7 @@ class ConfigManager:
 
     def validate_global(self, section, fields):
         for field, value in fields.items():
-            if field not in global_fields:
+            if field.replace('-', '_') not in global_fields:
                 self.validation_error_messages.append(f'Invalid {section} field {field} provided.')
             if field == 'output_format' and value not in output_format_choices.choices:
                 error = f'Invalid {section} field {field} value {value} provided. Invalid value choice.'
