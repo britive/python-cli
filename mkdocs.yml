@@ -20,17 +20,16 @@ theme:
         icon: material/brightness-auto
         name: Switch to dark mode
     - media: "(prefers-color-scheme: dark)"
-      primary: black
       scheme: slate
       toggle:
         icon: material/brightness-4
         name: Switch to light mode
     - media: "(prefers-color-scheme: light)"
-      primary: blue
-      scheme: default
       toggle:
         icon: material/brightness-7
         name: Switch to system preference
+extra_css:
+  - assets/extra.css
 repo_url: https://github.com/britive/python-cli
 edit_uri: ""
 copyright: 2025 Britive, Inc.
