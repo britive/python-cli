@@ -4,6 +4,8 @@ import os
 import sys
 from sys import argv
 
+from click.exceptions import ClickException
+
 
 def _fallback_input(prompt='', stream=None):
     if not stream:
@@ -231,7 +233,9 @@ def main():
 
         try:
             perform_checkout(b, args)
-        except exceptions.StepUpAuthRequiredButNotProvided:
+        except (exceptions.StepUpAuthRequiredButNotProvided, ClickException) as e:
+            if 'step up authentication required' not in str(e).lower():
+                raise SystemExit(e) from e
             perform_checkout(b, args, otp=get_input(prompt='(pybritive) Enter OTP:'))
         except (
             exceptions.ApprovalRequiredButNoJustificationProvided,
