@@ -1,8 +1,8 @@
 # Welcome to PyBritive
 
-For full documentation visit [docs.britive.com](https://docs.britive.com).
+Full Britive documentation is available here: [docs.britive.com](https://docs.britive.com).
 
-PyBritive is intended to be used as a CLI application for communicating with the Britive Platform.
+`pybritive` is intended to be used as a CLI application for interacting with the Britive Platform.
 
 ## Requirements
 
