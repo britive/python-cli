@@ -3,6 +3,28 @@
 > As of v1.4.0, release candidates will be published in an effort to get new features out faster while still allowing
 > time for full QA testing before moving the release candidate to a full release.
 
+## v2.1.3 [2025-03-31]
+
+__What's New:__
+
+* None
+
+__Enhancements:__
+
+* None
+
+__Bug Fixes:__
+
+* Fixed missing catch for `ClickException` in `pybritive-aws-cred-process` after previous catch update change in `9bf6738f`
+
+__Dependencies:__
+
+* None
+
+__Other:__
+
+* None
+
 ## v2.1.2 [2025-03-14]
 
 __What's New:__
