@@ -1,11 +1,36 @@
-site_name: pybritive documentation
+site_name: PyBritive
 nav:
   - Documentation: index.md
   - Resources:
       - Support: https://support.britive.com
       - Company Home Page: https://www.britive.com
       - GitHub Repo: https://github.com/britive/python-cli
-theme: readthedocs
+theme:
+  logo: assets/logo.png
+  favicon: assets/favicon.png
+  name: material
+  features:
+    - toc.integrate
+    - toc.follow
+  hide:
+    - path
+  palette:
+    - media: "(prefers-color-scheme)"
+      toggle:
+        icon: material/brightness-auto
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      primary: black
+      scheme: slate
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+    - media: "(prefers-color-scheme: light)"
+      primary: blue
+      scheme: default
+      toggle:
+        icon: material/brightness-7
+        name: Switch to system preference
 repo_url: https://github.com/britive/python-cli
 edit_uri: ""
 copyright: 2025 Britive, Inc.
@@ -13,6 +38,8 @@ markdown_extensions:
   - attr_list
   - mkdocs-click
   - admonition
+  - toc:
+      toc_depth: 3
 watch:
   - src/pybritive/commands/
   - src/pybritive/
