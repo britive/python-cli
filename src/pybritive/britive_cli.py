@@ -517,7 +517,7 @@ class BritiveCli:
                         'profile_allows_console': app.get('consoleAccess', False),
                         'profile_allows_programmatic': app.get('programmaticAccess', False),
                         'profile_description': profile['papDescription'],
-                        '2_part_profile_format_allowed': app['supportsMultipleProfilesCheckoutConsole'],
+                        '2_part_profile_format_allowed': app['requiresHierarchicalModel'],
                         'env_properties': env['profileEnvironmentProperties']
                         or self._get_missing_env_properties(
                             app_id, app['catalogAppName'], env_id, profile_id, from_cache_command
