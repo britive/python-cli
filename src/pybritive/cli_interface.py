@@ -37,7 +37,7 @@ def safe_cli():
 @britive_options(names='version')
 def cli(version):
     """
-    PyBritive CLI - Pure Python Implementation for a Britive CLI
+    PyBritive - the official Britive CLI
     """
 
 

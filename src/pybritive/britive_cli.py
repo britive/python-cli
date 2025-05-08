@@ -632,7 +632,7 @@ class BritiveCli:
             return printer.AzureCloudCredentialPrinter(
                 console=console, mode=mode, profile=profile, credentials=credentials, silent=silent, cli=self
             )
-        if app_type in ['GCP']:
+        if app_type in ['GCP', 'GCP Standalone']:
             return printer.GcpCloudCredentialPrinter(
                 console=console,
                 mode=mode,
@@ -816,7 +816,7 @@ class BritiveCli:
         if profile_type == 'my-resources':
             return True
         real_profile_name = self.config.profile_aliases.get(profile.lower(), profile).lower()
-        return real_profile_name.startswith(f'{self.resource_profile_prefix}')
+        return real_profile_name.startswith(self.resource_profile_prefix)
 
     def _resource_checkout(self, blocktime, justification, maxpolltime, profile, ticket_id, ticket_type):
         try:
@@ -1115,6 +1115,11 @@ class BritiveCli:
 
     def configure_update(self, section, field, value):
         self.config.update(section=section, field=field, value=value)
+
+    def configure_list(self, section, field):
+        import toml
+
+        click.echo(toml.dumps(self.config.list(section=section, field=field)))
 
     def request_submit(self, profile, justification, ticket_id, ticket_type):
         self._validate_justification(justification)

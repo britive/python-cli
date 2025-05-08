@@ -1,6 +1,6 @@
-# Britive CLI - Pure Python Implementation
+# Britive CLI
 
-PyBritive is intended to be used as a CLI application for communicating with the Britive Platform.
+`pybritive` is the official CLI for communicating with the Britive Platform.
 
 ## Installation
 

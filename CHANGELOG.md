@@ -3,6 +3,28 @@
 > As of v1.4.0, release candidates will be published in an effort to get new features out faster while still allowing
 > time for full QA testing before moving the release candidate to a full release.
 
+## v2.2.0 [2025-05-08]
+
+__What's New:__
+
+* None
+
+__Enhancements:__
+
+* Users can now view configuration details through the `configure list` command.
+
+__Bug Fixes:__
+
+* Fixed missing `GCP Standalone` credential handling.
+
+__Dependencies:__
+
+* None
+
+__Other:__
+
+* None
+
 ## v2.1.4 [2025-04-02]
 
 __What's New:__

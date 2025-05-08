@@ -101,3 +101,23 @@ def update(ctx, silent, section, field, value):  # silent is handled by @build_b
     field = field.lower().strip()
     value = value.lower().strip()
     ctx.obj.britive.configure_update(section=section, field=field, value=value)
+
+
+@configure.command()
+@build_britive
+@click.argument('section', default='')
+@click.argument('field', default='')
+def list(ctx, section, field):
+    """Provides a mechanism to list the config or any section/field within it.
+
+    All arguments provided will be converted to lowercase before being persisted.
+
+    `SECTION`: The config section (example: global, tenant-foo)
+
+    `FIELD`: The field within the section (example: default_tenant, name, output_format)
+
+    Example: `pybritive configure list global output_format`
+    """
+    section = section.lower().strip()
+    field = field.lower().strip()
+    ctx.obj.britive.configure_list(field=field, section=section)
