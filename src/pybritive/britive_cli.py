@@ -1116,6 +1116,11 @@ class BritiveCli:
     def configure_update(self, section, field, value):
         self.config.update(section=section, field=field, value=value)
 
+    def configure_list(self, section, field):
+        import toml
+
+        click.echo(toml.dumps(self.config.list(section=section, field=field)))
+
     def request_submit(self, profile, justification, ticket_id, ticket_type):
         self._validate_justification(justification)
         self.login()

@@ -234,9 +234,19 @@ class ConfigManager:
         self.config[section][field] = value
         self.save()
 
+    def list(self, section: str, field: str):
+        self.load()
+        try:
+            if field:
+                return {field: self.config[section][field]}
+            if section:
+                return {section: self.config[section]}
+            return self.config
+        except KeyError as e:
+            raise click.ClickException(f'{e} does not exist') from e
+
     def validate(self):
         self.validation_error_messages = []
-
         for section, fields in self.config.items():
             if section not in non_tenant_sections and not section.startswith('tenant-'):
                 self.validation_error_messages.append(f'Invalid section {section} provided.')
