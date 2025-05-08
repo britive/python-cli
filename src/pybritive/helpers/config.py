@@ -108,7 +108,6 @@ class ConfigManager:
         config.optionxform = str  # maintain key case
         config.read(str(path))
         config = json.loads(json.dumps(config._sections))  # TODO this is messy but works for now
-
         self.config = lowercase(config)
         self.alias = None  # will be set in self.get_tenant()
         self.default_tenant = self.config.get('global', {}).get('default_tenant')

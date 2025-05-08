@@ -816,7 +816,7 @@ class BritiveCli:
         if profile_type == 'my-resources':
             return True
         real_profile_name = self.config.profile_aliases.get(profile.lower(), profile).lower()
-        return real_profile_name.startswith(f'{self.resource_profile_prefix}')
+        return real_profile_name.startswith(self.resource_profile_prefix)
 
     def _resource_checkout(self, blocktime, justification, maxpolltime, profile, ticket_id, ticket_type):
         try:
