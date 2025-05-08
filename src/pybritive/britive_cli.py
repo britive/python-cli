@@ -632,7 +632,7 @@ class BritiveCli:
             return printer.AzureCloudCredentialPrinter(
                 console=console, mode=mode, profile=profile, credentials=credentials, silent=silent, cli=self
             )
-        if app_type in ['GCP']:
+        if app_type in ['GCP', 'GCP Standalone']:
             return printer.GcpCloudCredentialPrinter(
                 console=console,
                 mode=mode,
