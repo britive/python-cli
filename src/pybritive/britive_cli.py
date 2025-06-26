@@ -350,7 +350,12 @@ class BritiveCli:
             name = item['resourceName']
             if name not in found_resource_names:
                 resources.append(
-                    {'resourceId': item['resourceId'], 'resourceName': name, 'resourceLabels': item['resourceLabels']}
+                    {
+                        'resourceId': item['resourceId'],
+                        'resourceName': name,
+                        'resourceLabels': item['resourceLabels'],
+                        'responseTemplates': item['responseTemplates'],
+                    }
                 )
                 found_resource_names.append(name)
         self.print(resources, ignore_silent=True)
