@@ -253,11 +253,12 @@ class GcpCloudCredentialPrinter(CloudCredentialPrinter):
     def print_json(self):
         self.cli.print(json.dumps(self.credentials, indent=2), ignore_silent=True)
         self.cli.print('', ignore_silent=True)
-        self.cli.print(
-            f"Run command: gcloud auth activate-service-account {self.credentials['client_email']} "
-            "--key-file <path-where-above-json-is-stored>",
-            ignore_silent=True,
-        )
+        if not self.console:
+            self.cli.print(
+                f'Run command: gcloud auth activate-service-account {self.credentials.get("client_email")} '
+                '--key-file <path-where-above-json-is-stored>',
+                ignore_silent=True,
+            )
 
     def print_gcloudauth(self):
         # get path to gcloud key file
@@ -271,7 +272,7 @@ class GcpCloudCredentialPrinter(CloudCredentialPrinter):
         path.write_text(json.dumps(self.credentials, indent=2), encoding='utf-8')
 
         self.cli.print(
-            f"gcloud auth activate-service-account {self.credentials['client_email']} --key-file {path!s}",
+            f'gcloud auth activate-service-account {self.credentials["client_email"]} --key-file {path!s}',
             ignore_silent=True,
         )
 
