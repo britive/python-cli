@@ -350,7 +350,12 @@ class BritiveCli:
             name = item['resourceName']
             if name not in found_resource_names:
                 resources.append(
-                    {'resourceId': item['resourceId'], 'resourceName': name, 'resourceLabels': item['resourceLabels']}
+                    {
+                        'resourceId': item['resourceId'],
+                        'resourceName': name,
+                        'resourceLabels': item['resourceLabels'],
+                        'responseTemplates': item['responseTemplates'],
+                    }
                 )
                 found_resource_names.append(name)
         self.print(resources, ignore_silent=True)
@@ -762,19 +767,22 @@ class BritiveCli:
                 # attempt to automatically checkout console access instead
                 # this is a cli only feature - not available in the sdk
                 self.print('no programmatic access available - checking out console access instead')
-                return self._checkout(
-                    app_name,
-                    blocktime,
-                    env_name,
-                    justification,
-                    maxpolltime,
-                    otp,
-                    profile_name,
-                    False,
-                    ticket_id,
-                    ticket_type,
-                    mode,
-                )
+                return {
+                    **self._checkout(
+                        app_name,
+                        blocktime,
+                        env_name,
+                        justification,
+                        maxpolltime,
+                        otp,
+                        profile_name,
+                        False,
+                        ticket_id,
+                        ticket_type,
+                        mode,
+                    ),
+                    'console-fallback': True,
+                }
             raise e
 
     @staticmethod
@@ -861,11 +869,12 @@ class BritiveCli:
             self._extend_checkout(profile, console)
             return None
 
-        credentials = None
+        self.verbose_checkout = verbose
         app_type = None
         cached_credentials_found = False
+        console_fallback = False
+        credentials = None
         k8s_processor = None
-        self.verbose_checkout = verbose
 
         # handle kube-exec since the profile is actually going to be passed in via another method
         # and perform some basic validation so we don't waste time performing a checkout when we
@@ -924,6 +933,7 @@ class BritiveCli:
             response = self._checkout(**params)
             app_type = self._get_app_type(response['appContainerId'])
             credentials = response['credentials']
+            console_fallback = response.get('console-fallback')
 
         # this handles the --force-renew flag
         # lets check to see if we should checkin this profile first and check it out again
@@ -937,12 +947,13 @@ class BritiveCli:
                 response = self._checkout(**params)
                 cached_credentials_found = False  # need to write new creds to cache
                 credentials = response['credentials']
+                console_fallback = response.get('console-fallback')
 
         if mode in self.cachable_modes and not cached_credentials_found:
             Cache(passphrase=passphrase).save_credentials(
                 profile_name=alias or profile, credentials=credentials, mode=mode
             )
-        return app_type, credentials, k8s_processor
+        return app_type, console_fallback, credentials, k8s_processor
 
     def checkout(
         self,
@@ -976,7 +987,7 @@ class BritiveCli:
                 ticket_type=ticket_type,
             )
         else:
-            app_type, credentials, k8s_processor = self._access_checkout(
+            app_type, console_fallback, credentials, k8s_processor = self._access_checkout(
                 alias=alias,
                 blocktime=blocktime,
                 console=console,
@@ -998,7 +1009,7 @@ class BritiveCli:
 
         self.__get_cloud_credential_printer(
             app_type,
-            console,
+            console or console_fallback,
             mode,
             alias or profile,
             self.silent,
