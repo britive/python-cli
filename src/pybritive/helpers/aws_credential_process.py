@@ -128,7 +128,7 @@ def get_args():
     args = {
         'tenant': None,
         'token': None,
-        'passphrase': None,
+        'passphrase': os.getenv('PYBRITIVE_ENCRYPTED_CREDENTIAL_PASSPHRASE'),
         'force_renew': None,
         'profile': None,
         'federation_provider': None,
