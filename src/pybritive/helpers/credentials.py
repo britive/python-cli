@@ -5,6 +5,7 @@ import json
 import os
 import random
 import time
+import uuid
 import webbrowser
 from pathlib import Path
 from typing import Optional
@@ -345,10 +346,15 @@ class EncryptedFileCredentialManager(CredentialManager):
         try:
             return self.string_encryptor.decrypt(ciphertext=encrypted_access_token)
         except InvalidPassphraseException:
-            self.cli.print('invalid passphrase provided - wiping credentials and forcing a re-authentication.')
-            self.delete()
-            self.credentials = self.load() or {}
-            return self.get_token()
+            try:
+                self.passphrase = str(uuid.getnode())
+                self.string_encryptor = StringEncryption(passphrase=self.passphrase)
+                return self.string_encryptor.decrypt(ciphertext=encrypted_access_token)
+            except InvalidPassphraseException:
+                self.cli.print('invalid passphrase provided - wiping credentials and forcing a re-authentication.')
+                self.delete()
+                self.credentials = self.load() or {}
+                return self.get_token()
 
     def encrypt(self, decrypted_access_token: str):
         return self.string_encryptor.encrypt(plaintext=decrypted_access_token)

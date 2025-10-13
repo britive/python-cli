@@ -1,6 +1,8 @@
 import base64
+import hashlib
 import os
-import uuid
+import platform
+from getpass import getuser
 from typing import Optional
 
 from cryptography.fernet import Fernet, InvalidToken
@@ -15,7 +17,12 @@ class InvalidPassphraseException(Exception):
 
 class StringEncryption:
     def __init__(self, passphrase: Optional[str] = None):
-        self.passphrase = passphrase or str(uuid.getnode())  # TODO change?
+        self.passphrase = (
+            passphrase
+            or hashlib.sha256(
+                '|'.join([getuser(), *platform.uname()._asdict().values()]).replace(' ', '').encode('utf-8')
+            ).hexdigest()
+        )
 
     @staticmethod
     def _salt():
