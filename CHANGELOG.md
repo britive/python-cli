@@ -3,6 +3,32 @@
 > As of v1.4.0, release candidates will be published in an effort to get new features out faster while still allowing
 > time for full QA testing before moving the release candidate to a full release.
 
+## v2.3.0 [2025-10-16]
+
+__What's New:__
+
+* Applications, Environments, Profiles, Resources, and Secrets have a new `--search-text|-S` flag for listing with `ls`. 
+
+__Enhancements:__
+
+* Added `search_text` parameter to `list_[applications|environments|profiles|resources|secrets]`
+* Added `list_requests` functionality.
+
+__Bug Fixes:__
+
+* Added `PYBRITIVE_ENCRYPTED_CREDENTIAL_PASSPHRASE` env var for AWS/k8s helpers.
+* Refactored default `passphrase` as `uuid.getnode` doesn't afford repeatability in sandboxed environments, e.g. `uv`.
+* Corrected `my_access` profiles with empty description getting errant `Resource` default value.
+* Updated `list_[applications|environments]` to exclude unrelated `my-resources` profiles and replace `null` with `''`.
+
+__Dependencies:__
+
+* None
+
+__Other:__
+
+* Dropped temporary `_get_missing_session_attributes` method, API has been corrected.
+
 ## v2.2.3 [2025-08-06]
 
 __What's New:__
