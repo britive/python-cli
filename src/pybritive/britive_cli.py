@@ -314,9 +314,9 @@ class BritiveCli:
             output += f' (alias: {alias})'
         self.print(output, ignore_silent=True)
 
-    def list_secrets(self):
+    def list_secrets(self, search_text: Optional[str] = None):
         self.login()
-        self.print(self.b.my_secrets.list(), ignore_silent=True)
+        self.print(self.b.my_secrets.list(search=search_text), ignore_silent=True)
 
     def list_approvals(self):
         self.login()
@@ -338,14 +338,34 @@ class BritiveCli:
         approvals.reverse()
         self.print(approvals, ignore_silent=True)
 
-    def list_resources(self):
+    def list_requests(self):
+        self.login()
+        requests = []
+        for request in self.b.my_requests.list():
+            request.pop('resource', None)
+            request.pop('consumer', None)
+            request.pop('timeToApprove', None)
+            request.pop('validFor', None)
+            request.pop('action', None)
+            request.pop('approvers', None)
+            request.pop('expirationTimeApproval', None)
+            request.pop('updatedAt', None)
+            request.pop('actionBy', None)
+            request.pop('validForInDays', None)
+            requests.append(request)
+
+        requests = sorted(requests, key=lambda x: x['createdAt'])
+        requests.reverse()
+        self.print(requests, ignore_silent=True)
+
+    def list_resources(self, search_text: Optional[str] = None):
         self.login()
         found_resource_names = []
         resources = []
-        if resource_limit := int(self.config.my_resources_retrieval_limit):
-            profiles = self.b.my_resources.list(size=resource_limit)['data']
-        else:
-            profiles = self.b.my_resources.list_profiles()
+        resource_limit = int(self.config.my_resources_retrieval_limit)
+        profiles = self.b.my_resources.list(search_text=search_text, size=resource_limit)
+        if resource_limit:
+            profiles = profiles['data']
         for item in profiles:
             name = item['resourceName']
             if name not in found_resource_names:
@@ -360,9 +380,14 @@ class BritiveCli:
                 found_resource_names.append(name)
         self.print(resources, ignore_silent=True)
 
-    def list_profiles(self, checked_out: bool = False, profile_type: Optional[str] = None):
+    def list_profiles(
+        self,
+        checked_out: bool = False,
+        profile_type: Optional[str] = None,
+        search_text: Optional[str] = None,
+    ):
         self.login()
-        self._set_available_profiles(profile_type=profile_type)
+        self._set_available_profiles(profile_type=profile_type, search_text=search_text)
         data = []
         checked_out_profiles = {}
         if checked_out:  # only make this call if we have to
@@ -390,7 +415,7 @@ class BritiveCli:
                     'Application': profile['app_name'] or 'Resources',
                     'Environment': profile['env_name'],
                     'Profile': profile['profile_name'],
-                    'Description': profile['profile_description'] or 'Resource',
+                    'Description': profile['profile_description'] if profile['app_name'] else 'Resource',
                     'Type': profile['app_type'],
                 }
 
@@ -427,9 +452,9 @@ class BritiveCli:
         if self.output_format == 'list-profiles':
             self.output_format = 'list'
 
-    def list_applications(self):
+    def list_applications(self, search_text: Optional[str] = None):
         self.login()
-        self._set_available_profiles()
+        self._set_available_profiles(profile_type='my-access', search_text=search_text)
         keys = ['app_name', 'app_type', 'app_description']
         apps = []
         for profile in self.available_profiles:
@@ -440,14 +465,14 @@ class BritiveCli:
             row = {
                 'Application': app['app_name'],
                 'Type': app['app_type'],
-                'Description': app['app_description'],
+                'Description': app['app_description'] or '',
             }
             data.append(row)
         self.print(data, ignore_silent=True)
 
-    def list_environments(self):
+    def list_environments(self, search_text: Optional[str] = None):
         self.login()
-        self._set_available_profiles()
+        self._set_available_profiles(profile_type='my-access', search_text=search_text)
         envs = []
         keys = ['app_name', 'app_type', 'env_name', 'env_description']
         for profile in self.available_profiles:
@@ -459,37 +484,27 @@ class BritiveCli:
             row = {
                 'Application': env['app_name'],
                 'Environment': env['env_name'],
-                'Description': env['env_description'],
+                'Description': env['env_description'] or '',
                 'Type': env['app_type'],
             }
             data.append(row)
         self.print(data, ignore_silent=True)
 
-    # temporary fix till the new API is updated to return `sessionAttributes`
-    def _get_missing_session_attributes(self, app_id: str, profile_id: str) -> dict:
-        if not self.listed_profiles:
-            self.listed_profiles = self.b.my_access.list_profiles()
-        return next(
-            (
-                profile['sessionAttributes']
-                for app in self.listed_profiles
-                if app['appContainerId'] == app_id
-                for profile in app.get('profiles', [])
-                if profile['profileId'] == profile_id
-            ),
-            [],
-        )
-
-    def _set_available_profiles(self, from_cache_command=False, profile_type: Optional[str] = None):
+    def _set_available_profiles(
+        self,
+        from_cache_command=False,
+        profile_type: Optional[str] = None,
+        search_text: Optional[str] = None,
+    ):
         if not self.available_profiles:
             data = []
             if not profile_type or profile_type == 'my-access':
                 self.listed_profiles = None
                 access_limit = int(self.config.my_access_retrieval_limit)
                 increase = 0
-                while (access_data := self.b.my_access.list(size=access_limit + increase))['count'] > len(
-                    access_data['accesses']
-                ) and len({a['papId'] for a in access_data['accesses']}) < access_limit:
+                while (access_data := self.b.my_access.list(search_text=search_text, size=access_limit + increase))[
+                    'count'
+                ] > len(access_data['accesses']) and len({a['papId'] for a in access_data['accesses']}) < access_limit:
                     increase += max(25, round(access_data['count'] * 0.25))
                 apps = {a['appContainerId']: a for a in access_data.get('apps', [])}
                 envs = {e['environmentId']: e for e in access_data.get('environments', [])}
@@ -518,18 +533,15 @@ class BritiveCli:
                         'profile_description': profile['papDescription'],
                         'profile_id': profile_id,
                         'profile_name': profile['papName'],
-                        'session_attributes': profile.get(
-                            'sessionAttributes', self._get_missing_session_attributes(app_id, profile_id)
-                        ),
+                        'session_attributes': profile['sessionAttributes'],
                     }
                     if row not in access_output:
                         access_output.append(row)
                 data += access_output[:access_limit] if access_limit else access_output
             if self.b.feature_flags.get('server-access') and (not profile_type or profile_type == 'my-resources'):
-                if not (resource_limit := int(self.config.my_resources_retrieval_limit)):
-                    profiles = self.b.my_resources.list_profiles()
-                else:
-                    profiles = self.b.my_resources.list(size=resource_limit)
+                resource_limit = int(self.config.my_resources_retrieval_limit)
+                profiles = self.b.my_resources.list(search_text=search_text, size=resource_limit)
+                if resource_limit:
                     profiles = profiles['data']
                 for item in profiles:
                     row = {

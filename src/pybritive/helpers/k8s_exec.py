@@ -1,3 +1,4 @@
+import os
 from sys import argv, exit
 
 
@@ -8,7 +9,12 @@ def get_args():
         argv[1:], 't:T:p:F:hv', ['tenant=', 'token=', 'passphrase=', 'federation-provider=', 'help', 'version']
     )[0]
 
-    args = {'tenant': None, 'token': None, 'passphrase': None, 'federation_provider': None}
+    args = {
+        'tenant': None,
+        'token': None,
+        'passphrase': os.getenv('PYBRITIVE_ENCRYPTED_CREDENTIAL_PASSPHRASE'),
+        'federation_provider': None,
+    }
 
     for opt, arg in options:
         if opt in ('-t', '--tenant'):
