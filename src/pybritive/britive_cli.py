@@ -490,21 +490,6 @@ class BritiveCli:
             data.append(row)
         self.print(data, ignore_silent=True)
 
-    # temporary fix till the new API is updated to return `sessionAttributes`
-    def _get_missing_session_attributes(self, app_id: str, profile_id: str) -> dict:
-        if not self.listed_profiles:
-            self.listed_profiles = self.b.my_access.list_profiles()
-        return next(
-            (
-                profile['sessionAttributes']
-                for app in self.listed_profiles
-                if app['appContainerId'] == app_id
-                for profile in app.get('profiles', [])
-                if profile['profileId'] == profile_id
-            ),
-            [],
-        )
-
     def _set_available_profiles(
         self,
         from_cache_command=False,
@@ -548,9 +533,7 @@ class BritiveCli:
                         'profile_description': profile['papDescription'],
                         'profile_id': profile_id,
                         'profile_name': profile['papName'],
-                        'session_attributes': profile.get(
-                            'sessionAttributes', self._get_missing_session_attributes(app_id, profile_id)
-                        ),
+                        'session_attributes': profile['sessionAttributes'],
                     }
                     if row not in access_output:
                         access_output.append(row)
