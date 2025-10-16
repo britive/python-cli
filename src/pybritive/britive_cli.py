@@ -338,6 +338,26 @@ class BritiveCli:
         approvals.reverse()
         self.print(approvals, ignore_silent=True)
 
+    def list_requests(self):
+        self.login()
+        requests = []
+        for request in self.b.my_requests.list():
+            request.pop('resource', None)
+            request.pop('consumer', None)
+            request.pop('timeToApprove', None)
+            request.pop('validFor', None)
+            request.pop('action', None)
+            request.pop('approvers', None)
+            request.pop('expirationTimeApproval', None)
+            request.pop('updatedAt', None)
+            request.pop('actionBy', None)
+            request.pop('validForInDays', None)
+            requests.append(request)
+
+        requests = sorted(requests, key=lambda x: x['createdAt'])
+        requests.reverse()
+        self.print(requests, ignore_silent=True)
+
     def list_resources(self, search_text: Optional[str] = None):
         self.login()
         found_resource_names = []
