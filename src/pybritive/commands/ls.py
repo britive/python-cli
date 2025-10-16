@@ -58,6 +58,9 @@ def profiles(
 @ls.command()
 @build_britive
 @britive_options(names='format,tenant,token,silent,passphrase,federation_provider')
+def requests(ctx, output_format, tenant, token, silent, passphrase, federation_provider):
+    """List requests for the currently authenticated identity."""
+    ctx.obj.britive.list_requests()
 
 
 @ls.command()
