@@ -415,7 +415,7 @@ class BritiveCli:
                     'Application': profile['app_name'] or 'Resources',
                     'Environment': profile['env_name'],
                     'Profile': profile['profile_name'],
-                    'Description': profile['profile_description'] or 'Resource',
+                    'Description': profile['profile_description'] if profile['app_name'] else 'Resource',
                     'Type': profile['app_type'],
                 }
 
@@ -484,7 +484,7 @@ class BritiveCli:
             row = {
                 'Application': env['app_name'],
                 'Environment': env['env_name'],
-                'Description': env['env_description'],
+                'Description': env['env_description'] or '',
                 'Type': env['app_type'],
             }
             data.append(row)
