@@ -23,7 +23,7 @@ __Dependencies:__
 
 __Other:__
 
-* Dropped temporary `_get_missing_session_attributes` method, API has been corrected.
+* None
 
 ## v2.3.0 [2025-10-16]
 
