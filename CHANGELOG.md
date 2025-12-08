@@ -3,6 +3,28 @@
 > As of v1.4.0, release candidates will be published in an effort to get new features out faster while still allowing
 > time for full QA testing before moving the release candidate to a full release.
 
+## v2.3.1 [2025-12-08]
+
+__What's New:__
+
+* None
+
+__Enhancements:__
+
+* None
+
+__Bug Fixes:__
+
+* Removed trailing slashes in urls
+
+__Dependencies:__
+
+* None
+
+__Other:__
+
+* None
+
 ## v2.3.0 [2025-10-16]
 
 __What's New:__
