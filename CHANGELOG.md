@@ -7,6 +7,28 @@
 
 __What's New:__
 
+* None
+
+__Enhancements:__
+
+* None
+
+__Bug Fixes:__
+
+* Removed trailing slashes in urls to account for Python 3.14
+
+__Dependencies:__
+
+* None
+
+__Other:__
+
+* Dropped temporary `_get_missing_session_attributes` method, API has been corrected.
+
+## v2.3.0 [2025-10-16]
+
+__What's New:__
+
 * Applications, Environments, Profiles, Resources, and Secrets have a new `--search-text|-S` flag for listing with `ls`. 
 
 __Enhancements:__
