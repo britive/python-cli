@@ -612,7 +612,7 @@ class BritiveCli:
             return next(
                 iter(
                     a['catalogAppName']
-                    for a in self.b.get(f'{self.b.base_url}/access/apps/')
+                    for a in self.b.get(f'{self.b.base_url}/access/apps')
                     if a['appContainerId'] == application_id
                 )
             )
@@ -1303,14 +1303,14 @@ class BritiveCli:
                     app_id = next(
                         iter(
                             a['appContainerId']
-                            for a in self.b.get(f'{self.b.base_url}/access/apps/')
+                            for a in self.b.get(f'{self.b.base_url}/access/apps')
                             if a['catalogAppDisplayName'].lower() == application_name
                         )
                     )
                     env_id = next(
                         iter(
                             e['environmentId']
-                            for e in self.b.get(f'{self.b.base_url}/access/apps/{app_id}/environments/')
+                            for e in self.b.get(f'{self.b.base_url}/access/apps/{app_id}/environments')
                             if e['environmentName'].lower() == environment_name
                             or e['environmentId'] == environment_name
                             or e['alternateEnvironmentName'].lower() == environment_name
