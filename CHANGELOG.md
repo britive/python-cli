@@ -3,7 +3,7 @@
 > As of v1.4.0, release candidates will be published in an effort to get new features out faster while still allowing
 > time for full QA testing before moving the release candidate to a full release.
 
-## v2.4.0 [2025-12-8]
+## v2.3.1 [2025-12-8]
 
 __What's New:__
 
@@ -15,7 +15,7 @@ __Enhancements:__
 
 __Bug Fixes:__
 
-* Removed trailing slashes in urls to account for Python 3.14
+* Removed trailing slashes in urls
 
 __Dependencies:__
 
