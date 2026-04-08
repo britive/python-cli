@@ -4,13 +4,16 @@ import inspect
 from britive.britive import Britive
 from click.shell_completion import CompletionItem
 
+from pybritive.completers import get_tenant_for_api_completion
+
 
 def api_completer(ctx, param, incomplete):
     # create an instance of the Britive class, so we can inspect it
-    # this doesn't need to actually connect to any tenant, and we couldn't even if we
-    # wanted to since when performing shell completion we have no tenant/token
-    # context in order to properly establish a connection.
-    b = Britive(token='ignore', tenant='britive.com', query_features=False)
+    # using the user's configured tenant to avoid DNS resolution issues
+    tenant = get_tenant_for_api_completion()
+    if not tenant:
+        return []
+    b = Britive(token='ignore', tenant=tenant, query_features=False)
 
     # parse the incomplete command, so we can determine where in the "hierarchy" we are
     # and what commands/subcommands the user should be presented with
