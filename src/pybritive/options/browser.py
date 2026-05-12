@@ -9,6 +9,8 @@ option = click.option(
     show_choices=True,
     envvar='PYBRITIVE_BROWSER',
     show_envvar=True,
-    help='The browser to use when opening a URL from the PyBritive CLI. Defaults to None which indicates the standard '
-    'webbrowser selection process should be used. Can also source from PYBRITIVE_BROWSER.',
+    help='The browser to use when opening URLs. Accepts a predefined name (chrome, chromium, firefox, macosx, '
+    'mozilla, safari, windows-default) or a custom command with %s as the URL placeholder '
+    '(e.g. "firefox %s", "chromium-browser %s"). '
+    'Defaults to the OS default browser. Can also source from PYBRITIVE_BROWSER.',
 )

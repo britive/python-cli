@@ -10,10 +10,18 @@ option = click.option(
     '-m',
     type=mode_choices,
     show_choices=True,
-    help='The way in which the checked out credentials are presented. `integrate` will place the credentials into '
-    'the cloud providers local credential file (AWS only). Value `env` can optionally include terminal specific '
-    'options for setting environment variables '
-    '(example: env-nix for Linux/Mac, env-wincmd for Windows Command Prompt, env-winps for Windows PowerShell).'
-    '`gcloudauth` will save the generated key file/credentials to the pybritive config directory and generate a '
-    'gcloud auth command which can be directly evaluated. Will default to `json` if not provided.',
+    help='How checked out credentials are presented. Defaults to `json` if not provided. '
+    'General: `json` (JSON output), `text` (plain key-value output). '
+    'AWS: `env` (eval-able export/set statements, auto-detects OS), `env-nix` (export for Linux/Mac), '
+    '`env-wincmd` (set for Windows cmd), `env-winps` ($Env: for PowerShell), '
+    '`integrate` (write credentials to ~/.aws/credentials), '
+    '`awscredentialprocess` (credential_process JSON format for ~/.aws/config, with caching). '
+    'Azure: `azlogin` (eval-able `az login` command), `azps` (PowerShell login script). '
+    'GCP: `gcloudauth` (saves key file, outputs eval-able `gcloud auth activate-service-account` command), '
+    '`gcloudauthexec` (same as gcloudauth but executes the command directly in a subprocess). '
+    'OpenShift: `os-oclogin` (performs OIDC auth code grant flow, outputs eval-able `oc login` command), '
+    '`os-ocloginexec` (same as os-oclogin but executes `oc login` directly in a subprocess). '
+    'Kubernetes: `kube-exec` (ExecCredential output for kubeconfig OIDC exec plugin, with caching). '
+    'Console/Browser: `console` (prints console URL), `browser` (opens URL in default browser), '
+    '`browser-<name>` (opens URL in a specific browser, e.g. browser-chrome, browser-firefox).',
 )
