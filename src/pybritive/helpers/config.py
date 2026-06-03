@@ -43,6 +43,7 @@ global_fields = [
     'auto_refresh_kube_config',
     'auto_refresh_profile_cache',
     'ca_bundle',
+    'checkout_lock',
     'credential_backend',
     'default_tenant',
     'output_format',
@@ -281,6 +282,9 @@ class ConfigManager:
             if field.replace('-', '_') == 'auto_refresh_kube_config' and value not in ['true', 'false']:
                 error = f'Invalid {section} field {field} value {value} provided. Invalid value choice.'
                 self.validation_error_messages.append(error)
+            if field.replace('-', '_') == 'checkout_lock' and value not in ['true', 'false']:
+                error = f'Invalid {section} field {field} value {value} provided. Invalid value choice.'
+                self.validation_error_messages.append(error)
             if field == 'default_tenant':
                 tenant_aliases_from_sections = [extract_tenant(t) for t in self.config if t.startswith('tenant-')]
                 if value not in tenant_aliases_from_sections:
@@ -341,5 +345,12 @@ class ConfigManager:
         self.load()
         value = self.config.get('global', {}).get(
             'auto_refresh_kube_config', self.config.get('global', {}).get('auto-refresh-kube-config', 'false')
+        )
+        return value == 'true'
+
+    def checkout_lock_enabled(self) -> bool:
+        self.load()
+        value = self.config.get('global', {}).get(
+            'checkout_lock', self.config.get('global', {}).get('checkout-lock', 'false')
         )
         return value == 'true'
