@@ -65,7 +65,12 @@ def merge_new_with_existing(clusters, contexts, users, filename, tenant):
         yaml.safe_dump(kubeconfig, f, default_flow_style=False, encoding='utf-8')
 
 
+def _normalize_dashes(s: str) -> str:
+    return s.replace('–', '-').replace('—', '-')
+
+
 def parse_profiles(profiles, aliases):
+    normalized_aliases = {_normalize_dashes(k): v for k, v in aliases.items()}
     cluster_names = {}
     assigned_aliases = []
     for profile in profiles:
@@ -76,7 +81,12 @@ def parse_profiles(profiles, aliases):
             pro = BritiveCli.escape_profile_element(profile['profile'])
 
             escaped_profile_str = f'{app}/{env}/{pro}'.lower()
-            alias = aliases.get(escaped_profile_str, None)
+            raw_profile_str = f'{profile["app"]}/{profile["env"]}/{profile["profile"]}'.lower()
+            alias = (
+                aliases.get(escaped_profile_str)
+                or aliases.get(raw_profile_str)
+                or normalized_aliases.get(_normalize_dashes(raw_profile_str))
+            )
             assigned_aliases.append(alias)
 
             cluster_names[env_profile] = {
@@ -84,7 +94,7 @@ def parse_profiles(profiles, aliases):
                 'url': profile['url'],
                 'cert': profile['cert'],
                 'escaped_profile': escaped_profile_str,
-                'profile': f'{profile["app"]}/{profile["env"]}/{profile["profile"]}'.lower(),
+                'profile': raw_profile_str,
                 'alias': alias,
                 'session_attributes': profile['session_attributes'],
             }
