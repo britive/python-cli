@@ -1,5 +1,28 @@
 # Changelog
 
+## v2.4.1 [2026-06-03]
+
+__What's New:__
+
+* Added `awsstsjwt` federation provider support (OIDC-based AWS federation via STS `GetWebIdentityToken`)
+
+__Enhancements:__
+
+* Updated federation provider help text to list all valid providers including `awsstsjwt` parameter format
+
+__Bug Fixes:__
+
+* Added per-profile file locking to prevent concurrent duplicate checkouts, gated behind `checkout_lock` config flag
+* Fixed kubeconfig context names not honoring profile aliases
+
+__Dependencies:__
+
+* Bumped `britive` SDK requirement from `>=4.1.2` to `>=4.6.0`
+
+__Other:__
+
+* None
+
 ## v2.3.2 [2026-04-07]
 
 __What's New:__
