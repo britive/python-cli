@@ -24,6 +24,7 @@ from tabulate import tabulate
 from . import __version__
 from .helpers import cloud_credential_printer as printer
 from .helpers.cache import Cache
+from .helpers.checkout_lock import CheckoutLock
 from .helpers.config import ConfigManager
 from .helpers.credentials import EncryptedFileCredentialManager, FileCredentialManager
 from .helpers.split import profile_split
@@ -792,6 +793,17 @@ class BritiveCli:
                 }
             raise e
 
+    def _check_cache(self, passphrase: Optional[str], profile_name: str, mode: str) -> Optional[dict]:
+        credentials = Cache(passphrase=passphrase).get_credentials(profile_name=profile_name, mode=mode)
+        if credentials:
+            expiration_timestamp_str = jmespath.search(
+                expression=self.cachable_modes[mode]['expiration_jmespath'], data=credentials
+            ).replace('Z', '')
+            expires = datetime.fromisoformat(expiration_timestamp_str)
+            if datetime.utcnow() < expires:
+                return credentials
+        return None
+
     @staticmethod
     def _should_check_force_renew(app, force_renew, console):
         return app in ['AWS', 'AWS Standalone'] and force_renew and not console
@@ -903,25 +915,14 @@ class BritiveCli:
         self._validate_justification(justification)
 
         if mode in self.cachable_modes:
-            self.silent = True  # CANNOT output anything other than the expected JSON
-            # we need to check the cache for the credentials first and then check to see if they are expired
-            # if not simply return those credentials, if they are expired, continue to do an actual checkout
+            self.silent = True
             app_type = self.cachable_modes[mode]['app_type']
-            credentials = Cache(passphrase=passphrase).get_credentials(profile_name=alias or profile, mode=mode)
+            credentials = self._check_cache(passphrase, alias or profile, mode)
             if credentials:
-                expiration_timestamp_str = jmespath.search(
-                    expression=self.cachable_modes[mode]['expiration_jmespath'], data=credentials
-                ).replace('Z', '')
-                expires = datetime.fromisoformat(expiration_timestamp_str)
-                now = datetime.utcnow()
-                if now >= expires:  # check to ensure the credentials are still valid, if not, set to None and get new
-                    credentials = None
-                else:
-                    cached_credentials_found = True
+                cached_credentials_found = True
 
         parts = self._split_profile_into_parts(profile)
 
-        # create this params once so we can use it multiple places
         params = {
             'app_name': parts['app'],
             'blocktime': blocktime,
@@ -936,30 +937,41 @@ class BritiveCli:
             'ticket_type': ticket_type,
         }
 
-        if not cached_credentials_found:  # nothing found in cache, cache is expired, or not a cachable mode
-            response = self._checkout(**params)
-            app_type = self._get_app_type(response['appContainerId'])
-            credentials = response['credentials']
-            console_fallback = response.get('console-fallback')
+        if not cached_credentials_found:
+            if mode in self.cachable_modes:
+                with CheckoutLock(profile_key=alias or profile, mode=mode):
+                    credentials = self._check_cache(passphrase, alias or profile, mode)
+                    if credentials:
+                        cached_credentials_found = True
+                    else:
+                        response = self._checkout(**params)
+                        app_type = self._get_app_type(response['appContainerId'])
+                        credentials = response['credentials']
+                        console_fallback = response.get('console-fallback')
+                        Cache(passphrase=passphrase).save_credentials(
+                            profile_name=alias or profile, credentials=credentials, mode=mode
+                        )
+            else:
+                response = self._checkout(**params)
+                app_type = self._get_app_type(response['appContainerId'])
+                credentials = response['credentials']
+                console_fallback = response.get('console-fallback')
 
-        # this handles the --force-renew flag
-        # lets check to see if we should checkin this profile first and check it out again
         if self._should_check_force_renew(app_type, force_renew, console):
             expiration = datetime.fromisoformat(credentials['expirationTime'].replace('Z', ''))
             now = datetime.utcnow()
             diff = (expiration - now).total_seconds() / 60.0
-            if diff < force_renew:  # time to checkin the profile so we can refresh creds
+            if diff < force_renew:
                 self.print('checking in the profile to get renewed credentials....standby')
                 self.checkin(profile=profile, console=console)
                 response = self._checkout(**params)
-                cached_credentials_found = False  # need to write new creds to cache
                 credentials = response['credentials']
                 console_fallback = response.get('console-fallback')
+                if mode in self.cachable_modes:
+                    Cache(passphrase=passphrase).save_credentials(
+                        profile_name=alias or profile, credentials=credentials, mode=mode
+                    )
 
-        if mode in self.cachable_modes and not cached_credentials_found:
-            Cache(passphrase=passphrase).save_credentials(
-                profile_name=alias or profile, credentials=credentials, mode=mode
-            )
         return app_type, console_fallback, credentials, k8s_processor
 
     def checkout(

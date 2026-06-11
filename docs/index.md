@@ -266,7 +266,8 @@ At feature launch the following types of identity providers are supported for wo
 `pybritive` offers some native integrations with the following services.
 
 * Github Actions
-* AWS
+* AWS (STS)
+* AWS (STS via OIDC JWT)
 * Bitbucket
 * Azure System Assigned Managed Identities
 * Azure User Assigned Managed Identities
@@ -317,6 +318,24 @@ pybritive checkout "profile" --federation-provider aws-profile_expirationseconds
 # use aws sts without an AWS CLI profile and set the Britive expiration (in seconds) of the generated token
 pybritive checkout "profile" --federation-provider aws_expirationseconds
 ```
+
+#### AWS STS via OIDC (JWT)
+
+```sh
+# use awsstsjwt with an AWS CLI profile, audience, signing algorithm, and duration
+# format: awsstsjwt-<profile>|<audience>|<signing_algorithm>|<duration_seconds>
+pybritive checkout "profile" --federation-provider awsstsjwt-myprofile|sts.amazonaws.com|RS256|3600
+
+# use awsstsjwt with only an AWS CLI profile (other params use defaults)
+pybritive checkout "profile" --federation-provider awsstsjwt-myprofile
+
+# use awsstsjwt without an AWS CLI profile (source credentials via the standard credential discovery process)
+pybritive checkout "profile" --federation-provider awsstsjwt
+```
+
+The `awsstsjwt` provider uses the AWS STS `AssumeRoleWithWebIdentity` API to federate using an OIDC JWT token.
+Parameters are pipe-delimited in the format `awsstsjwt-<profile>|<audience>|<signing_algorithm>|<duration_seconds>`.
+All parameters after the profile are optional.
 
 #### Bitbucket
 
