@@ -1,0 +1,136 @@
+# Builds standalone, self-contained pybritive installers (no Python required on
+# the target machine) and attaches them to the GitHub Release. Mirrors the AWS
+# CLI v2 distribution model: PyInstaller onedir bundle wrapped in a native
+# installer per OS. Builds run natively per-OS because PyInstaller cannot
+# cross-compile. The existing PyPI publish workflow is left untouched.
+name: Build Standalone Installers
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version string to stamp onto artifacts (defaults to the tag/_init_ version)
+        required: false
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: build (${{ matrix.label }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            label: linux-x86_64
+          - os: macos-13       # Intel
+            label: macos-x86_64
+          - os: macos-latest   # Apple Silicon
+            label: macos-arm64
+          - os: windows-latest
+            label: windows-x64
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install project and build dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install . -r packaging/requirements-build.txt
+
+      - name: Resolve version
+        id: ver
+        shell: bash
+        run: |
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            V="${{ github.event.inputs.version }}"
+          elif [ -n "${GITHUB_REF_NAME:-}" ] && [ "${GITHUB_REF_TYPE:-}" = "tag" ]; then
+            V="${GITHUB_REF_NAME#v}"
+          else
+            V="$(python -c 'from importlib.metadata import version; print(version("pybritive"))')"
+          fi
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+          echo "Building version $V"
+
+      - name: Build PyInstaller bundle
+        run: pyinstaller packaging/pybritive.spec --noconfirm
+
+      - name: Smoke test bundle (Unix)
+        if: runner.os != 'Windows'
+        run: |
+          ./dist/pybritive/pybritive --version
+          ./dist/pybritive/pybritive-kube-exec --version
+          ./dist/pybritive/pybritive-aws-cred-process --version
+
+      - name: Smoke test bundle (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          .\dist\pybritive\pybritive.exe --version
+          .\dist\pybritive\pybritive-kube-exec.exe --version
+          .\dist\pybritive\pybritive-aws-cred-process.exe --version
+
+      # ---- Linux: zip + install script -------------------------------------
+      - name: Package Linux (zip + installer)
+        if: runner.os == 'Linux'
+        run: |
+          STAGE="pybritive-${{ steps.ver.outputs.version }}-${{ matrix.label }}"
+          mkdir -p "$STAGE"
+          cp -R dist/pybritive "$STAGE/pybritive"
+          cp packaging/linux/install "$STAGE/install"
+          chmod +x "$STAGE/install"
+          zip -r -q "dist/${STAGE}.zip" "$STAGE"
+          echo "ARTIFACT=dist/${STAGE}.zip" >> "$GITHUB_ENV"
+
+      # ---- macOS: signed/notarized .pkg ------------------------------------
+      - name: Package macOS (.pkg)
+        if: runner.os == 'macOS'
+        env:
+          # Wire these to repo secrets to enable signing + notarization.
+          MACOS_SIGN_IDENTITY: ${{ secrets.MACOS_SIGN_IDENTITY }}
+          MACOS_INSTALLER_IDENTITY: ${{ secrets.MACOS_INSTALLER_IDENTITY }}
+          AC_NOTARY_PROFILE: ${{ secrets.AC_NOTARY_PROFILE }}
+        run: |
+          bash packaging/macos/build-pkg.sh "${{ steps.ver.outputs.version }}"
+          echo "ARTIFACT=$(ls dist/*.pkg)" >> "$GITHUB_ENV"
+
+      # ---- Windows: signed MSI ---------------------------------------------
+      - name: Install WiX
+        if: runner.os == 'Windows'
+        run: dotnet tool install --global wix
+
+      - name: Package Windows (.msi)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        env:
+          WIN_PFX_BASE64: ${{ secrets.WIN_PFX_BASE64 }}
+          WIN_PFX_PASSWORD: ${{ secrets.WIN_PFX_PASSWORD }}
+        run: |
+          $args = @{ Version = "${{ steps.ver.outputs.version }}" }
+          if ($env:WIN_PFX_BASE64) {
+            [IO.File]::WriteAllBytes("cert.pfx", [Convert]::FromBase64String($env:WIN_PFX_BASE64))
+            $args.PfxPath = "cert.pfx"
+            $args.PfxPassword = $env:WIN_PFX_PASSWORD
+          }
+          .\packaging\windows\build-msi.ps1 @args
+          "ARTIFACT=$(Get-ChildItem dist\*.msi | Select-Object -First 1 -ExpandProperty FullName)" `
+            | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pybritive-${{ matrix.label }}
+          path: ${{ env.ARTIFACT }}
+
+      - name: Attach to release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ env.ARTIFACT }}

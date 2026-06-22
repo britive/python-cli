@@ -45,6 +45,8 @@ MANIFEST
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.
 *.manifest
 *.spec
+# ...except our committed, hand-maintained PyInstaller spec.
+!packaging/pybritive.spec
 
 # Installer logs
 pip-log.txt

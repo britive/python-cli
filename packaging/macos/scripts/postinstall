@@ -1,0 +1,15 @@
+#!/bin/sh
+# Runs after the pkg lays the bundle down in /usr/local/pybritive.
+# Symlinks the three commands into /usr/local/bin so they're on the PATH,
+# mirroring the AWS CLI v2 pkg behaviour.
+set -eu
+
+INSTALL_DIR="/usr/local/pybritive"
+BIN_DIR="/usr/local/bin"
+
+mkdir -p "$BIN_DIR"
+for cmd in pybritive pybritive-aws-cred-process pybritive-kube-exec; do
+    ln -sf "$INSTALL_DIR/$cmd" "$BIN_DIR/$cmd"
+done
+
+exit 0

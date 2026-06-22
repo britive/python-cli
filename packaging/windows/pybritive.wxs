@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  WiX v4 source for the pybritive MSI.
+
+  Installs the PyInstaller onedir bundle (dist\pybritive) into
+  "Program Files\Britive\pybritive" and prepends that folder to the system PATH,
+  so `pybritive`, `pybritive-aws-cred-process`, and `pybritive-kube-exec` all
+  resolve from any shell. Mirrors the AWS CLI v2 MSI behaviour.
+
+  Build (see build-msi.ps1):
+    wix build packaging\windows\pybritive.wxs ^
+      -d Version=<x.y.z> -d BundleDir=dist\pybritive -arch x64 ^
+      -o dist\pybritive-<x.y.z>-windows-x64.msi
+-->
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  <Package
+      Name="PyBritive CLI"
+      Manufacturer="Britive Inc."
+      Version="$(Version)"
+      UpgradeCode="0d9d3b2e-7b8a-4c1d-9f3a-2b1c6e5d4a7f"
+      Scope="perMachine"
+      Compressed="yes">
+
+    <!-- Allow in-place upgrades; block older versions over newer. -->
+    <MajorUpgrade DowngradeErrorMessage="A newer version of PyBritive CLI is already installed." />
+    <MediaTemplate EmbedCab="yes" />
+
+    <StandardDirectory Id="ProgramFiles64Folder">
+      <Directory Id="BritiveFolder" Name="Britive">
+        <Directory Id="INSTALLFOLDER" Name="pybritive" />
+      </Directory>
+    </StandardDirectory>
+
+    <!-- Auto-harvest the entire onedir bundle into INSTALLFOLDER. -->
+    <ComponentGroup Id="BundleFiles" Directory="INSTALLFOLDER">
+      <Files Include="$(BundleDir)\**" />
+    </ComponentGroup>
+
+    <!-- Add the install folder to the system PATH. -->
+    <ComponentGroup Id="PathEntry" Directory="INSTALLFOLDER">
+      <Component Id="SetPath" Guid="*">
+        <Environment Id="PybritivePath"
+                     Name="PATH"
+                     Value="[INSTALLFOLDER]"
+                     Permanent="no"
+                     Part="last"
+                     Action="set"
+                     System="yes" />
+      </Component>
+    </ComponentGroup>
+
+    <Feature Id="Main" Title="PyBritive CLI" Level="1">
+      <ComponentGroupRef Id="BundleFiles" />
+      <ComponentGroupRef Id="PathEntry" />
+    </Feature>
+  </Package>
+</Wix>

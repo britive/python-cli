@@ -1,0 +1,88 @@
+#!/bin/sh
+# pybritive standalone installer for Linux/Unix.
+#
+# Modeled on the AWS CLI v2 installer: ships the self-contained PyInstaller
+# onedir bundle (this file lives next to a ./pybritive/ directory) and installs
+# it under a fixed location with symlinks placed on the PATH.
+#
+#   ./install                              # installs to /usr/local
+#   ./install -i ~/.local/pybritive -b ~/.local/bin   # custom, no sudo
+#   ./install --update                     # overwrite an existing install
+#
+# Options:
+#   -i, --install-dir DIR   Where the bundle is copied. Default /usr/local/pybritive
+#   -b, --bin-dir DIR       Where command symlinks are created. Default /usr/local/bin
+#   -u, --update            Replace an existing install in --install-dir
+
+set -eu
+
+INSTALL_DIR="/usr/local/pybritive"
+BIN_DIR="/usr/local/bin"
+UPDATE="false"
+
+# The three commands exposed by the bundle (see packaging/pybritive.spec).
+COMMANDS="pybritive pybritive-aws-cred-process pybritive-kube-exec"
+
+usage() {
+    cat <<'EOF'
+pybritive standalone installer for Linux/Unix.
+
+Usage:
+  ./install                                          # installs to /usr/local
+  ./install -i ~/.local/pybritive -b ~/.local/bin    # custom prefix, no sudo
+  ./install --update                                 # overwrite an existing install
+
+Options:
+  -i, --install-dir DIR   Where the bundle is copied. Default /usr/local/pybritive
+  -b, --bin-dir DIR       Where command symlinks are created. Default /usr/local/bin
+  -u, --update            Replace an existing install in --install-dir
+  -h, --help              Show this help and exit
+EOF
+    exit "${1:-0}"
+}
+
+while [ $# -gt 0 ]; do
+    case "$1" in
+        -i|--install-dir) INSTALL_DIR="$2"; shift 2 ;;
+        -b|--bin-dir)     BIN_DIR="$2"; shift 2 ;;
+        -u|--update)      UPDATE="true"; shift ;;
+        -h|--help)        usage 0 ;;
+        *) echo "unknown option: $1" >&2; usage 1 ;;
+    esac
+done
+
+# Resolve the directory this script lives in (the unpacked release).
+SRC_DIR="$(cd "$(dirname "$0")" && pwd)"
+BUNDLE_DIR="$SRC_DIR/pybritive"
+
+if [ ! -x "$BUNDLE_DIR/pybritive" ]; then
+    echo "error: bundle not found at $BUNDLE_DIR (run install from the unpacked release)" >&2
+    exit 1
+fi
+
+if [ -e "$INSTALL_DIR" ] && [ "$UPDATE" != "true" ]; then
+    echo "error: $INSTALL_DIR already exists. Re-run with --update to replace it." >&2
+    exit 1
+fi
+
+echo "Installing pybritive to $INSTALL_DIR ..."
+rm -rf "$INSTALL_DIR"
+mkdir -p "$INSTALL_DIR"
+# Copy the bundle contents into the install dir.
+cp -R "$BUNDLE_DIR/." "$INSTALL_DIR/"
+
+mkdir -p "$BIN_DIR"
+for cmd in $COMMANDS; do
+    ln -sf "$INSTALL_DIR/$cmd" "$BIN_DIR/$cmd"
+done
+
+echo "Installed:"
+for cmd in $COMMANDS; do
+    echo "  $BIN_DIR/$cmd -> $INSTALL_DIR/$cmd"
+done
+echo
+echo "Verify with: $BIN_DIR/pybritive --version"
+case ":$PATH:" in
+    *":$BIN_DIR:"*) ;;
+    *) echo "note: $BIN_DIR is not on your PATH; add it to your shell profile." ;;
+esac
