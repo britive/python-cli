@@ -27,12 +27,18 @@ jobs:
         include:
           - os: ubuntu-latest
             label: linux-x86_64
+          - os: ubuntu-24.04-arm
+            label: linux-arm64
           - os: macos-13       # Intel
             label: macos-x86_64
           - os: macos-latest   # Apple Silicon
             label: macos-arm64
           - os: windows-latest
             label: windows-x64
+            winarch: x64
+          - os: windows-11-arm
+            label: windows-arm64
+            winarch: arm64
 
     steps:
       - uses: actions/checkout@v4
@@ -113,7 +119,7 @@ jobs:
           WIN_PFX_BASE64: ${{ secrets.WIN_PFX_BASE64 }}
           WIN_PFX_PASSWORD: ${{ secrets.WIN_PFX_PASSWORD }}
         run: |
-          $args = @{ Version = "${{ steps.ver.outputs.version }}" }
+          $args = @{ Version = "${{ steps.ver.outputs.version }}"; Arch = "${{ matrix.winarch }}" }
           if ($env:WIN_PFX_BASE64) {
             [IO.File]::WriteAllBytes("cert.pfx", [Convert]::FromBase64String($env:WIN_PFX_BASE64))
             $args.PfxPath = "cert.pfx"

@@ -62,12 +62,16 @@ Then package for the current OS:
 bash packaging/macos/build-pkg.sh <version>
 
 # Windows (PowerShell, requires `dotnet tool install --global wix`)
-.\packaging\windows\build-msi.ps1 -Version <version>
+.\packaging\windows\build-msi.ps1 -Version <version>            # x64 (default)
+.\packaging\windows\build-msi.ps1 -Version <version> -Arch arm64 # on a win-arm64 host
 ```
 
 PyInstaller **cannot cross-compile** — each OS/arch must be built on its own
 machine. CI (`.github/workflows/release-binaries.yml`) does this with a runner
-matrix and attaches every artifact to the GitHub Release.
+matrix covering linux x86_64/arm64, macOS x86_64/arm64, and Windows x64/arm64,
+and attaches every artifact to the GitHub Release. (arm64 Linux/Windows runners
+are free on public repos; native-dependency wheels such as `cryptography` must
+exist for win-arm64.)
 
 ## Code signing
 

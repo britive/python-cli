@@ -19,6 +19,7 @@
 #>
 param(
     [Parameter(Mandatory = $true)][string]$Version,
+    [ValidateSet("x64", "arm64")][string]$Arch = "x64",
     [string]$BundleDir = "dist\pybritive",
     [string]$PfxPath,
     [string]$PfxPassword,
@@ -34,7 +35,7 @@ if (-not (Test-Path (Join-Path $BundleDir "pybritive.exe"))) {
 
 # MSI ProductVersion must be numeric (x.y.z); drop any PEP 440 suffix.
 $MsiVersion = ($Version -split '[^0-9.]')[0].TrimEnd('.')
-$Out = "dist\pybritive-$Version-windows-x64.msi"
+$Out = "dist\pybritive-$Version-windows-$Arch.msi"
 
 # Sign the executables inside the bundle before packaging.
 function Invoke-Sign($path) {
@@ -52,11 +53,11 @@ if ($PfxPath -or $SignThumbprint) {
     Get-ChildItem -Path $BundleDir -Filter *.exe | ForEach-Object { Invoke-Sign $_.FullName }
 }
 
-Write-Host "Building MSI $Out (ProductVersion $MsiVersion)..."
+Write-Host "Building MSI $Out (ProductVersion $MsiVersion, arch $Arch)..."
 & wix build packaging\windows\pybritive.wxs `
     -d Version=$MsiVersion `
     -d BundleDir=$BundleDir `
-    -arch x64 `
+    -arch $Arch `
     -o $Out
 
 if ($PfxPath -or $SignThumbprint) {
