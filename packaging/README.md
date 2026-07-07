@@ -89,8 +89,28 @@ Locally, `build-pkg.sh` reads `MACOS_SIGN_IDENTITY` / `MACOS_INSTALLER_IDENTITY`
 `AC_NOTARY_PROFILE` from the environment and uses whatever keychain/notary
 profile you already have; in CI those are derived from the secrets above.
 
+## Homebrew tap
+
+`.github/workflows/release-homebrew.yml` keeps the
+[britive/homebrew-pybritive](https://github.com/britive/homebrew-pybritive) tap
+in sync automatically. On every **stable** (non-prerelease) GitHub release it
+waits for the new sdist to appear on PyPI, then runs
+`brew bump-formula-pr --write-only`, which rewrites the formula's `url`/`sha256`
+and regenerates the Python `resource` blocks from the new dependency set. The
+updated formula is test-installed (`brew install --build-from-source` +
+`brew test`) before being pushed to the tap. Pre-releases are skipped;
+`workflow_dispatch` accepts an explicit version for manual re-runs.
+
+Note the tap installs from PyPI (a virtualenv build), not from the standalone
+bundles above — it still requires nothing from the user but does compile
+`cryptography` from source (hence the formula's build-time `rust` dependency).
+
+Requires the `HOMEBREW_TAP_TOKEN` secret: a token with write (contents) access
+to `britive/homebrew-pybritive`.
+
 ## Distribution channels (optional follow-ups)
 
-Once installers are attached to releases, publishing to package managers is a
-small additional step: `winget` / Scoop / Chocolatey (Windows), a Homebrew tap
-(macOS), and the `install` script over `curl` (Linux).
+With installers attached to releases and the Homebrew tap automated, the
+remaining candidates are: `winget` / Scoop / Chocolatey (Windows) and hosting
+the Linux `install` script + zip behind `curl https://... | sh` on
+downloads.britive.com.

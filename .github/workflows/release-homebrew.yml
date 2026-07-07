@@ -1,0 +1,92 @@
+# Bumps the Homebrew tap (britive/homebrew-pybritive) when a stable release is
+# published. The tap formula installs from the PyPI sdist, so this waits for the
+# PyPI publish workflow to land the new version, then rewrites the formula's
+# url/sha256, regenerates the Python resource blocks, test-installs it, and
+# pushes the result to the tap repo.
+#
+# Requires one secret: HOMEBREW_TAP_TOKEN — a token with write (contents) access
+# to britive/homebrew-pybritive.
+name: Update Homebrew Tap
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: PyPI version to publish to the tap (e.g. 2.4.0)
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  bump-formula:
+    # The tap tracks stable releases only; skip rc/pre-release tags.
+    if: github.event_name == 'workflow_dispatch' || !github.event.release.prerelease
+    runs-on: macos-latest
+    steps:
+      - name: Resolve version
+        id: ver
+        run: |
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            V="${{ github.event.inputs.version }}"
+          else
+            V="${{ github.event.release.tag_name }}"
+            V="${V#v}"
+          fi
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+          echo "Bumping tap formula to $V"
+
+      - name: Wait for sdist on PyPI
+        id: sdist
+        run: |
+          V="${{ steps.ver.outputs.version }}"
+          URL=""
+          for i in $(seq 1 30); do
+            JSON="$(curl -fs "https://pypi.org/pypi/pybritive/$V/json" || true)"
+            URL="$(printf '%s' "$JSON" | jq -r '[.urls[] | select(.packagetype=="sdist")][0].url // empty')"
+            [ -n "$URL" ] && break
+            echo "sdist for $V not on PyPI yet; retrying in 30s ($i/30)"
+            sleep 30
+          done
+          if [ -z "$URL" ]; then
+            echo "sdist for pybritive $V never appeared on PyPI" >&2
+            exit 1
+          fi
+          SHA="$(printf '%s' "$JSON" | jq -r '[.urls[] | select(.packagetype=="sdist")][0].digests.sha256')"
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+          echo "sha256=$SHA" >> "$GITHUB_OUTPUT"
+
+      - name: Update formula url, sha256, and Python resources
+        env:
+          HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          brew tap britive/pybritive
+          # --write-only edits the local tap clone in place; for formulas with
+          # Python resources it also regenerates the resource blocks from the
+          # new sdist's dependency set.
+          brew bump-formula-pr britive/pybritive/pybritive \
+            --url "${{ steps.sdist.outputs.url }}" \
+            --sha256 "${{ steps.sdist.outputs.sha256 }}" \
+            --write-only --no-audit
+          git -C "$(brew --repository britive/pybritive)" diff
+
+      - name: Test install the updated formula
+        run: |
+          brew install --build-from-source britive/pybritive/pybritive
+          brew test britive/pybritive/pybritive
+
+      - name: Push to britive/homebrew-pybritive
+        env:
+          TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+        run: |
+          cd "$(brew --repository britive/pybritive)"
+          if git diff --quiet; then
+            echo "formula already up to date; nothing to push"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "pybritive ${{ steps.ver.outputs.version }}"
+          git push "https://x-access-token:${TAP_TOKEN}@github.com/britive/homebrew-pybritive.git" HEAD:main
