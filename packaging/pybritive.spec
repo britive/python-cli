@@ -44,9 +44,6 @@ hiddenimports = []
 hiddenimports += collect_submodules('britive')
 hiddenimports += ['boto3', 'botocore', 'bs4']
 
-block_cipher = None
-
-
 def make_analysis(script_name):
     return Analysis(
         [os.path.join(ENTRY_DIR, script_name)],
@@ -58,9 +55,6 @@ def make_analysis(script_name):
         hooksconfig={},
         runtime_hooks=[],
         excludes=['tkinter', 'pytest', 'mkdocs'],
-        win_no_prefer_redirects=False,
-        win_private_assemblies=False,
-        cipher=block_cipher,
         noarchive=False,
     )
 
@@ -81,9 +75,9 @@ MERGE(
     (a_kube, 'pybritive_kube_exec', 'pybritive-kube-exec'),
 )
 
-pyz_main = PYZ(a_main.pure, a_main.zipped_data, cipher=block_cipher)
-pyz_aws = PYZ(a_aws.pure, a_aws.zipped_data, cipher=block_cipher)
-pyz_kube = PYZ(a_kube.pure, a_kube.zipped_data, cipher=block_cipher)
+pyz_main = PYZ(a_main.pure)
+pyz_aws = PYZ(a_aws.pure)
+pyz_kube = PYZ(a_kube.pure)
 
 
 def make_exe(pyz, analysis, name):

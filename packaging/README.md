@@ -78,10 +78,16 @@ exist for win-arm64.)
 Unsigned binaries trigger SmartScreen (Windows) and Gatekeeper (macOS) warnings.
 Signing is **opt-in** via env vars / secrets, so local builds work unsigned:
 
-| Platform | Secrets / env | Effect |
+| Platform | Secrets | Effect |
 | --- | --- | --- |
-| macOS | `MACOS_SIGN_IDENTITY`, `MACOS_INSTALLER_IDENTITY`, `AC_NOTARY_PROFILE` | codesign + productsign + notarize/staple |
+| macOS | `MACOS_CERT_P12_BASE64`, `MACOS_CERT_P12_PASSWORD` | Developer ID certs imported into a throwaway CI keychain |
+| macOS | `MACOS_SIGN_IDENTITY`, `MACOS_INSTALLER_IDENTITY` | codesign the bundle + productsign the .pkg |
+| macOS | `APPLE_ID`, `APPLE_TEAM_ID`, `APPLE_APP_SPECIFIC_PASSWORD` | notarize + staple via `notarytool` |
 | Windows | `WIN_PFX_BASE64`, `WIN_PFX_PASSWORD` | Authenticode sign the exes + MSI |
+
+Locally, `build-pkg.sh` reads `MACOS_SIGN_IDENTITY` / `MACOS_INSTALLER_IDENTITY` /
+`AC_NOTARY_PROFILE` from the environment and uses whatever keychain/notary
+profile you already have; in CI those are derived from the secrets above.
 
 ## Distribution channels (optional follow-ups)
 

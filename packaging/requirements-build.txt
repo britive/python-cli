@@ -1,6 +1,6 @@
 # Build-time dependencies for producing the standalone pybritive bundle.
 # Install alongside the project itself: `pip install . -r packaging/requirements-build.txt`
-pyinstaller>=6.0
+pyinstaller>=6.0,<7
 # Optional-feature deps are bundled so the frozen binary has full parity with a
 # `pip install pybritive[aws,openshift]` install (AWS console / cred process and
 # OpenShift OIDC work out of the box).

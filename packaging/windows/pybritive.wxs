@@ -36,9 +36,17 @@
       <Files Include="$(BundleDir)\**" />
     </ComponentGroup>
 
-    <!-- Add the install folder to the system PATH. -->
+    <!-- Add the install folder to the system PATH. An Environment element can't
+         serve as a component keypath, so anchor the component on a registry
+         value (also what makes auto-GUIDs legal here). -->
     <ComponentGroup Id="PathEntry" Directory="INSTALLFOLDER">
       <Component Id="SetPath" Guid="*">
+        <RegistryValue Root="HKLM"
+                       Key="Software\Britive\pybritive"
+                       Name="Installed"
+                       Type="integer"
+                       Value="1"
+                       KeyPath="yes" />
         <Environment Id="PybritivePath"
                      Name="PATH"
                      Value="[INSTALLFOLDER]"

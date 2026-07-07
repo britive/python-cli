@@ -26,15 +26,36 @@ OUT="$ROOT/dist/pybritive-${VERSION}-macos-${ARCH}.pkg"
 mkdir -p "$PKGROOT$INSTALL_DIR"
 cp -R "$BUNDLE/." "$PKGROOT$INSTALL_DIR/"
 
-# Optionally codesign the embedded executables (deep) before packaging.
+# Optionally codesign the bundle before packaging. Notarization requires every
+# Mach-O in the payload to carry a hardened-runtime signature, so sign
+# inside-out: nested libraries first, then the launcher executables.
+# (codesign --deep is deprecated and does not reliably reach nested libs.)
 if [ -n "${MACOS_SIGN_IDENTITY:-}" ]; then
     echo "codesigning bundle with: $MACOS_SIGN_IDENTITY"
-    codesign --force --deep --options runtime --timestamp \
+    find "$PKGROOT$INSTALL_DIR/_internal" -type f \( -name '*.dylib' -o -name '*.so' \) -print0 |
+        xargs -0 codesign --force --options runtime --timestamp --sign "$MACOS_SIGN_IDENTITY"
+    # The embedded interpreter ships as a pruned Python.framework.
+    if [ -d "$PKGROOT$INSTALL_DIR/_internal/Python.framework" ]; then
+        codesign --force --options runtime --timestamp --sign "$MACOS_SIGN_IDENTITY" \
+            "$PKGROOT$INSTALL_DIR/_internal/Python.framework"
+    fi
+    codesign --force --options runtime --timestamp \
         --sign "$MACOS_SIGN_IDENTITY" \
         "$PKGROOT$INSTALL_DIR/pybritive" \
         "$PKGROOT$INSTALL_DIR/pybritive-aws-cred-process" \
         "$PKGROOT$INSTALL_DIR/pybritive-kube-exec"
 fi
+
+# pkgbuild auto-detects the embedded Python.framework as a relocatable bundle,
+# which would let the installer "update" a stray copy of the framework found
+# elsewhere on disk instead of installing under /usr/local/pybritive. Analyze
+# the payload and pin every detected bundle in place.
+PLIST="$(mktemp -d)/component.plist"
+pkgbuild --analyze --root "$PKGROOT" "$PLIST"
+i=0
+while plutil -replace "$i.BundleIsRelocatable" -bool NO "$PLIST" > /dev/null 2>&1; do
+    i=$((i + 1))
+done
 
 COMPONENT="$(mktemp -d)/pybritive-component.pkg"
 pkgbuild \
@@ -43,6 +64,7 @@ pkgbuild \
     --version "$VERSION" \
     --scripts "$ROOT/packaging/macos/scripts" \
     --install-location "/" \
+    --component-plist "$PLIST" \
     "$COMPONENT"
 
 DISTRIB="$(mktemp -d)/distribution.xml"
