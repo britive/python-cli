@@ -315,6 +315,29 @@ class BritiveCli:
             output += f' (alias: {alias})'
         self.print(output, ignore_silent=True)
 
+    def create_temp_token(self, duration_seconds: Optional[int] = None):
+        self.login()
+        token = self.b.security.temp_tokens.create(duration_seconds=duration_seconds)
+        output = [token] if self.output_format in ['csv', 'list'] else token
+        self.print(output, ignore_silent=True)
+
+    def list_temp_tokens(self):
+        self.login()
+        tokens = self.b.security.temp_tokens.list()
+        if not tokens and self.output_format == 'csv':
+            return  # There are no fields from which to build a CSV header.
+        self.print(tokens, ignore_silent=True)
+
+    def get_temp_token(self, token_id: str):
+        self.login()
+        token = self.b.security.temp_tokens.get(token_id=token_id)
+        output = [token] if self.output_format in ['csv', 'list'] else token
+        self.print(output, ignore_silent=True)
+
+    def revoke_temp_token(self, token_id: str):
+        self.login()
+        self.b.security.temp_tokens.revoke(token_id=token_id)
+
     def list_secrets(self, search_text: Optional[str] = None):
         self.login()
         self.print(self.b.my_secrets.list(search=search_text), ignore_silent=True)
