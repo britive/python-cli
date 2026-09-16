@@ -10,13 +10,13 @@ def common_asserts(result, substring=None, exit_code=0):
 
 
 def test_view(runner, cli):
-    result = runner.invoke(cli, 'secret view /pybritive-test-standard -f yaml'.split(' '))
+    result = runner.invoke(cli, ['secret', 'view', '/pybritive-test-standard', '-f', 'yaml'])
     common_asserts(result, 'test')
 
 
 def test_download(runner, cli):
     filename = 'pybritive-test-secret-file.txt'
-    result = runner.invoke(cli, 'secret download /pybritive-test-file'.split(' '))
+    result = runner.invoke(cli, ['secret', 'download', '/pybritive-test-file'])
     message = 'wrote contents of secret file to'
     common_asserts(result, message)
     with open(filename, encoding='utf-8') as f:

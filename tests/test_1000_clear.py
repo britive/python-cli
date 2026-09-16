@@ -4,7 +4,7 @@ from pathlib import Path
 
 
 def test_clear_cache(runner, cli):
-    result = runner.invoke(cli, 'clear cache'.split(' '))
+    result = runner.invoke(cli, ['clear', 'cache'])
     local_home = os.getenv('PYBRITIVE_HOME_DIR')
     path = Path(Path(local_home) / '.britive' / 'pybritive.cache')
     with open(str(path), encoding='utf-8') as f:
@@ -28,7 +28,7 @@ def test_clear_gcloud_key_files(runner, cli):
     assert file1.is_file()
     assert file2.is_file()
 
-    result = runner.invoke(cli, 'clear gcloud-auth-key-files'.split(' '))
+    result = runner.invoke(cli, ['clear', 'gcloud-auth-key-files'])
     assert result.exit_code == 0
     assert not file1.is_file()
     assert not file2.is_file()
