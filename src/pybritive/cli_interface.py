@@ -16,6 +16,7 @@ from pybritive.commands.ls import ls as group_ls
 from pybritive.commands.request import request as group_request
 from pybritive.commands.secret import secret as group_secret
 from pybritive.commands.ssh import ssh as group_ssh
+from pybritive.commands.tokens import tokens as group_tokens
 from pybritive.commands.user import user as command_user
 from pybritive.options.britive_options import britive_options
 
@@ -55,6 +56,7 @@ cli.add_command(group_clear)
 cli.add_command(command_api)
 cli.add_command(group_ssh)
 cli.add_command(group_aws)
+cli.add_command(group_tokens)
 
 
 if __name__ == '__main__':

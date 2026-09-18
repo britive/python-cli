@@ -1,3 +1,4 @@
+import contextlib
 import hashlib
 import os
 import time
@@ -36,10 +37,8 @@ except ImportError:
             raise _WouldBlock()
 
     def _unlock_fd(fd: int) -> None:
-        try:
+        with contextlib.suppress(OSError, IOError):
             msvcrt.locking(fd, msvcrt.LK_UNLCK, 1)
-        except (OSError, IOError):
-            pass
 
 
 class CheckoutLock:
@@ -66,9 +65,7 @@ class CheckoutLock:
                 if time.monotonic() >= deadline:
                     os.close(self._fd)
                     self._fd = None
-                    raise CheckoutLockTimeout(
-                        f'Timed out after {self.timeout}s waiting for checkout lock'
-                    )
+                    raise CheckoutLockTimeout(f'Timed out after {self.timeout}s waiting for checkout lock')
                 time.sleep(self.poll_interval)
 
     def release(self) -> None:

@@ -1,5 +1,29 @@
 # Changelog
 
+## v2.4.0-rc.2 [2026-09-16]
+
+__What's New:__
+
+* Added `tokens [create|get|list|revoke]` command to manage temporary bearer tokens for the authenticated user.
+
+__Enhancements:__
+
+* None
+
+__Bug Fixes:__
+
+* None
+
+__Dependencies:__
+
+* Bumped the `britive` SDK minimum to `4.8.0b0`.
+* Dropped `python3.9` support, EOL 2025-10-31, was dropped by `britive` dependency in `v4.5.0`.
+* Updated github workflows python version to `python3.11`
+
+__Other:__
+
+* Python lint related changes.
+
 ## v2.4.0-rc.1 [2026-06-08]
 
 __What's New:__

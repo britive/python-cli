@@ -1,32 +1,29 @@
 [build-system]
-requires = [
-    "setuptools>=42",
-    "wheel"
-]
+requires = ["setuptools>=42", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "pybritive"
-authors = [{name = "Britive Inc.", email = "support@britive.com"}]
+authors = [{ name = "Britive Inc.", email = "support@britive.com" }]
 description = "A pure Python CLI for Britive"
 readme = "README.md"
 classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Internet",
     "Topic :: Security",
     "Topic :: Utilities",
 ]
-license = {file = "LICENSE"}
-requires-python = ">= 3.9"
+license = { file = "LICENSE" }
+requires-python = ">= 3.10"
 dependencies = [
-    "britive>=4.6.0,<5.0",
+    "britive>=4.8.0b0,<5.0",
     "click>=8.1.7",
     "colored>=2.2.5",
     "cryptography",
@@ -37,7 +34,7 @@ dependencies = [
     "PyYAML",
     "requests>=2.31.0",
     "tabulate",
-    "toml"
+    "toml",
 ]
 dynamic = ["version"]
 keywords = ["britive", "cpam", "identity", "jit", "cli"]
@@ -59,10 +56,10 @@ Issues = "https://github.com/britive/python-cli/issues"
 Changelog = "https://github.com/britive/python-cli/blob/main/CHANGELOG.md"
 
 [tool.setuptools]
-package-dir = {"" = "src"}
+package-dir = { "" = "src" }
 
 [tool.setuptools.dynamic]
-version = {attr = "pybritive.__version__"}
+version = { attr = "pybritive.__version__" }
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -83,10 +80,10 @@ line-ending = "auto"
 
 [tool.ruff.lint]
 select = [
-    "E", # pycodestyle
-    "F", # Pyflakes
-    "I", # isort
-    "PL", #pylint
+    "E",   # pycodestyle
+    "F",   # Pyflakes
+    "I",   # isort
+    "PL",  #pylint
     "SIM", # flake8-simplify
 ]
 

@@ -12,7 +12,7 @@ from pybritive.options.britive_options import britive_options
     'gcloud_key_file,verbose,extend,profile_type,tenant,token,passphrase,federation_provider'
 )
 @click_smart_profile_argument
-def checkout(  # noqa: PLR0913
+def checkout(  # noqa: PLR0913, PLR0917
     ctx,
     alias,
     blocktime,
