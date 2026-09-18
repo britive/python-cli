@@ -6,7 +6,7 @@ Full Britive documentation is available here: [docs.britive.com](https://docs.br
 
 ## Requirements
 
-* Python 3.9 or higher
+* Python 3.10 or higher
 * Active Britive tenant (or nothing is really going to work)
 
 ## Installation

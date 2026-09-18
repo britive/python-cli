@@ -4,7 +4,7 @@ from pathlib import Path
 
 
 def test_cache_profiles(runner, cli):
-    result = runner.invoke(cli, 'cache profiles'.split(' '))
+    result = runner.invoke(cli, ['cache', 'profiles'])
     local_home = os.getenv('PYBRITIVE_HOME_DIR')
     path = Path(Path(local_home) / '.britive' / 'pybritive.cache')
     with open(str(path), encoding='utf-8') as f:
