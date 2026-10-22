@@ -6,7 +6,7 @@ import jwt
 import pytest
 
 from pybritive.britive_cli import BritiveCli
-from pybritive.helpers import clipboard, token_printer
+from pybritive.helpers import token_printer
 from pybritive.helpers.token_printer import TempTokenPrinter, decode_token
 
 TENANT_URL = 'https://example.britive-app.com'
@@ -91,40 +91,3 @@ def test_env_mode_platform_default(capsys, monkeypatch, system, prefix):
     monkeypatch.setattr(token_printer.platform, 'system', lambda: system)
     run_printer('env')
     assert capsys.readouterr().out.startswith(f'{prefix}BRITIVE_TENANT=')
-
-
-def patch_clipboard(monkeypatch, system, available):
-    calls = []
-    monkeypatch.setattr(clipboard.platform, 'system', lambda: system)
-    monkeypatch.setattr(clipboard.shutil, 'which', lambda cmd: cmd if cmd in available else None)
-    monkeypatch.setattr(clipboard.subprocess, 'run', lambda cmd, **kwargs: calls.append((cmd, kwargs['input'])))
-    return calls
-
-
-@pytest.mark.parametrize(
-    'system,available,expected',
-    [
-        ('Darwin', ['pbcopy'], ['pbcopy']),
-        ('Windows', ['clip'], ['clip']),
-        ('Linux', ['xclip', 'xsel'], ['xclip', '-selection', 'clipboard']),
-    ],
-)
-def test_clipboard_mode(capsys, monkeypatch, system, available, expected):
-    calls = patch_clipboard(monkeypatch, system, available)
-    token = run_printer('clipboard')
-    assert calls == [(expected, token['accessToken'])]
-    captured = capsys.readouterr()
-    assert captured.out == ''
-    assert 'copied to clipboard' in captured.err
-
-
-def test_clipboard_mode_silent(capsys, monkeypatch):
-    patch_clipboard(monkeypatch, 'Darwin', ['pbcopy'])
-    run_printer('clipboard', silent=True)
-    assert capsys.readouterr().err == ''
-
-
-def test_clipboard_unavailable(monkeypatch):
-    patch_clipboard(monkeypatch, 'Linux', [])
-    with pytest.raises(click.ClickException, match='No clipboard utility found'):
-        run_printer('clipboard')

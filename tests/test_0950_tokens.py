@@ -37,17 +37,6 @@ def test_create_mode_env_winps(runner, cli):
     common_asserts(result, ['$Env:BRITIVE_TENANT=', '$Env:BRITIVE_TOKEN='])
 
 
-def test_create_mode_clipboard(runner, cli, monkeypatch):
-    from pybritive.helpers import clipboard
-
-    copied = []
-    monkeypatch.setattr(clipboard.shutil, 'which', lambda cmd: cmd)
-    monkeypatch.setattr(clipboard.subprocess, 'run', lambda cmd, **kwargs: copied.append(kwargs['input']))
-    result = runner.invoke(cli, ['tokens', 'create', '-m', 'clipboard'])
-    common_asserts(result, 'copied to clipboard')
-    assert copied and copied[0].startswith('eyJ')
-
-
 def test_help(runner, cli):
     result = runner.invoke(cli, ['tokens', '--help'])
     common_asserts(result, ['create', 'get', 'list', 'revoke'])

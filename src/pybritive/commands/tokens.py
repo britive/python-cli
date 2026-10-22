@@ -29,7 +29,7 @@ def create(ctx, mode, output_format, tenant, token, silent, passphrase, federati
     Examples:
       pybritive tokens create -m token              # access token only
       pybritive tokens create -m decode -f yaml     # inspect claims and expiry
-      pybritive tokens create -m clipboard          # copy access token
+      pybritive tokens create -m token | pbcopy     # copy access token (macOS)
       eval $(pybritive tokens create -m env)        # export BRITIVE_TENANT/BRITIVE_TOKEN
     """
     ctx.obj.britive.create_temp_token(duration_seconds=duration_seconds, mode=mode)

@@ -717,7 +717,6 @@ The `--mode/-m` option controls how the new token is presented.
 | `json` (default) | `accessToken` and `expiresOn`, honoring `--format` |
 | `token` | the access token only, suitable for piping |
 | `decode` | token header and claims with issued/expires times (signature is not verified), honoring `--format` |
-| `clipboard` | copies the access token to the clipboard (`pbcopy`, `clip`, `wl-copy`, `xclip` or `xsel`) |
 | `env`, `env-nix`, `env-wincmd`, `env-winps` | `BRITIVE_TENANT`, `BRITIVE_TOKEN` and `BRITIVE_TOKEN_EXPIRATION` for `eval` |
 
 ### `tokens` examples
@@ -729,8 +728,11 @@ pybritive tokens create -t mytenant -m token
 # check the claims and expiry of a new token
 pybritive tokens create -t mytenant -m decode -f yaml
 
-# copy a 15 minute token to the clipboard
-pybritive tokens create -t mytenant -m clipboard --duration-seconds 900
+# copy a 15 minute token to the clipboard (tr drops the trailing newline)
+pybritive tokens create -t mytenant -m token --duration-seconds 900 | tr -d '\n' | pbcopy   # macOS
+pybritive tokens create -t mytenant -m token --duration-seconds 900 | tr -d '\n' | xclip -selection clipboard   # Linux (X11)
+pybritive tokens create -t mytenant -m token --duration-seconds 900 | tr -d '\n' | wl-copy   # Linux (Wayland)
+pybritive tokens create -t mytenant -m token --duration-seconds 900 | Set-Clipboard   # Windows PowerShell
 
 # export BRITIVE_TENANT (full tenant URL) and BRITIVE_TOKEN, e.g. for the Britive Terraform provider
 eval $(pybritive tokens create -t mytenant -m env)

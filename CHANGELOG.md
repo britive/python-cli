@@ -5,8 +5,7 @@
 __What's New:__
 
 * Added `--mode/-m` to `tokens create`: `token` (access token only), `decode` (header, claims, issued/expires times),
-`clipboard` (copy access token), and `env`, `env-nix`, `env-wincmd`, `env-winps` (export `BRITIVE_TENANT`,
-`BRITIVE_TOKEN`, `BRITIVE_TOKEN_EXPIRATION`).
+and `env`, `env-nix`, `env-wincmd`, `env-winps` (export `BRITIVE_TENANT`, `BRITIVE_TOKEN`, `BRITIVE_TOKEN_EXPIRATION`).
 
 __Enhancements:__
 

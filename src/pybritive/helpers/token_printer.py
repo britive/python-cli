@@ -5,7 +5,6 @@ from datetime import datetime
 import click
 import jwt
 
-from pybritive.helpers.clipboard import copy_to_clipboard
 from pybritive.helpers.cloud_credential_printer import env_options, safe_list_get
 
 
@@ -70,11 +69,6 @@ class TempTokenPrinter:
             self.cli.print(decoded, ignore_silent=True)
         else:  # tabular formats need a flat record
             self._print_record({**decoded['payload'], **decoded['times']})
-
-    def print_clipboard(self):
-        copy_to_clipboard(self.token['accessToken'])
-        if not self.silent:
-            click.echo(f'Access token copied to clipboard (expires {self.token["expiresOn"]}).', err=True)
 
     def print_env(self):
         variables = {
