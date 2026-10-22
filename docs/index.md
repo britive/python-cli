@@ -710,31 +710,24 @@ The `tokens` command group manages temporary bearer tokens for the authenticated
 a token once (it is not saved as your CLI login credential). Requires `securityadmin.temptoken.create`, and a temporary
 token cannot create another temporary token.
 
-The `--mode/-m` option controls how the new token is presented.
-
-| Mode | Output |
-|---|---|
-| `json` (default) | `accessToken` and `expiresOn`, honoring `--format` |
-| `token` | the access token only, suitable for piping |
-| `decode` | token header and claims with issued/expires times (signature is not verified), honoring `--format` |
-| `env`, `env-nix`, `env-wincmd`, `env-winps` | `BRITIVE_TENANT`, `BRITIVE_TOKEN` and `BRITIVE_TOKEN_EXPIRATION` for `eval` |
+`--format/-f` controls the output (`accessToken` and `expiresOn`). Use `jq` or similar to pick out fields.
+`--mode/-m env` instead prints `BRITIVE_TENANT` (full tenant URL), `BRITIVE_TOKEN` and `BRITIVE_TOKEN_EXPIRATION` for
+`eval`. As with `checkout`, `env` can include a terminal specific modifier: `env-nix`, `env-wincmd` or `env-winps`.
 
 ### `tokens` examples
 
 ```sh
 # print only the access token
-pybritive tokens create -t mytenant -m token
+pybritive tokens create -t mytenant -f json | jq -r .accessToken
 
-# check the claims and expiry of a new token
-pybritive tokens create -t mytenant -m decode -f yaml
+# copy a 15 minute token to the clipboard (macOS; use xclip, wl-copy or Set-Clipboard elsewhere)
+pybritive tokens create -t mytenant --duration-seconds 900 -f json | jq -j .accessToken | pbcopy
 
-# copy a 15 minute token to the clipboard (tr drops the trailing newline)
-pybritive tokens create -t mytenant -m token --duration-seconds 900 | tr -d '\n' | pbcopy   # macOS
-pybritive tokens create -t mytenant -m token --duration-seconds 900 | tr -d '\n' | xclip -selection clipboard   # Linux (X11)
-pybritive tokens create -t mytenant -m token --duration-seconds 900 | tr -d '\n' | wl-copy   # Linux (Wayland)
-pybritive tokens create -t mytenant -m token --duration-seconds 900 | Set-Clipboard   # Windows PowerShell
+# inspect the token claims (signature is not verified)
+pybritive tokens create -t mytenant -f json \
+  | jq -r '.accessToken | split(".")[1] | gsub("-";"+") | gsub("_";"/") | @base64d | fromjson'
 
-# export BRITIVE_TENANT (full tenant URL) and BRITIVE_TOKEN, e.g. for the Britive Terraform provider
+# export BRITIVE_TENANT and BRITIVE_TOKEN, e.g. for the Britive Terraform provider
 eval $(pybritive tokens create -t mytenant -m env)
 ```
 

@@ -16,17 +16,6 @@ def test_create_with_duration(runner, cli):
     common_asserts(result, ['accessToken', 'expiresOn'])
 
 
-def test_create_mode_token(runner, cli):
-    result = runner.invoke(cli, ['tokens', 'create', '-m', 'token'])
-    common_asserts(result, 'eyJ')
-    assert len(result.output.strip().split('.')) == 3
-
-
-def test_create_mode_decode(runner, cli):
-    result = runner.invoke(cli, ['tokens', 'create', '-m', 'decode', '-f', 'json'])
-    common_asserts(result, ['header', 'payload', 'expiresIn'])
-
-
 def test_create_mode_env(runner, cli):
     result = runner.invoke(cli, ['tokens', 'create', '-m', 'env-nix'])
     common_asserts(result, ['export BRITIVE_TENANT="https://', 'export BRITIVE_TOKEN="eyJ', 'BRITIVE_TOKEN_EXPIRATION'])
