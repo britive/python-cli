@@ -704,6 +704,42 @@ The first supported sub-command is `console` which will sign an AWS console URL 
 for a Britive AWS profile (or any other system which issues AWS access keys) and use the resulting keys to get into the
 AWS console.
 
+## `tokens` Command
+
+The `tokens` command group manages temporary bearer tokens for the authenticated identity. `tokens create` returns
+a token once (it is not saved as your CLI login credential). Requires `securityadmin.temptoken.create`, and a temporary
+token cannot create another temporary token.
+
+The `--mode/-m` option controls how the new token is presented.
+
+| Mode | Output |
+|---|---|
+| `json` (default) | `accessToken` and `expiresOn`, honoring `--format` |
+| `token` | the access token only, suitable for piping |
+| `decode` | token header and claims with issued/expires times (signature is not verified), honoring `--format` |
+| `clipboard` | copies the access token to the clipboard (`pbcopy`, `clip`, `wl-copy`, `xclip` or `xsel`) |
+| `env`, `env-nix`, `env-wincmd`, `env-winps` | `BRITIVE_TENANT`, `BRITIVE_TOKEN` and `BRITIVE_TOKEN_EXPIRATION` for `eval` |
+
+### `tokens` examples
+
+```sh
+# print only the access token
+pybritive tokens create -t mytenant -m token
+
+# check the claims and expiry of a new token
+pybritive tokens create -t mytenant -m decode -f yaml
+
+# copy a 15 minute token to the clipboard
+pybritive tokens create -t mytenant -m clipboard --duration-seconds 900
+
+# export BRITIVE_TENANT (full tenant URL) and BRITIVE_TOKEN, e.g. for the Britive Terraform provider
+eval $(pybritive tokens create -t mytenant -m env)
+```
+
+`BRITIVE_TENANT` is also read by `pybritive` as the `--tenant` value. After `eval` of the `env` output, later
+`pybritive` commands in that shell use the tenant URL instead of your configured tenant alias, and may prompt for a new
+interactive login. `unset BRITIVE_TENANT` or pass `--tenant` to return to the alias.
+
 ## Shell Completion
 
 > _TODO: Provide more automated scripts here to automatically add the required configs to the profiles._
@@ -808,6 +844,11 @@ echo $profile
 
 And is generally something like `C:\Users\{user}\Documents\WindowsPowerShell\Microsoft.PowerShell_profile.ps1`.
 Create the file (and any needed directories) if needed.
+
+### Shell Completion - Tenants
+
+The `--tenant/-t` option completes tenant aliases from the `pybritive` config file (`[tenant-<alias>]` sections).
+No authentication is required.
 
 ### Shell Completion - Profiles - Local Cache
 
