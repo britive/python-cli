@@ -28,6 +28,7 @@ from .helpers.checkout_lock import CheckoutLock
 from .helpers.config import ConfigManager
 from .helpers.credentials import EncryptedFileCredentialManager, FileCredentialManager
 from .helpers.split import profile_split
+from .helpers.token_printer import TempTokenPrinter
 
 default_table_format = 'fancy_grid'
 debug_enabled = os.getenv('PYBRITIVE_DEBUG')
@@ -315,11 +316,16 @@ class BritiveCli:
             output += f' (alias: {alias})'
         self.print(output, ignore_silent=True)
 
-    def create_temp_token(self, duration_seconds: Optional[int] = None):
+    def create_temp_token(self, duration_seconds: Optional[int] = None, mode: Optional[str] = None):
         self.login()
         token = self.b.security.temp_tokens.create(duration_seconds=duration_seconds)
-        output = [token] if self.output_format in ['csv', 'list'] else token
-        self.print(output, ignore_silent=True)
+        TempTokenPrinter(
+            mode=mode,
+            token=token,
+            tenant_url=self.b.base_url.removesuffix('/api'),
+            silent=self.silent,
+            cli=self,
+        ).print()
 
     def list_temp_tokens(self):
         self.login()
