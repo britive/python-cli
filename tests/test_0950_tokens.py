@@ -16,6 +16,16 @@ def test_create_with_duration(runner, cli):
     common_asserts(result, ['accessToken', 'expiresOn'])
 
 
+def test_create_mode_env(runner, cli):
+    result = runner.invoke(cli, ['tokens', 'create', '-m', 'env-nix'])
+    common_asserts(result, ['export BRITIVE_TENANT="https://', 'export BRITIVE_TOKEN="eyJ', 'BRITIVE_TOKEN_EXPIRATION'])
+
+
+def test_create_mode_env_winps(runner, cli):
+    result = runner.invoke(cli, ['tokens', 'create', '-m', 'env-winps'])
+    common_asserts(result, ['$Env:BRITIVE_TENANT=', '$Env:BRITIVE_TOKEN='])
+
+
 def test_help(runner, cli):
     result = runner.invoke(cli, ['tokens', '--help'])
     common_asserts(result, ['create', 'get', 'list', 'revoke'])
@@ -23,7 +33,7 @@ def test_help(runner, cli):
 
 def test_create_help(runner, cli):
     result = runner.invoke(cli, ['tokens', 'create', '--help'])
-    common_asserts(result, ['--duration-seconds', '--format', '--tenant', '--token', '--silent'])
+    common_asserts(result, ['--duration-seconds', '--mode', '--format', '--tenant', '--token', '--silent'])
 
 
 def test_list_not_implemented(runner, cli):

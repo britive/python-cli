@@ -36,6 +36,7 @@ from pybritive.options.tenant import option as tenant
 from pybritive.options.ticket_id import option as ticket_id
 from pybritive.options.ticket_type import option as ticket_type
 from pybritive.options.token import option as token
+from pybritive.options.token_mode import option as token_mode
 from pybritive.options.verbose import option as verbose
 from pybritive.options.version import option as version
 
@@ -77,6 +78,7 @@ options_map = {
     'ticket_id': ticket_id,
     'ticket_type': ticket_type,
     'token': token,
+    'token_mode': token_mode,
     'verbose': verbose,
     'version': version,
 }

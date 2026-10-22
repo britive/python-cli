@@ -11,21 +11,26 @@ def tokens():
 
 @tokens.command()
 @build_britive
-@britive_options(names='format,tenant,token,silent,passphrase,federation_provider')
+@britive_options(names='token_mode,format,tenant,token,silent,passphrase,federation_provider')
 @click.option(
     '--duration-seconds',
     type=click.IntRange(1, 86400),
     default=None,
     help='Requested lifetime in seconds. Omit to use the tenant default. The tenant maximum also applies.',
 )
-def create(ctx, output_format, tenant, token, silent, passphrase, federation_provider, duration_seconds):
+def create(ctx, mode, output_format, tenant, token, silent, passphrase, federation_provider, duration_seconds):
     """Create a temporary bearer token for your authenticated identity.
 
     Requires securityadmin.temptoken.create. A temporary token cannot create another temporary token.
     Prints accessToken and expiresOn, including when --silent is set. The token is returned only once
     and is not saved as your CLI login credential.
+
+    \b
+    Examples:
+      pybritive tokens create -f json | jq -r .accessToken   # access token only
+      eval $(pybritive tokens create -m env)                 # export BRITIVE_TENANT/BRITIVE_TOKEN
     """
-    ctx.obj.britive.create_temp_token(duration_seconds=duration_seconds)
+    ctx.obj.britive.create_temp_token(duration_seconds=duration_seconds, mode=mode)
 
 
 @tokens.command()

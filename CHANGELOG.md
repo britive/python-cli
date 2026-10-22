@@ -1,5 +1,28 @@
 # Changelog
 
+## v2.4.0-rc.3 [unreleased]
+
+__What's New:__
+
+* Added `--mode/-m env|env-nix|env-wincmd|env-winps` to `tokens create` to print `BRITIVE_TENANT`, `BRITIVE_TOKEN`
+and `BRITIVE_TOKEN_EXPIRATION` for `eval`.
+
+__Enhancements:__
+
+* Shell completion for `--tenant/-t` from tenant aliases in the `pybritive` config file.
+
+__Bug Fixes:__
+
+* None
+
+__Dependencies:__
+
+* None
+
+__Other:__
+
+* None
+
 ## v2.4.0-rc.2 [2026-09-16]
 
 __What's New:__
